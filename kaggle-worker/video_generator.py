@@ -150,45 +150,89 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
 
     # 1. Create a list file for FFmpeg concat demuxer
     list_file_path = "clips_list.txt"
-    with open(list_file_path, "w") as f:
-        for clip in clip_paths:
-            # We assume clips are safe paths without quotes
-            f.write(f"file '{clip}'\n")
+    audio_duration = get_media_duration(audio_path)
+    if audio_duration == 0:
+        audio_duration = 60.0
+        
+    sequence_clips = []
+    current_duration = 0.0
+    clip_idx = 0
+    fade_duration = 0.5
+    
+    while current_duration < audio_duration:
+        clip = clip_paths[clip_idx % len(clip_paths)]
+        duration = get_media_duration(clip)
+        if duration == 0:
+            duration = 5.0
             
-    # 2. Run FFmpeg
-    # This command concatenates the video clips, loops them if necessary to match audio,
-    # adds the audio, scales/crops to 1080x1920, and burns in the subtitles.
+        sequence_clips.append((clip, duration))
+        
+        if current_duration == 0.0:
+            current_duration += duration
+        else:
+            current_duration += (duration - fade_duration)
+            
+        clip_idx += 1
+
+    cmd = ["ffmpeg", "-y"]
+    cmd.extend(["-i", audio_path])
     
-    # Need absolute path for SRT in FFmpeg filter, escaping backslashes for Windows if needed
+    for clip, _ in sequence_clips:
+        cmd.extend(["-i", clip])
+        
+    filter_parts = []
+    
+    # Normalize each video stream
+    for i in range(len(sequence_clips)):
+        vid_idx = i + 1
+        norm_filter = f"[{vid_idx}:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p[v{i}]"
+        filter_parts.append(norm_filter)
+        
+    last_out = "[v0]"
+    current_offset = 0.0
+    
+    # Add crossfades
+    for i in range(1, len(sequence_clips)):
+        prev_duration = sequence_clips[i-1][1]
+        current_offset += (prev_duration - fade_duration)
+        out_name = f"[x{i}]"
+        xfade = f"{last_out}[v{i}]xfade=transition=fade:duration={fade_duration}:offset={current_offset:.2f}{out_name}"
+        filter_parts.append(xfade)
+        last_out = out_name
+
+    # Subtitles
     abs_srt_path = os.path.abspath(srt_path).replace('\\', '/')
+    sub_filter = f"{last_out}subtitles={abs_srt_path}:force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=10'[final_v]"
+    filter_parts.append(sub_filter)
     
-    cmd = [
-        "ffmpeg", "-y",
-        "-f", "concat", "-safe", "0",
-        "-stream_loop", "-1", # Loop video if shorter than audio
-        "-i", list_file_path,
-        "-i", audio_path,
-        "-vf", f"scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,subtitles={abs_srt_path}:force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=10'",
-        "-c:v", "libx264",
-        "-preset", "ultrafast",
-        "-crf", "18",
+    filter_complex = ";".join(filter_parts)
+    
+    cmd.extend([
+        "-filter_complex", filter_complex,
+        "-map", "[final_v]",
+        "-map", "0:a",
+        "-c:v", "h264_nvenc",
+        "-rc", "vbr",
+        "-cq", "19",
+        "-b:v", "5M",
+        "-maxrate", "8M",
+        "-bufsize", "8M",
+        "-profile:v", "high",
+        "-level", "4.1",
+        "-preset", "p2",
         "-c:a", "aac",
         "-b:a", "192k",
-        "-shortest", # Stop encoding when the shortest stream ends (the audio)
-        "-pix_fmt", "yuv420p",
+        "-shortest",
         output_path
-    ]
+    ])
     
     try:
-        logging.info(f"Running FFmpeg command: {' '.join(cmd)}")
-        result = subprocess.run(cmd, check=True, capture_output=True, text=True)
+        logging.info(f"Running FFmpeg with {len(sequence_clips)} clips and crossfades...")
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
         logging.info("Video composition completed successfully.")
     except subprocess.CalledProcessError as e:
         logging.error(f"FFmpeg error: {e.stderr}")
         raise
-    finally:
-        if os.path.exists(list_file_path):
-            os.remove(list_file_path)
 
 def upload_to_r2(file_path, object_name, r2_config):
     logging.info(f"Uploading {file_path} to R2 bucket {r2_config['bucket']}...")
