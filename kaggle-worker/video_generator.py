@@ -220,30 +220,42 @@ def send_webhook(webhook_url, payload, secret):
         logging.error(f"Failed to send webhook: {e}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Kaggle Video Generator Worker")
-    parser.add_argument("--config", required=True, help="Path to JSON config file")
-    args = parser.parse_args()
-
-    with open(args.config, 'r') as f:
-        config = json.load(f)
-
-    job_id = config['job_id']
-    full_script = f"{config.get('script_hook', '')} {config.get('script_body', '')} {config.get('script_cta', '')}"
-    prompts = config.get('visual_prompts', [])
-    voice = config.get('voice_name', 'en-US-GuyNeural')
-    title = config.get('title', 'Video Thumbnail')
+    VERCEL_URL = "https://simplyytr.vercel.app"
+    PIPELINE_SECRET = "youtubbot_secure_pipeline_key_2026"
     
-    # Environment config
-    pexels_key = config.get('pexels_api_key', os.environ.get('PEXELS_API_KEY'))
+    logging.info("Fetching next available job from Vercel...")
+    try:
+        res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+        res.raise_for_status()
+        data = res.json()
+    except Exception as e:
+        logging.error(f"Failed to fetch job from Vercel: {e}")
+        return
+
+    if data.get('status') != 'success':
+        logging.info("No pending jobs found. Exiting.")
+        return
+
+    job = data['job']
+    config = data['config']
+    
+    job_id = job['id']
+    full_script = f"{job.get('scriptHook', '')} {job.get('scriptBody', '')} {job.get('scriptCta', '')}"
+    prompts = job.get('visualPrompts', [])
+    voice = job.get('voiceName', 'en-US-GuyNeural')
+    title = job.get('generatedTitle', 'Video Thumbnail')
+    
+    # Environment config from API
+    pexels_key = config.get('pexels_api_key')
     webhook_url = config.get('webhook_url')
-    webhook_secret = config.get('webhook_secret')
+    webhook_secret = PIPELINE_SECRET
     
     r2_config = {
-        'account_id': config.get('r2_account_id', os.environ.get('R2_ACCOUNT_ID')),
-        'access_key': config.get('r2_access_key_id', os.environ.get('R2_ACCESS_KEY_ID')),
-        'secret_key': config.get('r2_secret_access_key', os.environ.get('R2_SECRET_ACCESS_KEY')),
-        'bucket': config.get('r2_bucket_name', os.environ.get('R2_BUCKET_NAME')),
-        'public_url': config.get('r2_public_url', os.environ.get('R2_PUBLIC_URL'))
+        'account_id': config.get('r2_account_id'),
+        'access_key': config.get('r2_access_key_id'),
+        'secret_key': config.get('r2_secret_access_key'),
+        'bucket': config.get('r2_bucket_name'),
+        'public_url': config.get('r2_public_url')
     }
 
     temp_dir = "./temp_assets"
