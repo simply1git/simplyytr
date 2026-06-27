@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=@youtubbot/backend\" \"npm run dev --workspace=web\"",
     "build": "npm run build --workspaces",
-    "start": "npm run start --workspaces"
+    "start": "npm run start --workspaces",
+    "uploader": "npm run start --workspace=@youtubbot/uploader-agent"
   },
   "devDependencies": {
     "concurrently": "^10.0.3"
