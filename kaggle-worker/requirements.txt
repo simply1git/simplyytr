@@ -4,3 +4,5 @@ boto3
 requests
 srt
 Pillow
+ffmpeg-python
+python-dotenv
