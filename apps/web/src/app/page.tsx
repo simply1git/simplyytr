@@ -3,52 +3,63 @@
 import { useState, useEffect } from "react";
 import toast, { Toaster } from "react-hot-toast";
 
-export default function TrendVault() {
-  const [trends, setTrends] = useState<any[]>([]);
-  const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
-  const [systemStatus, setSystemStatus] = useState("Sleeping / Waiting for Next Task");
+// Icon components
+const PlayIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M4.5 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347c1.295.712 1.295 2.573 0 3.286L7.28 19.99c-1.25.687-2.779-.217-2.779-1.643V5.653Z" clipRule="evenodd" />
+  </svg>
+);
 
+const BoltIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path fillRule="evenodd" d="M14.615 1.595a.75.75 0 0 1 .359.852L12.982 9.75h7.268a.75.75 0 0 1 .548 1.262l-10.5 11.25a.75.75 0 0 1-1.272-.71l1.992-7.302H3.75a.75.75 0 0 1-.548-1.262l10.5-11.25a.75.75 0 0 1 .913-.143Z" clipRule="evenodd" />
+  </svg>
+);
+
+export default function HybridDashboard() {
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [stats, setStats] = useState<any>({});
+  const [loading, setLoading] = useState(false);
+  
   const [settings, setSettings] = useState<any>({
-    targetNiche: "Podcast Clips shorts",
+    targetNiche: "Motivation",
     geminiTone: "Clickbaity",
-    autoPilotEnabled: false,
+    voiceName: "en-US-GuyNeural",
+    voiceGender: "Male",
     enableSelfLearningAI: false,
-    scrapeIntervalMinutes: 60,
-    uploadTimes: "15:00,18:00",
-    maxDownloadsPerRun: 1,
-    maxUploadsPerDay: 2,
-    videoSpeed: 1.05,
-    audioBass: 3,
-    colorScramble: true,
-    overlayText: "Wait for the end...",
-    overlayPosition: "CENTER",
-    overlayFontSize: 80
+    autoPilotEnabled: false,
+    availableVoices: []
   });
 
-  const [activeTab, setActiveTab] = useState("CORE");
+  const [activeTab, setActiveTab] = useState("PIPELINE");
 
   useEffect(() => {
-    fetchTrends();
     fetchSettings();
+    fetchJobs();
     
-    // Poll system status every 2 seconds
-    const interval = setInterval(async () => {
-      try {
-        const res = await fetch("http://localhost:3001/api/status");
-        const data = await res.json();
-        if (data.task) setSystemStatus(data.task);
-      } catch (err) {}
-    }, 2000);
+    // Poll for job updates every 5 seconds
+    const interval = setInterval(() => {
+      fetchJobs();
+    }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const fetchSettings = async () => {
     try {
-      const res = await fetch("http://localhost:3001/api/settings");
+      const res = await fetch("/api/settings");
       const data = await res.json();
       if (data.settings) setSettings(data.settings);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch("/api/pipeline/jobs?limit=20");
+      const data = await res.json();
+      if (data.jobs) setJobs(data.jobs);
+      if (data.statusCounts) setStats(data.statusCounts);
     } catch (err) {
       console.error(err);
     }
@@ -57,329 +68,287 @@ export default function TrendVault() {
   const updateSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await fetch("http://localhost:3001/api/settings", {
+      await fetch("/api/settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(settings),
       });
-      toast.success("Settings updated successfully! The Master Clock is now running with your new rules.");
+      toast.success("AI Configuration Saved.");
     } catch (err) {
-      console.error(err);
       toast.error("Failed to save settings");
     }
   };
 
-  const fetchTrends = async () => {
-    try {
-      const res = await fetch("http://localhost:3001/api/trends");
-      const data = await res.json();
-      setTrends(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setFetching(false);
-    }
-  };
-
-  const handleIngest = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const triggerPipeline = async () => {
+    if (!confirm("This will trigger a new AI script generation and start the Kaggle GPU worker. Continue?")) return;
     setLoading(true);
+    const tId = toast.loading("Connecting to Vercel & Groq...");
     try {
-      await fetch("http://localhost:3001/api/trends/ingest", {
+      const res = await fetch("/api/pipeline/trigger", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026'}` // Fallback for demo
+        },
+        body: JSON.stringify({ count: 1, force: true }),
       });
-      setUrl("");
-      fetchTrends();
-      toast.success("Ingested successfully! It will be scraped soon.");
+      const data = await res.json();
+      if (data.status === 'success') {
+        toast.success(`Pipeline Triggered! ${data.message}`, { id: tId });
+        fetchJobs();
+      } else {
+        toast.error(data.error || "Failed", { id: tId });
+      }
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to ingest URL");
+      toast.error("Network Error", { id: tId });
     } finally {
       setLoading(false);
     }
   };
 
-  const forceUpload = async () => {
-    const tId = toast.loading("Forcing upload of next ready video...");
-    try {
-      const res = await fetch("http://localhost:3001/api/publish/force-next", { method: "POST" });
-      const data = await res.json();
-      
-      if (data.needsAuth) {
-        const authRes = await fetch("http://localhost:3001/api/publish/auth");
-        const authData = await authRes.json();
-        if (authData.authUrl) {
-           window.location.href = authData.authUrl;
-           toast.dismiss(tId);
-        } else {
-           toast.error("Could not load Auth URL.", { id: tId });
-        }
-      } else if (data.status === 'success') {
-        toast.success(`Upload successful! Video ID: ${data.videoId}`, { id: tId });
-        fetchTrends();
-      } else {
-        toast.error(data.error || "Upload failed", { id: tId });
-      }
-    } catch (err) {
-      toast.error("Failed to force upload", { id: tId });
-    }
+  const getStatusBadge = (status: string) => {
+    const config: Record<string, { bg: string, text: string, border: string }> = {
+      'PENDING': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
+      'SCRIPTED': { bg: 'bg-blue-500/10', text: 'text-blue-400', border: 'border-blue-500/20' },
+      'RENDERING': { bg: 'bg-yellow-500/10', text: 'text-yellow-400', border: 'border-yellow-500/20' },
+      'READY': { bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/20' },
+      'UPLOADED': { bg: 'bg-purple-500/10', text: 'text-purple-400', border: 'border-purple-500/20' },
+      'FAILED': { bg: 'bg-red-500/10', text: 'text-red-400', border: 'border-red-500/20' },
+    };
+    const c = config[status] || config['PENDING'];
+    return (
+      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold border ${c.bg} ${c.text} ${c.border} flex items-center gap-1.5`}>
+        {status === 'RENDERING' && <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></span>}
+        {status}
+      </span>
+    );
   };
 
-  const deleteTrend = async (youtubeId: string) => {
-    if (!confirm("Are you sure you want to delete this trend?")) return;
-    try {
-      await fetch(`http://localhost:3001/api/trends/${youtubeId}`, { method: "DELETE" });
-      toast.success("Trend deleted");
-      fetchTrends();
-    } catch (err) {
-      toast.error("Failed to delete trend");
+  const getAvailableVoices = () => {
+    if (typeof settings.availableVoices === 'string') {
+      try { return JSON.parse(settings.availableVoices); } catch(e) { return []; }
     }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'PENDING': return 'bg-yellow-500/20 text-yellow-500 border-yellow-500/50';
-      case 'DOWNLOADING': return 'bg-blue-500/20 text-blue-500 border-blue-500/50';
-      case 'COMPLETED': return 'bg-green-500/20 text-green-500 border-green-500/50';
-      case 'UPLOADED': return 'bg-purple-500/20 text-purple-500 border-purple-500/50';
-      case 'FAILED': return 'bg-red-500/20 text-red-500 border-red-500/50';
-      default: return 'bg-gray-500/20 text-gray-500 border-gray-500/50';
-    }
+    return Array.isArray(settings.availableVoices) ? settings.availableVoices : [];
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto space-y-8">
-      <Toaster position="top-right" toastOptions={{ style: { background: '#18181b', color: '#fff', border: '1px solid #27272a' } }} />
+    <div className="min-h-screen bg-[#09090b] text-white selection:bg-purple-500/30">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-purple-900/20 via-[#09090b] to-[#09090b] -z-10"></div>
       
-      {/* System Status Bar */}
-      <div className="flex items-center justify-between bg-blue-900/20 border border-blue-500/30 rounded-xl p-4 shadow-sm animate-in fade-in slide-in-from-top-4">
-        <div className="flex items-center space-x-3">
-          <div className="relative flex h-3 w-3">
-            {systemStatus !== "Sleeping / Waiting for Next Task" && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>}
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${systemStatus === "Sleeping / Waiting for Next Task" ? 'bg-gray-500' : 'bg-blue-500'}`}></span>
-          </div>
-          <span className="text-sm font-medium text-blue-200">System Activity: <strong className="text-white">{systemStatus}</strong></span>
-        </div>
-      </div>
-
-      <div>
-        <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-600">
-          YouTubBot God Mode
-        </h1>
-        <p className="text-[#a1a1aa] mt-2 text-lg">
-          Absolute control over your automated YouTube empire.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+        <Toaster position="top-center" toastOptions={{ style: { background: 'rgba(24, 24, 27, 0.8)', backdropFilter: 'blur(10px)', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
         
-        {/* Settings Panel (Takes 2 columns) */}
-        <div className="lg:col-span-2 bg-[#18181b] border border-[#27272a] rounded-xl shadow-lg overflow-hidden">
-          
-          {/* Tabs */}
-          <div className="flex border-b border-[#27272a] bg-[#09090b]">
-            {['CORE', 'LIMITS', 'EDITOR', 'AI'].map((tab) => (
-              <button
-                key={tab}
-                type="button"
-                onClick={() => setActiveTab(tab)}
-                className={`flex-1 py-4 text-sm font-medium transition-colors ${activeTab === tab ? 'text-blue-400 border-b-2 border-blue-400 bg-[#18181b]' : 'text-[#a1a1aa] hover:text-white hover:bg-[#27272a]'}`}
-              >
-                {tab}
-              </button>
-            ))}
+        {/* Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-5xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-500">
+              Hybrid Cloud Engine
+            </h1>
+            <p className="text-zinc-400 mt-2 text-lg font-medium flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              System Online • Vercel + Kaggle + Groq
+            </p>
           </div>
-
-          <form onSubmit={updateSettings} className="p-8 space-y-6">
-            
-            {/* CORE TAB */}
-            {activeTab === 'CORE' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h2 className="text-xl font-bold text-white mb-6">Master Engine Core</h2>
-                <div>
-                  <label className="block text-sm text-[#a1a1aa] mb-2">Target Niche (Search Term)</label>
-                  <input type="text" value={settings.targetNiche} onChange={(e) => setSettings({ ...settings, targetNiche: e.target.value })} className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-[#a1a1aa] mb-2">Scrape Interval (Minutes)</label>
-                    <input type="number" min="1" value={settings.scrapeIntervalMinutes} onChange={(e) => setSettings({ ...settings, scrapeIntervalMinutes: e.target.value })} className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#a1a1aa] mb-2">Upload Times (HH:MM)</label>
-                    <input type="text" value={settings.uploadTimes} onChange={(e) => setSettings({ ...settings, uploadTimes: e.target.value })} placeholder="15:00, 18:00" className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-[#27272a]/30 rounded-lg border border-[#27272a]">
-                  <div>
-                    <label className="text-base font-medium text-white block">Engage Auto-Pilot</label>
-                    <span className="text-xs text-[#a1a1aa]">Allows the Master Clock to execute cron tasks automatically.</span>
-                  </div>
-                  <button type="button" onClick={() => setSettings({ ...settings, autoPilotEnabled: !settings.autoPilotEnabled })} className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${settings.autoPilotEnabled ? 'bg-blue-600' : 'bg-[#3f3f46]'}`}>
-                    <span className={`inline-block h-6 w-6 transform rounded-full bg-white transition-transform ${settings.autoPilotEnabled ? 'translate-x-7' : 'translate-x-1'}`} />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* LIMITS TAB */}
-            {activeTab === 'LIMITS' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h2 className="text-xl font-bold text-white mb-6">Volume & Limits</h2>
-                <div>
-                  <label className="block text-sm text-[#a1a1aa] mb-2 flex justify-between">
-                    <span>Max Downloads Per Scrape</span>
-                    <span className="text-blue-400 font-bold">{settings.maxDownloadsPerRun}</span>
-                  </label>
-                  <input type="range" min="1" max="10" value={settings.maxDownloadsPerRun} onChange={(e) => setSettings({ ...settings, maxDownloadsPerRun: e.target.value })} className="w-full accent-blue-500" />
-                </div>
-                <div>
-                  <label className="block text-sm text-[#a1a1aa] mb-2 flex justify-between">
-                    <span>Max Uploads Per Day</span>
-                    <span className="text-blue-400 font-bold">{settings.maxUploadsPerDay}</span>
-                  </label>
-                  <input type="range" min="1" max="10" value={settings.maxUploadsPerDay} onChange={(e) => setSettings({ ...settings, maxUploadsPerDay: e.target.value })} className="w-full accent-blue-500" />
-                  <p className="text-xs text-[#a1a1aa] mt-2">Warning: More than 4 uploads per day may flag your channel as spam.</p>
-                </div>
-              </div>
-            )}
-
-            {/* EDITOR TAB */}
-            {activeTab === 'EDITOR' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h2 className="text-xl font-bold text-white mb-6">FFmpeg Rendering Engine</h2>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-[#a1a1aa] mb-2 flex justify-between">
-                      <span>Video Speed</span>
-                      <span className="text-blue-400 font-bold">{settings.videoSpeed}x</span>
-                    </label>
-                    <input type="range" min="1.0" max="1.5" step="0.01" value={settings.videoSpeed} onChange={(e) => setSettings({ ...settings, videoSpeed: e.target.value })} className="w-full accent-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-[#a1a1aa] mb-2 flex justify-between">
-                      <span>Audio Bass Boost</span>
-                      <span className="text-blue-400 font-bold">g={settings.audioBass}</span>
-                    </label>
-                    <input type="range" min="0" max="10" value={settings.audioBass} onChange={(e) => setSettings({ ...settings, audioBass: e.target.value })} className="w-full accent-blue-500" />
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-[#27272a]/30 rounded-lg border border-[#27272a]">
-                  <label className="text-sm font-medium text-white">Cryptographic Color Scramble</label>
-                  <button type="button" onClick={() => setSettings({ ...settings, colorScramble: !settings.colorScramble })} className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.colorScramble ? 'bg-blue-600' : 'bg-[#3f3f46]'}`}>
-                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.colorScramble ? 'translate-x-6' : 'translate-x-1'}`} />
-                  </button>
-                </div>
-                <div className="pt-4 border-t border-[#27272a]">
-                  <h3 className="text-lg font-medium text-white mb-4">Video Overlay Branding</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm text-[#a1a1aa] mb-2">Overlay Hook Text</label>
-                      <input type="text" value={settings.overlayText} onChange={(e) => setSettings({ ...settings, overlayText: e.target.value })} className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-2">Overlay Position</label>
-                        <select value={settings.overlayPosition} onChange={(e) => setSettings({ ...settings, overlayPosition: e.target.value })} className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                          <option value="TOP">Top (Y: 20%)</option>
-                          <option value="CENTER">Center (Y: 50%)</option>
-                          <option value="BOTTOM">Bottom (Y: 80%)</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm text-[#a1a1aa] mb-2">Font Size ({settings.overlayFontSize}px)</label>
-                        <input type="range" min="40" max="150" value={settings.overlayFontSize} onChange={(e) => setSettings({ ...settings, overlayFontSize: e.target.value })} className="w-full mt-2 accent-blue-500" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* AI TAB */}
-            {activeTab === 'AI' && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                <h2 className="text-xl font-bold text-white mb-6">Gemini Director Configuration</h2>
-                
-                <div className="flex items-center justify-between p-6 bg-purple-900/20 rounded-xl border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
-                  <div>
-                    <label className="text-lg font-bold text-purple-300 block mb-1">🧠 Enable AI Self-Learning</label>
-                    <span className="text-sm text-purple-200/70">Allows Gemini to analyze views and automatically rewrite your Target Niche every Sunday.</span>
-                  </div>
-                  <button type="button" onClick={() => setSettings({ ...settings, enableSelfLearningAI: !settings.enableSelfLearningAI })} className={`relative inline-flex h-10 w-20 items-center rounded-full transition-all duration-300 ${settings.enableSelfLearningAI ? 'bg-gradient-to-r from-purple-600 to-pink-600 shadow-[0_0_20px_rgba(168,85,247,0.5)]' : 'bg-[#3f3f46]'}`}>
-                    <span className={`inline-block h-8 w-8 transform rounded-full bg-white transition-transform duration-300 ${settings.enableSelfLearningAI ? 'translate-x-11' : 'translate-x-1'}`} />
-                  </button>
-                </div>
-
-                <div className="mt-8">
-                  <label className="block text-sm text-[#a1a1aa] mb-2">AI Title Tone / Vibe</label>
-                  <select value={settings.geminiTone} onChange={(e) => setSettings({ ...settings, geminiTone: e.target.value })} className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option value="Clickbaity">Clickbaity (SHOCKING, 🤯, OMG)</option>
-                    <option value="Mysterious">Mysterious (Wait until you see...)</option>
-                    <option value="Aggressive">Aggressive (You NEED to see this...)</option>
-                    <option value="Professional">Professional (Informative and clean)</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            <button type="submit" className="w-full mt-8 bg-blue-600 hover:bg-blue-500 text-white px-6 py-4 rounded-xl text-lg font-bold transition-all shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]">
-              SAVE CONFIGURATION TO MASTER CLOCK
-            </button>
-          </form>
+          
+          <button 
+            onClick={triggerPipeline} 
+            disabled={loading}
+            className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-bold text-white transition-all duration-200 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] overflow-hidden"
+          >
+            <div className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></div>
+            <span className="relative flex items-center gap-2">
+              {loading ? <span className="animate-spin text-xl">⚪</span> : <BoltIcon />}
+              TRIGGER PIPELINE
+            </span>
+          </button>
         </div>
 
-        {/* Intelligence Vault Side Panel */}
-        <div className="space-y-6">
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 shadow-sm">
-            <h2 className="text-lg font-semibold mb-4">Manual Ingest Signal</h2>
-            <form onSubmit={handleIngest} className="flex flex-col gap-4">
-              <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste YouTube URL..." required className="w-full bg-[#09090b] border border-[#27272a] rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button type="submit" disabled={loading} className="w-full bg-[#27272a] hover:bg-[#3f3f46] text-white px-6 py-3 rounded-lg text-sm font-medium transition-colors disabled:opacity-50">
-                {loading ? "Scraping..." : "Force Download Video"}
-              </button>
-            </form>
-          </div>
-
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 shadow-sm min-h-[400px]">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Vault ({trends.length})</h2>
-              <button onClick={forceUpload} className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white px-3 py-1.5 rounded text-xs font-bold shadow-lg transition-transform active:scale-95">
-                Force Upload Next
-              </button>
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Jobs Processing", value: (stats['SCRIPTED'] || 0) + (stats['RENDERING'] || 0), color: "text-blue-400" },
+            { label: "Ready to Upload", value: stats['READY'] || 0, color: "text-emerald-400" },
+            { label: "Total Uploaded", value: stats['UPLOADED'] || 0, color: "text-purple-400" },
+            { label: "Failed Jobs", value: stats['FAILED'] || 0, color: "text-red-400" },
+          ].map((stat, i) => (
+            <div key={i} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-colors">
+              <p className="text-zinc-400 text-sm font-medium mb-1">{stat.label}</p>
+              <p className={`text-4xl font-bold tracking-tight ${stat.color}`}>{stat.value}</p>
             </div>
-            {fetching ? (
-              <div className="animate-pulse space-y-4">
-                {[1,2,3].map(i => (
-                  <div key={i} className="h-16 bg-[#27272a] rounded-lg"></div>
-                ))}
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+          
+          {/* Main Content Area */}
+          <div className="xl:col-span-2 space-y-6">
+            
+            {/* Tabs */}
+            <div className="flex gap-2 p-1 bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl w-fit">
+              {['PIPELINE', 'AI CONFIG', 'ANALYTICS'].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`px-6 py-2.5 text-sm font-bold rounded-lg transition-all ${activeTab === tab ? 'bg-white/10 text-white shadow-sm' : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'}`}
+                >
+                  {tab}
+                </button>
+              ))}
+            </div>
+
+            {/* TAB: PIPELINE */}
+            {activeTab === 'PIPELINE' && (
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-4">
+                <div className="p-6 border-b border-white/10 flex justify-between items-center">
+                  <h2 className="text-xl font-bold text-white">Active Render Jobs</h2>
+                </div>
+                <div className="divide-y divide-white/5">
+                  {jobs.length === 0 ? (
+                    <div className="p-12 text-center text-zinc-500 font-medium">No active jobs in the pipeline.</div>
+                  ) : (
+                    jobs.map((job) => (
+                      <div key={job.id} className="p-5 hover:bg-white/[0.02] transition-colors flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium text-white truncate mb-1">
+                            {job.generatedTitle || job.topic}
+                          </p>
+                          <div className="flex items-center gap-3 text-xs text-zinc-500">
+                            <span>ID: {job.id.slice(-6)}</span>
+                            <span>•</span>
+                            <span>{new Date(job.createdAt).toLocaleString()}</span>
+                            {job.publishedYoutubeId && (
+                              <>
+                                <span>•</span>
+                                <a href={`https://youtube.com/shorts/${job.publishedYoutubeId}`} target="_blank" rel="noreferrer" className="text-purple-400 hover:underline flex items-center gap-1">
+                                  <PlayIcon /> View Live
+                                </a>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                        <div className="shrink-0 flex flex-col items-end gap-2">
+                          {getStatusBadge(job.status)}
+                          {job.error && <span className="text-[10px] text-red-400 max-w-[200px] truncate" title={job.error}>{job.error}</span>}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
-            ) : trends.length === 0 ? (
-              <div className="text-center py-12 text-[#a1a1aa]">Vault is empty.</div>
-            ) : (
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                {trends.map((trend) => {
-                  const meta = trend.metadata ? JSON.parse(trend.metadata) : {};
-                  return (
-                    <div key={trend.id} className="bg-[#09090b] border border-[#27272a] rounded-lg p-3 hover:border-[#3f3f46] transition-colors">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-medium text-xs line-clamp-2 leading-tight pr-2">{trend.topic}</h3>
-                        <button onClick={() => deleteTrend(trend.youtubeId)} className="text-[#a1a1aa] hover:text-red-500">×</button>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between text-[10px] text-[#a1a1aa]">
-                        <span className={`px-2 py-0.5 rounded-full border ${getStatusColor(trend.downloadStatus)}`}>
-                          {trend.downloadStatus}
-                        </span>
-                        <span className="text-blue-400 font-bold">Views: {meta.viewCount || "N/A"}</span>
-                      </div>
+            )}
+
+            {/* TAB: AI CONFIG */}
+            {activeTab === 'AI CONFIG' && (
+              <form onSubmit={updateSettings} className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 space-y-8">
+                <div className="space-y-5">
+                  <h3 className="text-lg font-bold text-white border-b border-white/10 pb-4">Content Strategy</h3>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Target Niche</label>
+                    <input type="text" value={settings.targetNiche} onChange={(e) => setSettings({ ...settings, targetNiche: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" placeholder="e.g. Motivation, Psychology Facts" />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">AI Title Tone</label>
+                      <select value={settings.geminiTone} onChange={(e) => setSettings({ ...settings, geminiTone: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow">
+                        <option value="Clickbaity">Clickbaity (SHOCKING, 🤯)</option>
+                        <option value="Mysterious">Mysterious (Wait until you see...)</option>
+                        <option value="Educational">Educational (3 facts about...)</option>
+                      </select>
                     </div>
-                  );
-                })}
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-400 mb-2">Neural Voice</label>
+                      <select value={settings.voiceName} onChange={(e) => setSettings({ ...settings, voiceName: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow">
+                        {getAvailableVoices().map((v: any) => (
+                          <option key={v.name} value={v.name}>{v.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-5">
+                  <h3 className="text-lg font-bold text-white border-b border-white/10 pb-4">Automation Protocols</h3>
+                  
+                  <div className="flex items-center justify-between p-5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                    <div>
+                      <p className="font-bold text-white">Full Auto-Pilot</p>
+                      <p className="text-sm text-zinc-500 mt-1">Allow GitHub Actions to trigger the pipeline automatically on schedule.</p>
+                    </div>
+                    <button type="button" onClick={() => setSettings({ ...settings, autoPilotEnabled: !settings.autoPilotEnabled })} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${settings.autoPilotEnabled ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings.autoPilotEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-5 bg-purple-900/10 rounded-xl border border-purple-500/20 hover:border-purple-500/40 transition-colors">
+                    <div>
+                      <p className="font-bold text-purple-300">Self-Learning AI Loop</p>
+                      <p className="text-sm text-purple-200/60 mt-1">Groq will analyze past video performance to write better scripts.</p>
+                    </div>
+                    <button type="button" onClick={() => setSettings({ ...settings, enableSelfLearningAI: !settings.enableSelfLearningAI })} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${settings.enableSelfLearningAI ? 'bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'bg-zinc-700'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings.enableSelfLearningAI ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
+                </div>
+
+                <button type="submit" className="w-full bg-white text-black hover:bg-zinc-200 px-6 py-4 rounded-xl text-sm font-bold transition-colors">
+                  SAVE CONFIGURATION
+                </button>
+              </form>
+            )}
+
+            {/* TAB: ANALYTICS */}
+            {activeTab === 'ANALYTICS' && (
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center animate-in fade-in slide-in-from-bottom-4">
+                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
+                  <span className="text-2xl">📈</span>
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Analytics Engine</h3>
+                <p className="text-zinc-400">YouTube Data API sync runs automatically every midnight via GitHub Actions.<br/>Stats will populate here after your first few uploads.</p>
               </div>
             )}
           </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-[50px] rounded-full"></div>
+              <h3 className="text-lg font-bold text-white mb-4">Architecture Nodes</h3>
+              
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-emerald-400 font-bold">1</span>
+                    <span className="text-sm font-medium text-zinc-300">Vercel (Brain)</span>
+                  </div>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-purple-400 font-bold">2</span>
+                    <span className="text-sm font-medium text-zinc-300">Supabase (Memory)</span>
+                  </div>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-blue-400 font-bold">3</span>
+                    <span className="text-sm font-medium text-zinc-300">Kaggle GPU (Worker)</span>
+                  </div>
+                  <span className="text-xs text-zinc-500">Idle</span>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                  <div className="flex items-center gap-3">
+                    <span className="text-orange-400 font-bold">4</span>
+                    <span className="text-sm font-medium text-zinc-300">Local Agent (Uploader)</span>
+                  </div>
+                  <span className="text-xs text-emerald-400 font-medium">Polling...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
