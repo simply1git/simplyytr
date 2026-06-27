@@ -1,0 +1,21 @@
+{
+  "job_id": "cuid_1234567890",
+  "title": "Why You Are Not Successful Yet",
+  "script_hook": "You are making this one mistake every single day.",
+  "script_body": "And it is costing you your dreams. Success isn't about working hard, it's about working smart.",
+  "script_cta": "Subscribe if you want to win.",
+  "visual_prompts": [
+    "person stressed working late night",
+    "successful person looking at sunset",
+    "like and subscribe button"
+  ],
+  "voice_name": "en-US-GuyNeural",
+  "pexels_api_key": "your_pexels_key_here",
+  "webhook_url": "https://your-app.vercel.app/api/pipeline/webhook",
+  "webhook_secret": "your_pipeline_secret_here",
+  "r2_account_id": "your_cloudflare_account_id",
+  "r2_access_key_id": "your_r2_access_key",
+  "r2_secret_access_key": "your_r2_secret_key",
+  "r2_bucket_name": "youtubbot-assets",
+  "r2_public_url": "https://pub-xxxx.r2.dev"
+}
