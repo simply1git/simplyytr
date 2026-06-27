@@ -1,0 +1,39 @@
+0:03:13 Tab1 StartNav24 #renderer-script #auto_subframe
+0:03:13 Tab1 StartNav25 #renderer-script #auto_subframe
+0:03:13 Tab1 StartNav26 #renderer-script #link
+0:03:13 Tab1 FinishNav26
+0:03:13 Tab1 StartNav27 #renderer-script #link
+0:03:13 Tab1 FinishNav27
+0:03:14 Tab1 StartNav28 #renderer-script #auto_subframe
+0:03:14 Tab1 FinishNav28
+0:03:14 Tab1 PageLoad
+0:03:15 UserEducation.MessageNotShown
+0:03:15 UserEducation.MessageNotShown.IPH_BatterySaverMode
+0:03:15 UserEducation.MessageNotShown.BlockedByNewProfile
+0:03:15 Tab1 StartNav29 #renderer-script #auto_subframe
+0:03:15 Memory Pressure: Moderate
+0:03:15 Tab1 FinishNav25
+0:03:15 Tab1 FinishNav24
+0:03:15 Tab1 PageLoad
+0:03:15 Tab1 PageLoad
+0:03:15 Tab1 StartNav30 #renderer-script #link
+0:03:15 Tab1 FinishNav30
+0:03:16 Tab1 FinishNav29
+0:03:16 Tab1 PageLoad
+0:03:17 Tab1 StartNav31 #renderer-script #auto_subframe
+0:03:17 Tab1 FinishNav31
+0:03:17 Tab1 StartNav32 #renderer-script #auto_subframe
+0:03:17 Tab1 FinishNav32
+0:03:17 Tab1 PageLoad
+0:03:17 Tab1 PageLoad
+0:03:17 Tab1 StartNav33 #renderer-script #auto_subframe
+0:03:18 Tab1 FinishNav33
+0:03:18 Tab1 PageLoad
+0:03:19 Tab1 PageLoad
+0:03:20 Tab1 StartNav34 #renderer-script #auto_subframe
+0:03:20 Tab1 FinishNav34
+0:03:20 Tab1 PageLoad
+0:03:25 Memory Pressure: Moderate
+0:03:30 Memory Pressure: None
+0:03:40 Widget Closed: StatusBubble
+0:03:49 Browser1 Close Tab1 at 0

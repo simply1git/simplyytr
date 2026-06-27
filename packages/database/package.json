@@ -1,0 +1,16 @@
+{
+  "name": "@youtubbot/database",
+  "version": "1.0.0",
+  "private": true,
+  "main": "index.ts",
+  "scripts": {
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.2"
+  },
+  "devDependencies": {
+    "prisma": "^5.10.2"
+  }
+}

@@ -1,0 +1,173 @@
+// YouTubBot Platform — Prisma Schema
+// Supports PostgreSQL (Supabase) via DATABASE_URL env var
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── Channels ────────────────────────────────────────────
+model Channel {
+  id           String       @id @default(cuid())
+  name         String
+  youtubeId    String       @unique
+  accessToken  String?
+  refreshToken String?
+  videos       VideoCandidate[]
+  renderJobs   RenderJob[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+}
+
+// ─── Render Jobs (Core Pipeline) ─────────────────────────
+// Each row represents one video moving through the pipeline:
+// PENDING → SCRIPTED → RENDERING → READY → UPLOADING → UPLOADED
+model RenderJob {
+  id          String   @id @default(cuid())
+  status      String   @default("PENDING")
+
+  // Channel association (optional for single-channel setups)
+  channelId   String?
+  channel     Channel? @relation(fields: [channelId], references: [id])
+
+  // Script & Content
+  topic             String
+  scriptHook        String?
+  scriptBody        String?
+  scriptCta         String?
+  visualPrompts     Json?       // Array of scene descriptions for Pexels queries
+  voiceName         String      @default("en-US-GuyNeural")
+
+  // Generated Assets (Cloudflare R2 URLs)
+  voiceoverUrl      String?
+  videoUrl          String?
+  thumbnailUrl      String?
+
+  // Publishing Metadata
+  generatedTitle       String?
+  generatedDescription String?
+  generatedTags        String[]  @default([])
+  publishedYoutubeId   String?
+
+  // Analytics Feedback
+  views             Int      @default(0)
+  ctr               Float    @default(0.0)
+  avgWatchTime      Float    @default(0.0)
+  retentionScore    Float    @default(0.0)
+
+  // Error tracking
+  error             String?
+  attempts          Int      @default(0)
+
+  // Timestamps
+  createdAt         DateTime @default(now())
+  scriptedAt        DateTime?
+  renderedAt        DateTime?
+  uploadedAt        DateTime?
+  analyticsSyncedAt DateTime?
+}
+
+// ─── Trend Signals (Research Vault) ──────────────────────
+model TrendSignal {
+  id                 String         @id @default(cuid())
+  youtubeId          String         @unique
+  topic              String
+  metadata           String?        // Stored as JSON string
+  transcript         String?
+  embedding          String?        // JSON array of floats
+  score              Float          @default(0.0)
+  createdAt          DateTime       @default(now())
+
+  // Media Asset Tracking
+  localFilePath      String?
+  processedFilePath  String?
+  downloadStatus     String         @default("PENDING")
+  youtubeViews       Int            @default(0)
+  publishedYoutubeId String?
+
+  contentBriefs      ContentBrief[]
+}
+
+// ─── Content Briefs ──────────────────────────────────────
+model ContentBrief {
+  id               String         @id @default(cuid())
+  generatedTitle   String
+  generatedScript  String?
+  sourceTrends     TrendSignal[]
+  status           String         @default("DRAFT")
+}
+
+// ─── Video Candidates (Legacy) ───────────────────────────
+model VideoCandidate {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  status      String       @default("DRAFT")
+  channelId   String
+  channel     Channel      @relation(fields: [channelId], references: [id])
+  publishJob  PublishJob?
+}
+
+// ─── Publish Jobs (Legacy) ───────────────────────────────
+model PublishJob {
+  id        String         @id @default(cuid())
+  videoId   String         @unique
+  video     VideoCandidate @relation(fields: [videoId], references: [id])
+  title     String
+  status    String         @default("PENDING")
+  error     String?
+}
+
+// ─── System Settings ─────────────────────────────────────
+model SystemSettings {
+  id                    Int      @id @default(1)
+
+  // Niche & AI (fully customizable)
+  targetNiche           String   @default("Motivation")
+  geminiTone            String   @default("Clickbaity")
+  enableSelfLearningAI  Boolean  @default(false)
+  autoPilotEnabled      Boolean  @default(false)
+
+  // Voice Configuration
+  voiceName             String   @default("en-US-GuyNeural")
+  voiceGender           String   @default("Male")  // Male, Female
+  availableVoices       Json     @default("[{\"name\":\"en-US-GuyNeural\",\"gender\":\"Male\",\"label\":\"Guy (US Male)\"},{\"name\":\"en-US-JennyNeural\",\"gender\":\"Female\",\"label\":\"Jenny (US Female)\"},{\"name\":\"en-US-AriaNeural\",\"gender\":\"Female\",\"label\":\"Aria (US Female)\"},{\"name\":\"en-GB-RyanNeural\",\"gender\":\"Male\",\"label\":\"Ryan (UK Male)\"},{\"name\":\"en-IN-PrabhatNeural\",\"gender\":\"Male\",\"label\":\"Prabhat (Indian Male)\"},{\"name\":\"en-IN-NeerjaNeural\",\"gender\":\"Female\",\"label\":\"Neerja (Indian Female)\"}]")
+
+  // Timing
+  scrapeIntervalMinutes Int      @default(60)
+  uploadTimes           String   @default("09:00,12:00,15:00,18:00")
+  videosPerDay          Int      @default(4)
+  lastScrapedAt         DateTime?
+
+  // Volume
+  maxDownloadsPerRun    Int      @default(1)
+  maxUploadsPerDay      Int      @default(4)
+
+  // Editing Bay
+  videoSpeed            Float    @default(1.05)
+  audioBass             Int      @default(3)
+  colorScramble         Boolean  @default(true)
+  overlayText           String   @default("Wait for the end...")
+  overlayPosition       String   @default("CENTER")
+  overlayFontSize       Int      @default(80)
+
+  updatedAt             DateTime @updatedAt
+}
+
+// ─── Background Jobs ─────────────────────────────────────
+model BackgroundJob {
+  id           String   @id @default(cuid())
+  queueName    String   // INGEST, EDITOR, PUBLISHER, RENDER
+  payload      String   // JSON string
+  status       String   @default("PENDING")
+  attempts     Int      @default(0)
+  maxAttempts  Int      @default(3)
+  error        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  processedAt  DateTime?
+}

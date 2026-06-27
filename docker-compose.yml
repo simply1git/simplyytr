@@ -1,0 +1,28 @@
+version: '3.8'
+services:
+  youtubbot:
+    build: .
+    container_name: youtubbot
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - ./packages/database/dev.db:/app/packages/database/dev.db
+      - ./apps/backend/client_secret.json:/app/apps/backend/client_secret.json
+      - ./apps/backend/storage:/app/apps/backend/storage
+      - ./.env:/app/.env
+    restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    container_name: youtubbot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+
+volumes:
+  redis_data:
