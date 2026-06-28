@@ -5,4 +5,5 @@ requests
 srt
 Pillow
 ffmpeg-python
-python-dotenv
+python-dotenv==1.0.1
+yt-dlp
