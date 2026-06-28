@@ -7,6 +7,8 @@ import boto3
 from urllib.parse import urlparse
 import srt
 import datetime
+import time
+import random
 from PIL import Image, ImageDraw, ImageFont
 
 from trend_scraper import download_viral_short
@@ -259,113 +261,115 @@ def main():
     VERCEL_URL = "https://simplyytr.vercel.app"
     PIPELINE_SECRET = "youtubbot_secure_pipeline_key_2026"
     
-    logging.info("Fetching next available job from Vercel...")
-    try:
-        res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
-        res.raise_for_status()
-        data = res.json()
-    except Exception as e:
-        logging.error(f"Failed to fetch job from Vercel: {e}")
-        return
+    logging.info("Starting Continuous Orchestrator Loop...")
+    while True:
+        logging.info("Generating a new job via Auto-Trigger endpoint...")
+        try:
+            res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+            res.raise_for_status()
+            data = res.json()
+        except Exception as e:
+            logging.error(f"Failed to generate job from Vercel: {e}")
+            logging.info("Sleeping for 60 seconds before retrying...")
+            time.sleep(60)
+            continue
 
-    if data.get('status') != 'success':
-        logging.info("No pending jobs found. Trigger a pipeline job on your Vercel Dashboard first! Exiting.")
-        return
+        if data.get('status') != 'success':
+            logging.error(f"Auto-trigger failed: {data}")
+            time.sleep(60)
+            continue
 
-    job = data['job']
-    config = data['config']
-    
-    job_id = job['id']
-    full_script = f"{job.get('scriptHook', '')} {job.get('scriptBody', '')} {job.get('scriptCta', '')}"
-    prompts = job.get('visualPrompts', [])
-    voice = job.get('voiceName', 'en-US-GuyNeural')
-    title = job.get('generatedTitle', 'Video Thumbnail')
-    
-    # Environment config from API
-    pexels_key = config.get('pexels_api_key')
-    webhook_url = config.get('webhook_url')
-    webhook_secret = PIPELINE_SECRET
-    
-    r2_config = {
-        'account_id': config.get('r2_account_id'),
-        'access_key': config.get('r2_access_key_id'),
-        'secret_key': config.get('r2_secret_access_key'),
-        'bucket': config.get('r2_bucket_name'),
-        'public_url': config.get('r2_public_url')
-    }
-
-    temp_dir = "./temp_assets"
-    os.makedirs(temp_dir, exist_ok=True)
-    
-    audio_path = os.path.join(temp_dir, "voiceover.mp3")
-    final_video_path = os.path.join(temp_dir, "final_video.mp4")
-    thumbnail_path = os.path.join(temp_dir, "thumbnail.jpg")
-
-    job_type = job.get('jobType', 'generative')
-
-    try:
-        if job_type == 'aggregator':
-            logging.info("Starting Aggregator Pipeline...")
-            # Use the first prompt as the search keyword
-            keyword = prompts[0] if prompts else job.get('niche', 'trending')
-            
-            # Step 1: Scrape Viral Video
-            viral_data = download_viral_short(keyword, temp_dir)
-            if not viral_data:
-                raise Exception("Failed to download viral short.")
-            top_video = viral_data['filepath']
-            
-            # Step 2: Download Satisfying Filler Video (Bottom Half)
-            logging.info("Downloading filler footage...")
-            filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
-            bottom_video = filler_clip_paths[0] if filler_clip_paths else top_video
-            
-            # Step 3: AI Commentary Voiceover
-            logging.info("Generating AI Commentary...")
-            audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
-            
-            # Step 4: Compose Split-Screen Video
-            create_split_screen_video(top_video, bottom_video, final_video_path, audio_path, srt_path)
-            
-            # Step 5: Thumbnail
-            generate_thumbnail(viral_data['title'], thumbnail_path)
-            
-        else:
-            logging.info("Starting Generative Pipeline...")
-            # Step 1: Voiceover and Subtitles
-            audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
-            
-            # Step 2: Download Stock Video Clips
-            clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
-            
-            # Step 3 & 4: Compose Video
-            compose_video(audio_path, srt_path, clip_paths, final_video_path)
-            
-            # Step 5: Thumbnail
-            generate_thumbnail(title, thumbnail_path)
+        job = data['job']
         
-        # Step 6: Upload to R2 (Common for both pipelines)
-        video_url = upload_to_r2(final_video_path, f"{job_id}_video.mp4", r2_config)
-        thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
-        voice_url = upload_to_r2(audio_path, f"{job_id}_voice.mp3", r2_config)
+        try:
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+            config_data = config_res.json()
+            config = config_data.get('config', {})
+        except Exception:
+            config = {}
         
-        # Step 7: Webhook
-        payload = {
-            "jobId": job_id,
-            "videoUrl": video_url,
-            "thumbnailUrl": thumb_url,
-            "voiceoverUrl": voice_url
+        job_id = job['id']
+        full_script = f"{job.get('scriptHook', '')} {job.get('scriptBody', '')} {job.get('scriptCta', '')}"
+        prompts = job.get('visualPrompts', [])
+        voice = job.get('voiceName', 'en-US-GuyNeural')
+        title = job.get('generatedTitle', 'Video Thumbnail')
+        
+        # Environment config from API
+        pexels_key = config.get('pexels_api_key')
+        webhook_url = config.get('webhook_url')
+        webhook_secret = PIPELINE_SECRET
+        
+        r2_config = {
+            'account_id': config.get('r2_account_id'),
+            'access_key': config.get('r2_access_key_id'),
+            'secret_key': config.get('r2_secret_access_key'),
+            'bucket': config.get('r2_bucket_name'),
+            'public_url': config.get('r2_public_url')
         }
-        send_webhook(webhook_url, payload, webhook_secret)
+
+        temp_dir = "./temp_assets"
+        os.makedirs(temp_dir, exist_ok=True)
         
-    except Exception as e:
-        logging.error(f"Worker failed: {e}")
-        # Report failure back to webhook
-        payload = {
-            "jobId": job_id,
-            "error": str(e)
-        }
-        send_webhook(webhook_url, payload, webhook_secret)
+        audio_path = os.path.join(temp_dir, "voiceover.mp3")
+        final_video_path = os.path.join(temp_dir, "final_video.mp4")
+        thumbnail_path = os.path.join(temp_dir, "thumbnail.jpg")
+
+        job_type = job.get('jobType', 'generative')
+
+        try:
+            if job_type == 'aggregator':
+                logging.info("Starting Aggregator Pipeline...")
+                keyword = prompts[0] if prompts else job.get('niche', 'trending')
+                
+                viral_data = download_viral_short(keyword, temp_dir)
+                if not viral_data:
+                    raise Exception("Failed to download viral short.")
+                top_video = viral_data['filepath']
+                
+                logging.info("Downloading filler footage...")
+                filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
+                bottom_video = filler_clip_paths[0] if filler_clip_paths else top_video
+                
+                logging.info("Generating AI Commentary...")
+                audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+                
+                create_split_screen_video(top_video, bottom_video, final_video_path, audio_path, srt_path)
+                
+                generate_thumbnail(viral_data['title'], thumbnail_path)
+                
+            else:
+                logging.info("Starting Generative Pipeline...")
+                audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+                clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
+                compose_video(audio_path, srt_path, clip_paths, final_video_path)
+                generate_thumbnail(title, thumbnail_path)
+            
+            # Upload to R2
+            video_url = upload_to_r2(final_video_path, f"{job_id}_video.mp4", r2_config)
+            thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
+            voice_url = upload_to_r2(audio_path, f"{job_id}_voice.mp3", r2_config)
+            
+            # Webhook
+            payload = {
+                "jobId": job_id,
+                "videoUrl": video_url,
+                "thumbnailUrl": thumb_url,
+                "voiceoverUrl": voice_url
+            }
+            send_webhook(webhook_url, payload, webhook_secret)
+            
+        except Exception as e:
+            logging.error(f"Worker failed: {e}")
+            payload = {
+                "jobId": job_id,
+                "error": str(e)
+            }
+            send_webhook(webhook_url, payload, webhook_secret)
+            
+        # Wait a random time between 0 and 10 minutes before generating the next video
+        delay_seconds = random.randint(0, 600)
+        logging.info(f"Loop finished. Sleeping for {delay_seconds} seconds before the next run...")
+        time.sleep(delay_seconds)
 
 if __name__ == "__main__":
     main()
