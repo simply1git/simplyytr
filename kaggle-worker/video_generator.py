@@ -1,6 +1,5 @@
 import os
 import json
-import argparse
 import logging
 import subprocess
 import requests
@@ -9,6 +8,9 @@ from urllib.parse import urlparse
 import srt
 import datetime
 from PIL import Image, ImageDraw, ImageFont
+
+from trend_scraper import download_viral_short
+from split_screen_transformer import create_split_screen_video
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -24,8 +26,6 @@ def download_file(url, filepath):
 
 def generate_voiceover(text, voice, output_path):
     logging.info(f"Generating voiceover for: {text[:30]}... using {voice}")
-    # Run edge-tts via subprocess to capture the SubMaker subtitle output
-    # We use vtt output format to easily parse it, but edge-tts handles --write-subtitles
     subtitle_path = output_path.replace('.mp3', '.vtt')
     cmd = [
         "edge-tts",
@@ -37,8 +37,6 @@ def generate_voiceover(text, voice, output_path):
     try:
         subprocess.run(cmd, check=True, capture_output=True, text=True)
         logging.info("Voiceover and subtitles generated successfully.")
-        
-        # Convert VTT to SRT (FFmpeg prefers SRT or ASS for reliable overlay)
         if os.path.exists(subtitle_path):
             srt_path = output_path.replace('.mp3', '.srt')
             convert_vtt_to_srt(subtitle_path, srt_path)
@@ -49,7 +47,6 @@ def generate_voiceover(text, voice, output_path):
         raise
 
 def convert_vtt_to_srt(vtt_path, srt_path):
-    # Basic conversion from VTT to SRT
     with open(vtt_path, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     
@@ -59,14 +56,11 @@ def convert_vtt_to_srt(vtt_path, srt_path):
         while i < len(lines):
             line = lines[i].strip()
             if '-->' in line:
-                # Replace VTT timestamp dots with SRT commas
                 ts = line.replace('.', ',')
                 f.write(f"{sub_idx}\n")
                 f.write(f"{ts}\n")
                 i += 1
-                # Write the text
                 while i < len(lines) and lines[i].strip() != '':
-                    # Remove any VTT specific tags like <c> or alignment
                     text = lines[i].strip()
                     if text:
                         f.write(f"{text}\n")
@@ -88,11 +82,8 @@ def download_pexels_videos(prompts, pexels_api_key, temp_dir):
             data = response.json()
             
             if data.get('videos') and len(data['videos']) > 0:
-                # Get highest resolution portrait video from the first result
                 video = data['videos'][0]
                 video_files = video.get('video_files', [])
-                
-                # Sort by quality (highest first, preferably HD and vertical)
                 video_files = sorted(
                     [f for f in video_files if f.get('width') and f.get('height') and f['height'] > f['width']], 
                     key=lambda x: (x.get('height', 0) * x.get('width', 0)), 
@@ -117,39 +108,40 @@ def download_pexels_videos(prompts, pexels_api_key, temp_dir):
 
 def generate_thumbnail(title, output_path, pollinations_api_key=None):
     logging.info("Generating thumbnail...")
-    # For now, generate a basic text-based thumbnail using Pillow.
-    # In a fully integrated version, we could call Pollinations.ai here.
     try:
         img = Image.new('RGB', (1280, 720), color = (73, 109, 137))
         d = ImageDraw.Draw(img)
-        # Try to load a generic font, fallback to default
         try:
             font = ImageFont.truetype("arial.ttf", 60)
         except IOError:
             font = ImageFont.load_default()
             
-        # Draw text centered (rough estimation for default font)
         d.text((100, 300), title, fill=(255, 255, 0), font=font)
         img.save(output_path)
         logging.info("Thumbnail generated.")
         return output_path
     except Exception as e:
         logging.error(f"Error generating thumbnail: {e}")
-        # Create a dummy file if generation fails so the process doesn't completely halt
         open(output_path, 'a').close()
         return output_path
 
+def get_media_duration(filepath):
+    cmd = [
+        "ffprobe", "-v", "error", "-show_entries",
+        "format=duration", "-of",
+        "default=noprint_wrappers=1:nokey=1", filepath
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    try:
+        return float(result.stdout.strip())
+    except:
+        return 0.0
+
 def compose_video(audio_path, srt_path, clip_paths, output_path):
-    logging.info("Composing final video using FFmpeg...")
-    # Note: For this script, we'll use a basic FFmpeg concatenation approach.
-    # A robust production version would use complex filtergraphs for precise crossfades 
-    # and exact timing alignment with the audio track.
-    
+    logging.info("Composing final video using FFmpeg complex filtergraph...")
     if not clip_paths:
         raise ValueError("No video clips available for composition.")
 
-    # 1. Create a list file for FFmpeg concat demuxer
-    list_file_path = "clips_list.txt"
     audio_duration = get_media_duration(audio_path)
     if audio_duration == 0:
         audio_duration = 60.0
@@ -277,7 +269,7 @@ def main():
         return
 
     if data.get('status') != 'success':
-        logging.info("No pending jobs found. Exiting.")
+        logging.info("No pending jobs found. Trigger a pipeline job on your Vercel Dashboard first! Exiting.")
         return
 
     job = data['job']
@@ -309,20 +301,50 @@ def main():
     final_video_path = os.path.join(temp_dir, "final_video.mp4")
     thumbnail_path = os.path.join(temp_dir, "thumbnail.jpg")
 
+    job_type = job.get('jobType', 'generative')
+
     try:
-        # Step 1: Voiceover and Subtitles
-        audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+        if job_type == 'aggregator':
+            logging.info("Starting Aggregator Pipeline...")
+            # Use the first prompt as the search keyword
+            keyword = prompts[0] if prompts else job.get('niche', 'trending')
+            
+            # Step 1: Scrape Viral Video
+            viral_data = download_viral_short(keyword, temp_dir)
+            if not viral_data:
+                raise Exception("Failed to download viral short.")
+            top_video = viral_data['filepath']
+            
+            # Step 2: Download Satisfying Filler Video (Bottom Half)
+            logging.info("Downloading filler footage...")
+            filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
+            bottom_video = filler_clip_paths[0] if filler_clip_paths else top_video
+            
+            # Step 3: AI Commentary Voiceover
+            logging.info("Generating AI Commentary...")
+            audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+            
+            # Step 4: Compose Split-Screen Video
+            create_split_screen_video(top_video, bottom_video, final_video_path, audio_path, srt_path)
+            
+            # Step 5: Thumbnail
+            generate_thumbnail(viral_data['title'], thumbnail_path)
+            
+        else:
+            logging.info("Starting Generative Pipeline...")
+            # Step 1: Voiceover and Subtitles
+            audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+            
+            # Step 2: Download Stock Video Clips
+            clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
+            
+            # Step 3 & 4: Compose Video
+            compose_video(audio_path, srt_path, clip_paths, final_video_path)
+            
+            # Step 5: Thumbnail
+            generate_thumbnail(title, thumbnail_path)
         
-        # Step 2: Download Stock Video Clips
-        clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
-        
-        # Step 3 & 4: Compose Video
-        compose_video(audio_path, srt_path, clip_paths, final_video_path)
-        
-        # Step 5: Thumbnail
-        generate_thumbnail(title, thumbnail_path)
-        
-        # Step 6: Upload to R2
+        # Step 6: Upload to R2 (Common for both pipelines)
         video_url = upload_to_r2(final_video_path, f"{job_id}_video.mp4", r2_config)
         thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
         voice_url = upload_to_r2(audio_path, f"{job_id}_voice.mp3", r2_config)
