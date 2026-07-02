@@ -13,6 +13,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 from trend_scraper import download_viral_short
 from split_screen_transformer import create_split_screen_video
+from voice_cloner import clone_voice
+from avatar_generator import generate_avatar
+from subtitle_generator import generate_kinetic_ass
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -337,6 +340,83 @@ def main():
                 
                 generate_thumbnail(viral_data['title'], thumbnail_path)
                 
+            elif job_type == 'clone':
+                logging.info("Starting Clone Pipeline...")
+                keyword = prompts[0] if prompts else job.get('niche', 'trending')
+                
+                # 1. Download viral video
+                viral_data = download_viral_short(keyword, temp_dir)
+                if not viral_data:
+                    raise Exception("Failed to download viral short.")
+                viral_video_path = viral_data['filepath']
+                
+                # 2. Extract audio from viral video
+                reference_audio = os.path.join(temp_dir, "ref_audio.wav")
+                subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", reference_audio], check=True, capture_output=True)
+                
+                # 3. Clone voice
+                cloned_audio_path = os.path.join(temp_dir, "cloned_audio.wav")
+                clone_voice(full_script, reference_audio, cloned_audio_path)
+                
+                # 4. Generate avatar video
+                avatar_base_img = os.path.join(temp_dir, "avatar_base.jpg")
+                if not os.path.exists(avatar_base_img):
+                    img = Image.new('RGB', (512, 512), color=(73, 109, 137))
+                    d = ImageDraw.Draw(img)
+                    try:
+                        font = ImageFont.truetype("arial.ttf", 60)
+                    except IOError:
+                        font = ImageFont.load_default()
+                    d.text((150, 220), "Avatar", fill=(255, 255, 0), font=font)
+                    img.save(avatar_base_img)
+                
+                avatar_video_path = os.path.join(temp_dir, "avatar_video.mp4")
+                generate_avatar(avatar_base_img, cloned_audio_path, avatar_video_path)
+                
+                # 5. Generate subtitles
+                ass_path = os.path.join(temp_dir, "subtitles.ass")
+                generate_kinetic_ass(cloned_audio_path, ass_path)
+                
+                # 6. Compose video with FFmpeg
+                # We use a relative path for the .ass file to avoid Windows absolute path colon issues in FFmpeg filters.
+                rel_ass_path = ass_path.replace('\\', '/')
+                
+                filter_complex = (
+                    f"[0:v]hflip,scale=iw*1.05:ih*1.05,crop=iw/1.05:ih/1.05,eq=contrast=1.05:saturation=1.05[bg];"
+                    f"[1:v]scale=320:-1[avatar_scaled];"
+                    f"[bg][avatar_scaled]overlay=W-w-10:H-h-10[with_avatar];"
+                    f"[with_avatar]ass='{rel_ass_path}'[subbed];"
+                    f"[subbed]setpts=PTS/1.05[final_v];"
+                    f"[2:a]atempo=1.05[final_a]"
+                )
+                
+                cmd = [
+                    "ffmpeg", "-y",
+                    "-i", viral_video_path,
+                    "-i", avatar_video_path,
+                    "-i", cloned_audio_path,
+                    "-filter_complex", filter_complex,
+                    "-map", "[final_v]",
+                    "-map", "[final_a]",
+                    "-c:v", "h264_nvenc",
+                    "-rc", "vbr",
+                    "-cq", "19",
+                    "-b:v", "5M",
+                    "-maxrate", "8M",
+                    "-bufsize", "8M",
+                    "-c:a", "aac",
+                    "-b:a", "192k",
+                    "-shortest",
+                    final_video_path
+                ]
+                
+                logging.info("Running FFmpeg for clone pipeline...")
+                subprocess.run(cmd, check=True, capture_output=True, text=True)
+                logging.info("Clone video composition completed.")
+                
+                generate_thumbnail(viral_data['title'], thumbnail_path)
+                audio_path = cloned_audio_path
+
             else:
                 logging.info("Starting Generative Pipeline...")
                 audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
