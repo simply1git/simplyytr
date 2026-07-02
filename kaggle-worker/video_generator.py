@@ -2,13 +2,28 @@ import os
 import json
 import logging
 import subprocess
+import datetime
+import time
+import random
+import sys
+
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def setup_environment():
+    logging.info("Installing required dependencies...")
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "boto3", "requests", "srt", "edge-tts", "yt-dlp", "faster-whisper", "Pillow"], check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(f"Failed to install dependencies: {e}")
+
+# Must run before other imports
+setup_environment()
+
 import requests
 import boto3
 from urllib.parse import urlparse
 import srt
-import datetime
-import time
-import random
 from PIL import Image, ImageDraw, ImageFont
 
 from trend_scraper import download_viral_short
@@ -16,9 +31,6 @@ from split_screen_transformer import create_split_screen_video
 from voice_cloner import clone_voice
 from avatar_generator import generate_avatar
 from subtitle_generator import generate_kinetic_ass
-
-# Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def download_file(url, filepath):
     logging.info(f"Downloading {url} to {filepath}")
@@ -266,31 +278,31 @@ def main():
     
     logging.info("Starting Continuous Orchestrator Loop...")
     while True:
-        logging.info("Generating a new job via Auto-Trigger endpoint...")
+        logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
-            res.raise_for_status()
-            data = res.json()
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+            if config_res.status_code == 404:
+                logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
+                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+                res.raise_for_status()
+                # Fetch the newly created job and mark it as rendering
+                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+            
+            config_res.raise_for_status()
+            config_data = config_res.json()
+            job = config_data.get('job', {})
+            config = config_data.get('config', {})
         except Exception as e:
-            logging.error(f"Failed to generate job from Vercel: {e}")
+            logging.error(f"Failed to fetch job from Vercel: {e}")
             logging.info("Sleeping for 60 seconds before retrying...")
             time.sleep(60)
             continue
 
-        if data.get('status') != 'success':
-            logging.error(f"Auto-trigger failed: {data}")
+        if not job:
+            logging.error("Failed to load a valid job.")
             time.sleep(60)
             continue
 
-        job = data['job']
-        
-        try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
-            config_data = config_res.json()
-            config = config_data.get('config', {})
-        except Exception:
-            config = {}
-        
         job_id = job['id']
         full_script = f"{job.get('scriptHook', '')} {job.get('scriptBody', '')} {job.get('scriptCta', '')}"
         prompts = job.get('visualPrompts', [])
