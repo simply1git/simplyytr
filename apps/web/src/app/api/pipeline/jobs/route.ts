@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
         voiceName: true,
         views: true,
         ctr: true,
+        statusMessage: true,
         error: true,
         createdAt: true,
         scriptedAt: true,

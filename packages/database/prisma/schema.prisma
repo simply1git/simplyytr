@@ -60,7 +60,8 @@ model RenderJob {
   avgWatchTime      Float    @default(0.0)
   retentionScore    Float    @default(0.0)
 
-  // Error tracking
+  // Error & Live Log tracking
+  statusMessage     String?
   error             String?
   attempts          Int      @default(0)
 
