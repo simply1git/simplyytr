@@ -19,21 +19,23 @@ jobs:
           python-version: '3.11'
 
       - name: Install Kaggle CLI
-        run: pip install kaggle==1.5.16
+        run: pip install kaggle
 
       - name: Configure Kaggle credentials
         run: |
-          if [ -z "${{ secrets.KAGGLE_USERNAME }}" ]; then
-            echo "::error::GitHub Secrets are empty! Please make sure you added them as 'Repository Secrets' and not 'Environment Secrets'."
+          if [ -z "${{ secrets.KAGGLE_API_TOKEN }}" ]; then
+            echo "::error::KAGGLE_API_TOKEN secret is empty! Please add it to Repository Secrets."
             exit 1
           fi
           
           mkdir -p ~/.kaggle
-          echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
+          echo "${{ secrets.KAGGLE_API_TOKEN }}" > ~/.kaggle/access_token
+          chmod 600 ~/.kaggle/access_token
 
       - name: Push and trigger Kaggle kernel
         run: kaggle kernels push -p ./kaggle-worker/
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
 
       - name: Log success
         run: echo "✅ Kaggle kernel triggered successfully at $(date -u)"
