@@ -21,15 +21,24 @@ jobs:
       - name: Install Kaggle CLI
         run: pip install kaggle
 
-      - name: Configure Kaggle credentials
+      - name: Verify Secrets Exist
         run: |
-          mkdir -p ~/.kaggle
-          echo '{"username":"${{ secrets.KAGGLE_USERNAME }}","key":"${{ secrets.KAGGLE_KEY }}"}' > ~/.kaggle/kaggle.json
-          chmod 600 ~/.kaggle/kaggle.json
+          if [ -z "${{ secrets.KAGGLE_USERNAME }}" ]; then
+            echo "::error::KAGGLE_USERNAME secret is empty!"
+            exit 1
+          else
+            echo "✅ KAGGLE_USERNAME is set"
+          fi
+          
+          if [ -z "${{ secrets.KAGGLE_KEY }}" ]; then
+            echo "::error::KAGGLE_KEY secret is empty!"
+            exit 1
+          else
+            echo "✅ KAGGLE_KEY is set"
+          fi
 
       - name: Push and trigger Kaggle kernel
-        run: |
-          kaggle kernels push -p ./kaggle-worker/
+        run: kaggle kernels push -p ./kaggle-worker/
         env:
           KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
           KAGGLE_KEY: ${{ secrets.KAGGLE_KEY }}
