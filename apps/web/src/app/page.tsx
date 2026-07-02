@@ -142,11 +142,11 @@ export default function HybridDashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-5xl font-extrabold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-500">
-              Hybrid Cloud Engine
+              SOTA Viral Engine
             </h1>
             <p className="text-zinc-400 mt-2 text-lg font-medium flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              System Online • Vercel + Kaggle + Groq
+              Phase 2 Active • OpenVoice + SadTalker + Whisper
             </p>
           </div>
           
@@ -320,23 +320,23 @@ export default function HybridDashboard() {
                 <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
                   <div className="flex items-center gap-3">
                     <span className="text-emerald-400 font-bold">1</span>
-                    <span className="text-sm font-medium text-zinc-300">Vercel (Brain)</span>
+                    <span className="text-sm font-medium text-zinc-300">Vercel (Brain & DB)</span>
                   </div>
                   <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-emerald-500/30 bg-emerald-500/10">
                   <div className="flex items-center gap-3">
-                    <span className="text-purple-400 font-bold">2</span>
-                    <span className="text-sm font-medium text-zinc-300">Supabase (Memory)</span>
+                    <span className="text-emerald-400 font-bold">2</span>
+                    <span className="text-sm font-medium text-emerald-300">Viral Cloner Active</span>
                   </div>
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="text-xs text-emerald-400 font-medium animate-pulse">OpenVoice</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
                   <div className="flex items-center gap-3">
                     <span className="text-blue-400 font-bold">3</span>
                     <span className="text-sm font-medium text-zinc-300">Kaggle GPU (Worker)</span>
                   </div>
-                  <span className="text-xs text-zinc-500">Idle</span>
+                  <span className="text-xs text-zinc-500">Idle / Ready</span>
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
                   <div className="flex items-center gap-3">

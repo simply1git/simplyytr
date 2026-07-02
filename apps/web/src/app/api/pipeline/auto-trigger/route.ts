@@ -71,7 +71,7 @@ Rules:
         visualPrompts: job.visualPrompts,
         voiceName: job.voiceName,
         generatedTitle: job.generatedTitle,
-        jobType: 'aggregator' // Force aggregator pipeline for the infinite loop
+        jobType: 'clone' // Force clone pipeline for Phase 2 SOTA
       }
     });
   } catch (err) {
