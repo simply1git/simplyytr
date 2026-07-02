@@ -1,6 +1,6 @@
 {
   "id": "etlabcode/youtubbot-worker",
-  "title": "YouTubBot SOTA Video Worker",
+  "title": "youtubbot-worker",
   "code_file": "video_generator.py",
   "language": "python",
   "kernel_type": "script",
