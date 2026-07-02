@@ -100,9 +100,30 @@ Rules:
       jobs.push(job);
     }
 
+    // Trigger GitHub Action to wake up Kaggle GPU
+    try {
+      const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
+      if (ghToken) {
+        await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `Bearer ${ghToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ref: 'main' })
+        });
+        console.log('[Pipeline Trigger] Woke up Kaggle via GitHub Actions');
+      } else {
+        console.warn('[Pipeline Trigger] No GITHUB_PAT found. Kaggle must be triggered manually or via cron.');
+      }
+    } catch (e) {
+      console.error('[Pipeline Trigger] Failed to trigger GitHub Action:', e);
+    }
+
     return Response.json({
       status: 'success',
-      message: `Created ${jobs.length} render job(s)`,
+      message: `Created ${jobs.length} render job(s) and waking up Kaggle GPU!`,
       jobs: jobs.map(j => ({ id: j.id, topic: j.topic, status: j.status })),
     });
   } catch (err) {
