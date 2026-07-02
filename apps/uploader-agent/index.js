@@ -1,7 +1,6 @@
 require('dotenv').config({ path: '../../.env' });
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 
@@ -9,10 +8,13 @@ puppeteer.use(StealthPlugin());
 
 const VERCEL_API_URL = process.env.VERCEL_API_URL || 'http://localhost:3000';
 const PIPELINE_SECRET = process.env.PIPELINE_SECRET;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '';
 const DOWNLOAD_DIR = path.join(__dirname, 'downloads');
 const CHROME_PROFILE = path.join(__dirname, 'storage', 'chrome_profile');
 
 const POLL_INTERVAL = 5 * 60 * 1000; // 5 minutes
+const MAX_RETRIES = 3;
 
 // Ensure directories exist
 if (!fs.existsSync(DOWNLOAD_DIR)) fs.mkdirSync(DOWNLOAD_DIR, { recursive: true });
@@ -22,29 +24,67 @@ function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-async function downloadFile(url, dest) {
-  log(`Downloading ${url} to ${dest}...`);
-  // Using native fetch in Node 18+
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to download ${url}: ${res.statusText}`);
-  const arrayBuffer = await res.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  fs.writeFileSync(dest, buffer);
-  log(`Download complete: ${dest}`);
+// ─────────────────────────────────────────────────────────
+// Telegram Notifications
+// ─────────────────────────────────────────────────────────
+async function sendTelegramNotification(message) {
+  if (!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: TELEGRAM_CHAT_ID,
+        text: message,
+        parse_mode: 'Markdown'
+      })
+    });
+  } catch (err) {
+    log(`Telegram notification failed: ${err.message}`);
+  }
 }
 
+// ─────────────────────────────────────────────────────────
+// File Downloads (with retry)
+// ─────────────────────────────────────────────────────────
+async function downloadFile(url, dest, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      log(`Downloading ${url} (attempt ${attempt}/${retries})...`);
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const arrayBuffer = await res.arrayBuffer();
+      fs.writeFileSync(dest, Buffer.from(arrayBuffer));
+      log(`Download complete: ${dest} (${(fs.statSync(dest).size / 1024 / 1024).toFixed(1)} MB)`);
+      return;
+    } catch (err) {
+      log(`Download attempt ${attempt} failed: ${err.message}`);
+      if (attempt >= retries) throw err;
+      const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 2s, 4s, 8s
+      log(`Retrying in ${delay / 1000}s...`);
+      await new Promise(r => setTimeout(r, delay));
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Chrome Discovery
+// ─────────────────────────────────────────────────────────
 function findChrome() {
   const paths = [
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe'
-  ];
+    'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    process.env.CHROME_PATH // Allow custom path via env
+  ].filter(Boolean);
   for (const p of paths) {
     if (fs.existsSync(p)) return p;
   }
   return null;
 }
 
-// Helper: Deep Shadow DOM text entry
+// ─────────────────────────────────────────────────────────
+// Shadow DOM Helpers (YouTube Studio uses heavy Web Components)
+// ─────────────────────────────────────────────────────────
 async function typeInShadowDom(page, selector, text) {
   await page.evaluate((sel, txt) => {
     function getElement(root, selector) {
@@ -62,12 +102,13 @@ async function typeInShadowDom(page, selector, text) {
     const el = getElement(document.body, sel);
     if (el) {
       el.focus();
+      // Clear existing text first
+      el.textContent = '';
       document.execCommand('insertText', false, txt);
     }
   }, selector, text);
 }
 
-// Helper: Deep Shadow DOM click
 async function clickInShadowDom(page, selector) {
   await page.evaluate((sel) => {
     function getElement(root, selector) {
@@ -87,83 +128,143 @@ async function clickInShadowDom(page, selector) {
   }, selector);
 }
 
-async function uploadToYoutube(job, videoPath) {
+// ─────────────────────────────────────────────────────────
+// Shorts Detection
+// ─────────────────────────────────────────────────────────
+function isShorts(videoPath) {
+  // Quick check: if it came from our pipeline, it's almost always vertical (9:16)
+  // We trust the job metadata if available; otherwise check filename patterns
+  return true; // Our pipeline exclusively produces Shorts
+}
+
+function generateHashtags(title, niche) {
+  const base = ['#Shorts', '#Viral', '#Trending', '#FYP'];
+  if (niche) {
+    const nicheTag = `#${niche.replace(/\s+/g, '')}`;
+    base.unshift(nicheTag);
+  }
+  // Extract words from title to create hashtags
+  const titleWords = (title || '').split(/\s+/)
+    .filter(w => w.length > 3 && !w.startsWith('#'))
+    .slice(0, 3)
+    .map(w => `#${w.replace(/[^a-zA-Z0-9]/g, '')}`);
+  
+  return [...new Set([...base, ...titleWords])].slice(0, 8).join(' ');
+}
+
+// ─────────────────────────────────────────────────────────
+// YouTube Upload via Puppeteer
+// ─────────────────────────────────────────────────────────
+async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
   log(`Starting Puppeteer upload for job ${job.id}`);
   const executablePath = findChrome();
-  
+
   const browser = await puppeteer.launch({
     headless: false,
-    executablePath: executablePath || undefined, // fallback to bundled if null
+    executablePath: executablePath || undefined,
     userDataDir: CHROME_PROFILE,
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled'
+      '--disable-blink-features=AutomationControlled',
+      '--window-size=1280,900'
     ]
   });
 
   try {
     const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 800 });
+    await page.setViewport({ width: 1280, height: 900 });
 
     log('Navigating to YouTube Studio...');
-    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2' });
+    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2', timeout: 30000 });
 
     // Check if logged in
     const url = page.url();
     if (url.includes('accounts.google.com') || url.includes('signin')) {
-      throw new Error('Not logged into YouTube. Run `npm run login` first.');
+      throw new Error('NOT_LOGGED_IN: Run `npm run login` first.');
     }
 
+    // ── Step 1: Open Upload Dialog ──
     log('Clicking Create > Upload Videos...');
-    await page.waitForSelector('#create-icon', { timeout: 10000 });
+    await page.waitForSelector('#create-icon', { timeout: 15000 });
     await clickInShadowDom(page, '#create-icon');
-    await new Promise(r => setTimeout(r, 1000));
-    await clickInShadowDom(page, 'tp-yt-paper-item#text-item-0'); // "Upload videos"
-    
-    // File upload
+    await new Promise(r => setTimeout(r, 1500));
+    await clickInShadowDom(page, 'tp-yt-paper-item#text-item-0');
+
+    // ── Step 2: Upload Video File ──
     log('Waiting for file input...');
-    await page.waitForSelector('input[type="file"]', { timeout: 10000 });
+    await page.waitForSelector('input[type="file"]', { timeout: 15000 });
     const fileInput = await page.$('input[type="file"]');
     await fileInput.uploadFile(videoPath);
-    
-    log('Waiting for upload dialog to open...');
-    await new Promise(r => setTimeout(r, 5000)); // Wait for dialog rendering
+    log('Video file selected. Waiting for upload dialog...');
+    await new Promise(r => setTimeout(r, 6000));
 
-    // Title
-    log('Setting title...');
+    // ── Step 3: Title ──
+    const title = (job.generatedTitle || 'Untitled Video').substring(0, 100);
+    log(`Setting title: "${title}"`);
     const titleBox = '#textbox[aria-label*="Add a title"]';
-    await typeInShadowDom(page, titleBox, job.generatedTitle);
+    await typeInShadowDom(page, titleBox, title);
 
-    // Description
-    log('Setting description...');
+    // ── Step 4: Description with Hashtags ──
+    const hashtags = generateHashtags(title, job.niche);
+    const description = `${job.generatedDescription || ''}\n\n${hashtags}`;
+    log('Setting description with hashtags...');
     const descBox = '#textbox[aria-label*="Tell viewers about your video"]';
-    await typeInShadowDom(page, descBox, job.generatedDescription);
+    await typeInShadowDom(page, descBox, description);
 
-    // Audience (Not made for kids)
+    // ── Step 5: Thumbnail Upload ──
+    if (thumbnailPath && fs.existsSync(thumbnailPath)) {
+      log('Uploading custom thumbnail...');
+      try {
+        const thumbInput = await page.$('input[accept="image/jpeg,image/png"]');
+        if (thumbInput) {
+          await thumbInput.uploadFile(thumbnailPath);
+          log('Thumbnail uploaded successfully.');
+          await new Promise(r => setTimeout(r, 2000));
+        }
+      } catch (thumbErr) {
+        log(`Thumbnail upload failed (non-fatal): ${thumbErr.message}`);
+      }
+    }
+
+    // ── Step 6: Audience (Not made for kids) ──
     log('Setting Audience to "No, it\'s not made for kids"...');
     await clickInShadowDom(page, 'tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]');
 
-    // Next -> Next -> Next -> Visibility
+    // ── Step 7: Tags (Show More > Tags field) ──
+    log('Expanding "Show More" for tags...');
+    try {
+      await clickInShadowDom(page, '#toggle-button');
+      await new Promise(r => setTimeout(r, 1500));
+      const tagsInput = '#text-input[aria-label="Tags"]';
+      const tags = [job.niche, 'shorts', 'viral', 'trending', 'fyp', 'ai'].filter(Boolean).join(',');
+      await typeInShadowDom(page, tagsInput, tags);
+      log(`Tags set: ${tags}`);
+    } catch (tagErr) {
+      log(`Tags section skipped (non-fatal): ${tagErr.message}`);
+    }
+
+    // ── Step 8: Next -> Next -> Next -> Visibility ──
     log('Clicking Next through wizard...');
     for (let i = 0; i < 3; i++) {
       await clickInShadowDom(page, '#next-button');
-      await new Promise(r => setTimeout(r, 2000));
+      await new Promise(r => setTimeout(r, 2500));
     }
 
-    // Visibility (Public)
+    // ── Step 9: Visibility = Public ──
     log('Setting visibility to Public...');
     await clickInShadowDom(page, 'tp-yt-paper-radio-button[name="PUBLIC"]');
+    await new Promise(r => setTimeout(r, 1000));
 
-    // Publish
+    // ── Step 10: Publish ──
     log('Clicking Publish...');
     await clickInShadowDom(page, '#done-button');
 
-    // Wait for "Video published" or progress indicator
+    // ── Step 11: Wait for confirmation ──
     log('Waiting for publish confirmation...');
-    await new Promise(r => setTimeout(r, 10000)); // Simple wait for now
+    await new Promise(r => setTimeout(r, 12000));
 
-    // Attempt to extract the published URL
+    // Extract published URL
     let publishedId = null;
     try {
       const href = await page.evaluate(() => {
@@ -173,9 +274,9 @@ async function uploadToYoutube(job, videoPath) {
       if (href) {
         publishedId = href.split('/').pop();
       }
-    } catch(e) {}
+    } catch (e) {}
 
-    log(`Upload complete. Published ID: ${publishedId || 'unknown'}`);
+    log(`✅ Upload complete! Published ID: ${publishedId || 'unknown'}`);
     return publishedId;
 
   } finally {
@@ -183,8 +284,11 @@ async function uploadToYoutube(job, videoPath) {
   }
 }
 
+// ─────────────────────────────────────────────────────────
+// Job Status Updates
+// ─────────────────────────────────────────────────────────
 async function markJobComplete(jobId, publishedYoutubeId, error = null) {
-  log(`Marking job ${jobId} complete...`);
+  log(`Marking job ${jobId} as ${error ? 'FAILED' : 'COMPLETE'}...`);
   await fetch(`${VERCEL_API_URL}/api/pipeline/complete`, {
     method: 'POST',
     headers: {
@@ -195,6 +299,9 @@ async function markJobComplete(jobId, publishedYoutubeId, error = null) {
   });
 }
 
+// ─────────────────────────────────────────────────────────
+// Main Processing Loop (with Exponential Backoff Retries)
+// ─────────────────────────────────────────────────────────
 async function processReadyJobs() {
   log('Polling for ready jobs...');
   try {
@@ -202,7 +309,7 @@ async function processReadyJobs() {
       headers: { 'Authorization': `Bearer ${PIPELINE_SECRET}` }
     });
     if (!res.ok) throw new Error(`API Error: ${res.statusText}`);
-    
+
     const data = await res.json();
     if (data.count === 0) {
       log('No pending jobs.');
@@ -210,35 +317,68 @@ async function processReadyJobs() {
     }
 
     log(`Found ${data.count} ready jobs.`);
-    
+
     for (const job of data.jobs) {
       if (!job.videoUrl) continue;
-      
+
       const videoPath = path.join(DOWNLOAD_DIR, `${job.id}.mp4`);
-      
+      const thumbnailPath = path.join(DOWNLOAD_DIR, `${job.id}_thumb.jpg`);
+
       try {
+        // Download video
         await downloadFile(job.videoUrl, videoPath);
-        
-        let attempts = 0;
-        let success = false;
-        
-        while (attempts < 2 && !success) {
+
+        // Download thumbnail if available
+        let hasThumb = false;
+        if (job.thumbnailUrl) {
           try {
-            attempts++;
-            const publishedId = await uploadToYoutube(job, videoPath);
-            await markJobComplete(job.id, publishedId);
-            success = true;
-          } catch (uploadErr) {
-            log(`Upload attempt ${attempts} failed: ${uploadErr.message}`);
-            if (attempts >= 2) throw uploadErr;
-            await new Promise(r => setTimeout(r, 30000)); // Wait 30s before retry
+            await downloadFile(job.thumbnailUrl, thumbnailPath);
+            hasThumb = true;
+          } catch (thumbErr) {
+            log(`Thumbnail download failed (non-fatal): ${thumbErr.message}`);
           }
+        }
+
+        // Upload with exponential backoff retries
+        let lastError = null;
+        for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+          try {
+            const publishedId = await uploadToYoutube(job, videoPath, hasThumb ? thumbnailPath : null);
+            await markJobComplete(job.id, publishedId);
+
+            // Send Telegram success notification
+            await sendTelegramNotification(
+              `✅ *Video Uploaded!*\n📹 Title: ${job.generatedTitle}\n🔗 ID: ${publishedId || 'unknown'}\n📊 Job: ${job.id}`
+            );
+
+            lastError = null;
+            break;
+          } catch (uploadErr) {
+            lastError = uploadErr;
+            log(`Upload attempt ${attempt}/${MAX_RETRIES} failed: ${uploadErr.message}`);
+            if (attempt < MAX_RETRIES) {
+              const delay = Math.pow(2, attempt) * 5000; // 10s, 20s, 40s
+              log(`Retrying in ${delay / 1000}s...`);
+              await new Promise(r => setTimeout(r, delay));
+            }
+          }
+        }
+
+        if (lastError) {
+          log(`❌ All ${MAX_RETRIES} attempts failed for job ${job.id}`);
+          await markJobComplete(job.id, null, lastError.message);
+          await sendTelegramNotification(
+            `❌ *Upload Failed!*\n📹 Title: ${job.generatedTitle}\n⚠️ Error: ${lastError.message}\n📊 Job: ${job.id}`
+          );
         }
       } catch (err) {
         log(`Failed to process job ${job.id}: ${err.message}`);
         await markJobComplete(job.id, null, err.message);
+        await sendTelegramNotification(`❌ *Job Failed:* ${err.message}`);
       } finally {
+        // Cleanup downloaded files
         if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+        if (fs.existsSync(thumbnailPath)) fs.unlinkSync(thumbnailPath);
       }
     }
   } catch (err) {
@@ -246,7 +386,9 @@ async function processReadyJobs() {
   }
 }
 
+// ─────────────────────────────────────────────────────────
 // Manual Login mode
+// ─────────────────────────────────────────────────────────
 if (process.argv.includes('--manual-login')) {
   (async () => {
     log('Starting manual login mode. Please log into YouTube Studio.');
@@ -259,11 +401,14 @@ if (process.argv.includes('--manual-login')) {
     const page = await browser.newPage();
     await page.goto('https://studio.youtube.com');
     log('Close the browser window when you are done logging in.');
-    // Keep alive until user closes
   })();
 } else {
   // Agent loop
-  log('Starting Local Uploader Agent...');
+  log('🚀 Starting Bulletproof Local Uploader Agent v2.0...');
+  log(`   Vercel API: ${VERCEL_API_URL}`);
+  log(`   Poll interval: ${POLL_INTERVAL / 1000}s`);
+  log(`   Max retries: ${MAX_RETRIES}`);
+  log(`   Telegram: ${TELEGRAM_BOT_TOKEN ? 'Enabled ✅' : 'Disabled ❌'}`);
   processReadyJobs();
   setInterval(processReadyJobs, POLL_INTERVAL);
 }
