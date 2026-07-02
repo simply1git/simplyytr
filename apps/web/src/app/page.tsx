@@ -228,6 +228,11 @@ export default function HybridDashboard() {
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
                           {getStatusBadge(job.status)}
+                          {job.statusMessage && job.status !== 'UPLOADED' && job.status !== 'READY' && (
+                            <span className="text-[10px] text-zinc-400 max-w-[200px] truncate animate-pulse bg-white/5 px-2 py-1 rounded-md" title={job.statusMessage}>
+                              {job.statusMessage}
+                            </span>
+                          )}
                           {job.error && <span className="text-[10px] text-red-400 max-w-[200px] truncate" title={job.error}>{job.error}</span>}
                         </div>
                       </div>

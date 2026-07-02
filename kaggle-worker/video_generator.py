@@ -272,6 +272,17 @@ def send_webhook(webhook_url, payload, secret):
     except Exception as e:
         logging.error(f"Failed to send webhook: {e}")
 
+def send_status_update(job_id, message, vercel_url, secret):
+    logging.info(f"Status Update: {message}")
+    try:
+        requests.post(
+            f"{vercel_url}/api/pipeline/worker-status", 
+            json={"jobId": job_id, "message": message},
+            headers={"Authorization": f"Bearer {secret}"}
+        )
+    except Exception as e:
+        logging.error(f"Failed to send status update: {e}")
+
 def main():
     VERCEL_URL = "https://simplyytr.vercel.app"
     PIPELINE_SECRET = "youtubbot_secure_pipeline_key_2026"
@@ -304,6 +315,7 @@ def main():
             continue
 
         job_id = job['id']
+        send_status_update(job_id, "Initializing Video Rendering Bay on Kaggle GPU...", VERCEL_URL, PIPELINE_SECRET)
         full_script = f"{job.get('scriptHook', '')} {job.get('scriptBody', '')} {job.get('scriptCta', '')}"
         prompts = job.get('visualPrompts', [])
         voice = job.get('voiceName', 'en-US-GuyNeural')
@@ -356,20 +368,24 @@ def main():
                 logging.info("Starting Clone Pipeline...")
                 keyword = prompts[0] if prompts else job.get('niche', 'trending')
                 
+                send_status_update(job_id, "Searching YouTube for viral trends...", VERCEL_URL, PIPELINE_SECRET)
                 # 1. Download viral video
                 viral_data = download_viral_short(keyword, temp_dir)
                 if not viral_data:
                     raise Exception("Failed to download viral short.")
                 viral_video_path = viral_data['filepath']
                 
+                send_status_update(job_id, f"Found viral video. Extracting audio track...", VERCEL_URL, PIPELINE_SECRET)
                 # 2. Extract audio from viral video
                 reference_audio = os.path.join(temp_dir, "ref_audio.wav")
                 subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", reference_audio], check=True, capture_output=True)
                 
+                send_status_update(job_id, "Synthesizing AI voice clone...", VERCEL_URL, PIPELINE_SECRET)
                 # 3. Clone voice
                 cloned_audio_path = os.path.join(temp_dir, "cloned_audio.wav")
                 clone_voice(full_script, reference_audio, cloned_audio_path)
                 
+                send_status_update(job_id, "Animating SadTalker lip-sync avatar...", VERCEL_URL, PIPELINE_SECRET)
                 # 4. Generate avatar video
                 avatar_base_img = os.path.join(temp_dir, "avatar_base.jpg")
                 if not os.path.exists(avatar_base_img):
@@ -385,6 +401,7 @@ def main():
                 avatar_video_path = os.path.join(temp_dir, "avatar_video.mp4")
                 generate_avatar(avatar_base_img, cloned_audio_path, avatar_video_path)
                 
+                send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
                 # 5. Generate subtitles
                 ass_path = os.path.join(temp_dir, "subtitles.ass")
                 generate_kinetic_ass(cloned_audio_path, ass_path)
@@ -422,6 +439,7 @@ def main():
                     final_video_path
                 ]
                 
+                send_status_update(job_id, "Composing final video using FFmpeg Complex Filters...", VERCEL_URL, PIPELINE_SECRET)
                 logging.info("Running FFmpeg for clone pipeline...")
                 subprocess.run(cmd, check=True, capture_output=True, text=True)
                 logging.info("Clone video composition completed.")
@@ -436,6 +454,7 @@ def main():
                 compose_video(audio_path, srt_path, clip_paths, final_video_path)
                 generate_thumbnail(title, thumbnail_path)
             
+            send_status_update(job_id, "Uploading final assets to Cloudflare R2...", VERCEL_URL, PIPELINE_SECRET)
             # Upload to R2
             video_url = upload_to_r2(final_video_path, f"{job_id}_video.mp4", r2_config)
             thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
