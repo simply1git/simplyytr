@@ -1,5 +1,5 @@
 {
-  "id": "INSERT_YOUR_KAGGLE_USERNAME/youtubbot-worker",
+  "id": "etlabcode/youtubbot-worker",
   "title": "YouTubBot SOTA Video Worker",
   "code_file": "video_generator.py",
   "language": "python",
