@@ -23,6 +23,11 @@ jobs:
 
       - name: Configure Kaggle credentials
         run: |
+          if [ -z "${{ secrets.KAGGLE_USERNAME }}" ]; then
+            echo "::error::GitHub Secrets are empty! Please make sure you added them as 'Repository Secrets' and not 'Environment Secrets'."
+            exit 1
+          fi
+          
           mkdir -p ~/.kaggle
           echo "{\"username\":\"${{ secrets.KAGGLE_USERNAME }}\",\"key\":\"${{ secrets.KAGGLE_KEY }}\"}" > ~/.kaggle/kaggle.json
           chmod 600 ~/.kaggle/kaggle.json
