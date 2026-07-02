@@ -1,12 +1,12 @@
 {
-  "id": "youtubbot/youtubbot-video-worker",
-  "title": "YouTubBot Video Worker",
+  "id": "INSERT_YOUR_KAGGLE_USERNAME/youtubbot-worker",
+  "title": "YouTubBot SOTA Video Worker",
   "code_file": "video_generator.py",
   "language": "python",
   "kernel_type": "script",
-  "is_private": true,
-  "enable_gpu": true,
-  "enable_internet": true,
+  "is_private": "true",
+  "enable_gpu": "true",
+  "enable_internet": "true",
   "dataset_sources": [],
   "competition_sources": [],
   "kernel_sources": []
