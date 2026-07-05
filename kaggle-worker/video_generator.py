@@ -632,13 +632,22 @@ def main():
                 channels_list = [c.strip() for c in target_channels.split(',') if c.strip()]
                 keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else job.get('niche', 'trending'))
                 send_status_update(job_id, f"Downloading viral short for '{keyword}'...", VERCEL_URL, PIPELINE_SECRET)
-                viral_data = download_viral_short(keyword, temp_dir)
-                if not viral_data:
-                    raise Exception("Failed to download viral short.")
-                top_video = viral_data['filepath']
-                
+                try:
+                    viral_data = download_viral_short(keyword, temp_dir)
+                except Exception as e:
+                    logging.warning(f"YouTube block detected in aggregator: {e}. Falling back to Pexels...")
+                    viral_data = None
+
                 send_status_update(job_id, "Downloading filler clips from Pexels...", VERCEL_URL, PIPELINE_SECRET)
-                filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
+                filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour", "nature landscape beautiful"], pexels_key, temp_dir)
+                
+                if not viral_data:
+                    if not filler_clip_paths:
+                        raise Exception("Failed to download viral short AND failed to download Pexels fallback.")
+                    top_video = filler_clip_paths[1] if len(filler_clip_paths) > 1 else filler_clip_paths[0]
+                else:
+                    top_video = viral_data['filepath']
+
                 bottom_video = filler_clip_paths[0] if filler_clip_paths else top_video
                 
                 send_status_update(job_id, "Generating AI Commentary...", VERCEL_URL, PIPELINE_SECRET)
@@ -655,14 +664,31 @@ def main():
                 keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else job.get('niche', 'trending'))
                 
                 send_status_update(job_id, f"Searching YouTube for viral short ({keyword})...", VERCEL_URL, PIPELINE_SECRET)
-                viral_data = download_viral_short(keyword, temp_dir)
+                try:
+                    viral_data = download_viral_short(keyword, temp_dir)
+                except Exception as e:
+                    logging.warning(f"YouTube block detected: {e}. Falling back to Pexels...")
+                    viral_data = None
+                
                 if not viral_data:
-                    raise Exception("Failed to download viral short.")
+                    send_status_update(job_id, "YouTube blocked. Falling back to Pexels background...", VERCEL_URL, PIPELINE_SECRET)
+                    pexels_clips = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
+                    if not pexels_clips:
+                        raise Exception("Failed to download viral short AND failed to download Pexels fallback.")
+                    viral_data = {'filepath': pexels_clips[0], 'title': f"{keyword} Motivation", 'is_pexels': True}
+                else:
+                    viral_data['is_pexels'] = False
+                    
                 viral_video_path = viral_data['filepath']
                 
-                send_status_update(job_id, "Extracting audio track from viral video...", VERCEL_URL, PIPELINE_SECRET)
                 reference_audio = os.path.join(temp_dir, "ref_audio.wav")
-                subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", reference_audio], check=True, capture_output=True)
+                if not viral_data.get('is_pexels'):
+                    send_status_update(job_id, "Extracting audio track from viral video...", VERCEL_URL, PIPELINE_SECRET)
+                    subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", reference_audio], check=True, capture_output=True)
+                else:
+                    # Create dummy file so clone_voice edge-tts fallback doesn't complain
+                    with open(reference_audio, 'wb') as f:
+                        f.write(b'RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00')
                 
                 send_status_update(job_id, "Synthesizing AI voice clone/narration...", VERCEL_URL, PIPELINE_SECRET)
                 cloned_audio_path = os.path.join(temp_dir, "cloned_audio.wav")
