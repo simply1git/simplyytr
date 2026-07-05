@@ -82,9 +82,47 @@ function findChrome() {
   return null;
 }
 
-// ─────────────────────────────────────────────────────────
-// Shadow DOM Helpers (YouTube Studio uses heavy Web Components)
-// ─────────────────────────────────────────────────────────
+function clearChromeProfileLock() {
+  try {
+    const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+    for (const file of lockFiles) {
+      const lockPath = path.join(CHROME_PROFILE, file);
+      if (fs.existsSync(lockPath)) {
+        try { fs.unlinkSync(lockPath); } catch (e) {}
+      }
+    }
+  } catch (e) {}
+}
+
+async function waitForShadowDomElement(page, selectors, timeout = 25000) {
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeout) {
+    for (const sel of selectors) {
+      try {
+        const found = await page.evaluate((selector) => {
+          function getElement(root, selector) {
+            if (root.matches && root.matches(selector)) return root;
+            if (root.shadowRoot) {
+              const found = getElement(root.shadowRoot, selector);
+              if (found) return found;
+            }
+            for (const child of Array.from(root.children || [])) {
+              const found = getElement(child, selector);
+              if (found) return found;
+            }
+            return null;
+          }
+          const el = getElement(document.body, selector);
+          return el ? selector : null;
+        }, sel);
+        if (found) return found;
+      } catch (e) {}
+    }
+    await new Promise(r => setTimeout(r, 500));
+  }
+  throw new Error(`Waiting for selectors [${selectors.join(', ')}] failed after ${timeout}ms`);
+}
+
 async function typeInShadowDom(page, selector, text) {
   await page.evaluate((sel, txt) => {
     function getElement(root, selector) {
@@ -102,30 +140,38 @@ async function typeInShadowDom(page, selector, text) {
     const el = getElement(document.body, sel);
     if (el) {
       el.focus();
-      // Clear existing text first
       el.textContent = '';
       document.execCommand('insertText', false, txt);
     }
   }, selector, text);
 }
 
-async function clickInShadowDom(page, selector) {
-  await page.evaluate((sel) => {
-    function getElement(root, selector) {
-      if (root.matches && root.matches(selector)) return root;
-      if (root.shadowRoot) {
-        const found = getElement(root.shadowRoot, selector);
-        if (found) return found;
+async function clickInShadowDom(page, selectors) {
+  const selList = Array.isArray(selectors) ? selectors : [selectors];
+  for (const sel of selList) {
+    const clicked = await page.evaluate((selector) => {
+      function getElement(root, selector) {
+        if (root.matches && root.matches(selector)) return root;
+        if (root.shadowRoot) {
+          const found = getElement(root.shadowRoot, selector);
+          if (found) return found;
+        }
+        for (const child of Array.from(root.children || [])) {
+          const found = getElement(child, selector);
+          if (found) return found;
+        }
+        return null;
       }
-      for (const child of Array.from(root.children || [])) {
-        const found = getElement(child, selector);
-        if (found) return found;
+      const el = getElement(document.body, selector);
+      if (el) {
+        el.click();
+        return true;
       }
-      return null;
-    }
-    const el = getElement(document.body, sel);
-    if (el) el.click();
-  }, selector);
+      return false;
+    }, sel);
+    if (clicked) return sel;
+  }
+  return null;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -156,27 +202,46 @@ function generateHashtags(title, niche) {
 // YouTube Upload via Puppeteer
 // ─────────────────────────────────────────────────────────
 async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
+  clearChromeProfileLock();
   log(`Starting Puppeteer upload for job ${job.id}`);
   const executablePath = findChrome();
 
-  const browser = await puppeteer.launch({
-    headless: false,
-    executablePath: executablePath || undefined,
-    userDataDir: CHROME_PROFILE,
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--disable-blink-features=AutomationControlled',
-      '--window-size=1280,900'
-    ]
-  });
+  let browser;
+  try {
+    browser = await puppeteer.launch({
+      headless: false,
+      executablePath: executablePath || undefined,
+      userDataDir: CHROME_PROFILE,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--window-size=1280,900'
+      ]
+    });
+  } catch (launchErr) {
+    log(`Browser launch failed, attempting profile lock cleanup...`);
+    clearChromeProfileLock();
+    await new Promise(r => setTimeout(r, 2000));
+    browser = await puppeteer.launch({
+      headless: false,
+      executablePath: executablePath || undefined,
+      userDataDir: CHROME_PROFILE,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--window-size=1280,900'
+      ]
+    });
+  }
 
   try {
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 900 });
 
     log('Navigating to YouTube Studio...');
-    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2', timeout: 30000 });
+    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2', timeout: 35000 });
 
     // Check if logged in
     const url = page.url();
@@ -186,14 +251,32 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
 
     // ── Step 1: Open Upload Dialog ──
     log('Clicking Create > Upload Videos...');
-    await page.waitForSelector('#create-icon', { timeout: 15000 });
-    await clickInShadowDom(page, '#create-icon');
-    await new Promise(r => setTimeout(r, 1500));
-    await clickInShadowDom(page, 'tp-yt-paper-item#text-item-0');
+    const createSelectors = [
+      '#create-icon',
+      'ytcp-button#create-icon',
+      'ytcp-icon-button#create-icon',
+      'button[aria-label="Create"]',
+      '#upload-icon',
+      'ytcp-button#upload-icon',
+      'ytcp-button[label="Upload videos"]',
+      'ytcp-button[id="create-icon"]'
+    ];
+    await waitForShadowDomElement(page, createSelectors, 25000);
+    await clickInShadowDom(page, createSelectors);
+    await new Promise(r => setTimeout(r, 2000));
+
+    const uploadOptionSelectors = [
+      'tp-yt-paper-item#text-item-0',
+      'tp-yt-paper-item',
+      '#text-item-0',
+      'yt-formatted-string[text-id="UPLOAD_VIDEO"]',
+      '#upload-item'
+    ];
+    await clickInShadowDom(page, uploadOptionSelectors);
 
     // ── Step 2: Upload Video File ──
     log('Waiting for file input...');
-    await page.waitForSelector('input[type="file"]', { timeout: 15000 });
+    await page.waitForSelector('input[type="file"]', { timeout: 20000 });
     const fileInput = await page.$('input[type="file"]');
     await fileInput.uploadFile(videoPath);
     log('Video file selected. Waiting for upload dialog...');
@@ -206,7 +289,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     await typeInShadowDom(page, titleBox, title);
 
     // ── Step 4: Description with Hashtags ──
-    const hashtags = generateHashtags(title, job.niche);
+    const hashtags = generateHashtags(title, job.topic || job.niche);
     const description = `${job.generatedDescription || ''}\n\n${hashtags}`;
     log('Setting description with hashtags...');
     const descBox = '#textbox[aria-label*="Tell viewers about your video"]';
@@ -229,15 +312,20 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
 
     // ── Step 6: Audience (Not made for kids) ──
     log('Setting Audience to "No, it\'s not made for kids"...');
-    await clickInShadowDom(page, 'tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]');
+    const kidsSelectors = [
+      'tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]',
+      '#made-for-kids-group tp-yt-paper-radio-button[name="VIDEO_MADE_FOR_KIDS_NOT_MFK"]',
+      'tp-yt-paper-radio-button[id="off"]'
+    ];
+    await clickInShadowDom(page, kidsSelectors);
 
     // ── Step 7: Tags (Show More > Tags field) ──
     log('Expanding "Show More" for tags...');
     try {
-      await clickInShadowDom(page, '#toggle-button');
+      await clickInShadowDom(page, ['#toggle-button', 'ytcp-button#toggle-button']);
       await new Promise(r => setTimeout(r, 1500));
       const tagsInput = '#text-input[aria-label="Tags"]';
-      const tags = [job.niche, 'shorts', 'viral', 'trending', 'fyp', 'ai'].filter(Boolean).join(',');
+      const tags = [job.topic || job.niche, 'shorts', 'viral', 'trending', 'fyp', 'ai'].filter(Boolean).join(',');
       await typeInShadowDom(page, tagsInput, tags);
       log(`Tags set: ${tags}`);
     } catch (tagErr) {
@@ -246,19 +334,22 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
 
     // ── Step 8: Next -> Next -> Next -> Visibility ──
     log('Clicking Next through wizard...');
+    const nextSelectors = ['#next-button', 'ytcp-button#next-button', '#next-button ytcp-button', 'button[aria-label="Next"]'];
     for (let i = 0; i < 3; i++) {
-      await clickInShadowDom(page, '#next-button');
+      await clickInShadowDom(page, nextSelectors);
       await new Promise(r => setTimeout(r, 2500));
     }
 
     // ── Step 9: Visibility = Public ──
     log('Setting visibility to Public...');
-    await clickInShadowDom(page, 'tp-yt-paper-radio-button[name="PUBLIC"]');
+    const publicSelectors = ['tp-yt-paper-radio-button[name="PUBLIC"]', '#first-container tp-yt-paper-radio-button[name="PUBLIC"]'];
+    await clickInShadowDom(page, publicSelectors);
     await new Promise(r => setTimeout(r, 1000));
 
     // ── Step 10: Publish ──
     log('Clicking Publish...');
-    await clickInShadowDom(page, '#done-button');
+    const publishSelectors = ['#done-button', 'ytcp-button#done-button', '#done-button ytcp-button', 'button[aria-label="Publish"]', 'button[aria-label="Save"]'];
+    await clickInShadowDom(page, publishSelectors);
 
     // ── Step 11: Wait for confirmation ──
     log('Waiting for publish confirmation...');
@@ -280,7 +371,10 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     return publishedId;
 
   } finally {
-    await browser.close();
+    if (browser) {
+      try { await browser.close(); } catch (e) {}
+    }
+    clearChromeProfileLock();
   }
 }
 
