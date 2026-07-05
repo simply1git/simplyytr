@@ -307,6 +307,30 @@ export default function HybridDashboard() {
                   <h3 className="text-lg font-bold text-white border-b border-white/10 pb-4">Content Strategy</h3>
                   
                   <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Copy-Paste Strategy Formula</label>
+                    <select 
+                      value={settings.copyPasteMode || 'clone_avatar'} 
+                      onChange={(e) => setSettings({ ...settings, copyPasteMode: e.target.value })} 
+                      className="w-full bg-black/40 border border-purple-500/30 rounded-xl px-4 py-3 text-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow font-medium"
+                    >
+                      <option value="clone_avatar">Formula B: Viral Clone & Avatar (Viral Short + OpenVoice + SadTalker + Kinetic ASS)</option>
+                      <option value="split_screen">Formula A: Split-Screen Aggregator (Top: Viral Short | Bottom: Satisfying B-Roll)</option>
+                      <option value="renarration">Formula C: AI Re-Narration (Groq Script + Neural TTS + Pexels B-Roll)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-400 mb-2">Target YouTubers & Channels (Inspiration Vault)</label>
+                    <input 
+                      type="text" 
+                      value={settings.targetChannels || 'Alex Hormozi, Andrew Huberman, Joe Rogan, MrBeast, Motivation'} 
+                      onChange={(e) => setSettings({ ...settings, targetChannels: e.target.value })} 
+                      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" 
+                      placeholder="e.g. Alex Hormozi, Andrew Huberman, Joe Rogan, MrBeast, Motivation" 
+                    />
+                  </div>
+
+                  <div>
                     <label className="block text-sm font-medium text-zinc-400 mb-2">Target Niche</label>
                     <input type="text" value={settings.targetNiche} onChange={(e) => setSettings({ ...settings, targetNiche: e.target.value })} className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-shadow" placeholder="e.g. Motivation, Psychology Facts" />
                   </div>

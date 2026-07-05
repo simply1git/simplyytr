@@ -130,6 +130,8 @@ model SystemSettings {
 
   // Niche & AI (fully customizable)
   targetNiche           String   @default("Motivation")
+  targetChannels        String   @default("Alex Hormozi, Andrew Huberman, Joe Rogan, MrBeast, Motivation")
+  copyPasteMode         String   @default("clone_avatar") // split_screen, clone_avatar, renarration
   geminiTone            String   @default("Clickbaity")
   enableSelfLearningAI  Boolean  @default(false)
   autoPilotEnabled      Boolean  @default(false)

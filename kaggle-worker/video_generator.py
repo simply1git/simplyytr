@@ -638,7 +638,9 @@ def main():
                 
             elif job_type == 'clone':
                 logging.info("Starting Clone Pipeline...")
-                keyword = prompts[0] if prompts else job.get('niche', 'trending')
+                target_channels = config.get('target_channels', 'Alex Hormozi, Andrew Huberman, Motivation')
+                channels_list = [c.strip() for c in target_channels.split(',') if c.strip()]
+                keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else job.get('niche', 'trending'))
                 
                 send_status_update(job_id, f"Searching YouTube for viral short ({keyword})...", VERCEL_URL, PIPELINE_SECRET)
                 viral_data = download_viral_short(keyword, temp_dir)
