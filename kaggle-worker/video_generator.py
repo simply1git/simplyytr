@@ -575,12 +575,12 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "25"})
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
                 res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "25"})
             
             config_res.raise_for_status()
             config_data = config_res.json()
