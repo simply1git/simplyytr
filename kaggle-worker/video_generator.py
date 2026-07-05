@@ -613,7 +613,7 @@ def main():
         final_video_path = os.path.join(temp_dir, "final_video.mp4")
         thumbnail_path = os.path.join(temp_dir, "thumbnail.jpg")
 
-        job_type = job.get('jobType', 'generative')
+        job_type = job.get('jobType', 'clone')
 
         try:
             if job_type == 'aggregator':

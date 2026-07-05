@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
 
     return Response.json({ 
       status: 'success', 
-      job: updatedJob,
+      job: {
+        ...updatedJob,
+        jobType: (updatedJob as any).jobType || 'clone'
+      },
       config: {
         r2_account_id: process.env.R2_ACCOUNT_ID,
         r2_access_key_id: process.env.R2_ACCESS_KEY_ID,
