@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
   if (!verifyAuth(request)) return unauthorized();
 
   try {
+    const workerVersion = request.headers.get('x-worker-version');
+    if (workerVersion !== '25') {
+      return Response.json({ message: 'Old worker versions are disabled' }, { status: 404 });
+    }
+
     // Find the oldest SCRIPTED job
     const job = await prisma.renderJob.findFirst({
       where: { status: 'SCRIPTED' },
