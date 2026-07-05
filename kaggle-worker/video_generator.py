@@ -191,9 +191,12 @@ def run_ffmpeg_command(cmd):
                     fallback_cmd.append("libx264")
                 else:
                     fallback_cmd.append(arg)
-            subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
+            try:
+                subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
+            except subprocess.CalledProcessError as fallback_e:
+                raise Exception(f"FFmpeg fallback failed: {fallback_e.stderr}")
         else:
-            raise
+            raise Exception(f"FFmpeg failed: {e.stderr}")
 
 def create_split_screen_video(top_video, bottom_video, output_path, audio_path=None, srt_path=None):
     logging.info("Building split-screen complex filtergraph...")
@@ -213,10 +216,10 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
 
     if audio_path and os.path.exists(audio_path):
         cmd.extend(["-i", audio_path])
-        filter_parts.append("[0:a]volume=0.3[orig_a];[2:a]volume=1.0[voice_a];[orig_a][voice_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]")
+        filter_parts.append("[2:a]volume=1.0[final_a]")
         last_a = "[final_a]"
     else:
-        last_a = "0:a"
+        last_a = "0:a?"
         
     filter_complex = ";".join(filter_parts)
     cmd.extend(["-filter_complex", filter_complex])
@@ -496,7 +499,7 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
     cmd.extend([
         "-filter_complex", filter_complex,
         "-map", last_v,
-        "-map", "0:a",
+        "-map", "0:a?",
         "-c:v", "h264_nvenc",
         "-preset", "p2",
         "-c:a", "aac",
