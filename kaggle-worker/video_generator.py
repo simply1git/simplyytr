@@ -75,7 +75,7 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
                     valid_entries = []
                     for entry in info['entries']:
                         duration = entry.get('duration')
-                        if duration is not None and duration <= 60:
+                        if duration is not None and duration <= 600:
                             valid_entries.append(entry)
                     if valid_entries:
                         best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
@@ -626,8 +626,9 @@ def main():
 
         try:
             if job_type == 'aggregator':
-                logging.info("Starting Aggregator Pipeline...")
-                keyword = prompts[0] if prompts else job.get('niche', 'trending')
+                target_channels = config.get('target_channels', 'Alex Hormozi, Andrew Huberman, Motivation')
+                channels_list = [c.strip() for c in target_channels.split(',') if c.strip()]
+                keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else job.get('niche', 'trending'))
                 send_status_update(job_id, f"Downloading viral short for '{keyword}'...", VERCEL_URL, PIPELINE_SECRET)
                 viral_data = download_viral_short(keyword, temp_dir)
                 if not viral_data:
