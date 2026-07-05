@@ -305,12 +305,71 @@ export default function HybridDashboard() {
 
             {/* TAB: ANALYTICS */}
             {activeTab === 'ANALYTICS' && (
-              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-12 text-center animate-in fade-in slide-in-from-bottom-4">
-                <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-purple-500/30">
-                  <span className="text-2xl">📈</span>
+              <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-4 space-y-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
+                  <div>
+                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                      <span>📈</span> Self-Learning AI Analytics Engine
+                    </h3>
+                    <p className="text-zinc-400 text-sm mt-1">
+                      Views & retention data feed directly back into Groq to generate higher-CTR scripts.
+                    </p>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      const tId = toast.loading("Syncing YouTube Analytics...");
+                      try {
+                        const res = await fetch("/api/cron/analytics", {
+                          headers: { "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026'}` }
+                        });
+                        const data = await res.json();
+                        toast.success(`Analytics Synced! Updated ${data.syncedJobsCount || 0} jobs`, { id: tId });
+                        fetchJobs();
+                      } catch(e) {
+                        toast.error("Sync Failed", { id: tId });
+                      }
+                    }}
+                    className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded-xl text-xs font-bold transition-all"
+                  >
+                    SYNC YOUTUBE VIEWS
+                  </button>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Analytics Engine</h3>
-                <p className="text-zinc-400">YouTube Data API sync runs automatically every midnight via GitHub Actions.<br/>Stats will populate here after your first few uploads.</p>
+
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold text-zinc-300 uppercase tracking-wider">Top Performing Content</h4>
+                  {jobs.filter(j => j.views > 0 || j.publishedYoutubeId).length === 0 ? (
+                    <div className="p-8 text-center text-zinc-500 bg-black/20 rounded-xl border border-white/5 font-medium">
+                      No published performance data recorded yet.<br/>Views will populate automatically after your first video uploads.
+                    </div>
+                  ) : (
+                    jobs.filter(j => j.views > 0 || j.publishedYoutubeId)
+                      .sort((a, b) => b.views - a.views)
+                      .map((job, idx) => (
+                        <div key={job.id} className="p-4 bg-black/30 rounded-xl border border-white/5 flex items-center justify-between gap-4 hover:border-white/10 transition-all">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <span className="w-7 h-7 rounded-full bg-purple-500/20 text-purple-300 flex items-center justify-center font-bold text-xs shrink-0">
+                              #{idx + 1}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-white truncate">{job.generatedTitle || job.topic}</p>
+                              <p className="text-xs text-zinc-500 truncate">ID: {job.id.slice(-6)} • {job.publishedYoutubeId ? `Shorts ID: ${job.publishedYoutubeId}` : 'Published'}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <div className="text-right">
+                              <p className="text-lg font-extrabold text-emerald-400">{job.views.toLocaleString()} views</p>
+                              <p className="text-[10px] text-zinc-500">Retention Score: {job.retentionScore || 0}%</p>
+                            </div>
+                            {job.publishedYoutubeId && (
+                              <a href={`https://youtube.com/shorts/${job.publishedYoutubeId}`} target="_blank" rel="noreferrer" className="p-2 bg-white/5 hover:bg-white/10 rounded-lg text-white text-xs">
+                                ↗
+                              </a>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                  )}
+                </div>
               </div>
             )}
           </div>

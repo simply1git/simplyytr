@@ -14,13 +14,34 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'System settings not configured' }, { status: 500 });
     }
 
+    // Fetch top performing videos for Self-Learning AI prompt engineering
+    let selfLearningContext = "";
+    if (settings.enableSelfLearningAI) {
+      const topVideos = await prisma.renderJob.findMany({
+        where: { views: { gt: 0 } },
+        orderBy: { views: 'desc' },
+        take: 5,
+        select: { generatedTitle: true, scriptHook: true, views: true, topic: true }
+      });
+
+      if (topVideos.length > 0) {
+        selfLearningContext = `
+WINNING PERFORMANCE PATTERNS (Self-Learning AI Active):
+Analyze these top-performing video titles and hooks from past uploads to model style and high-CTR patterns:
+${topVideos.map(v => `- Title: "${v.generatedTitle}" | Hook: "${v.scriptHook}" | Views: ${v.views}`).join('\n')}
+
+INSTRUCTION: Adapt your hook structure and title style to match the pacing and viral hook mechanics of these top-performing examples.
+`;
+      }
+    }
+
     // Generate script via Groq
     const scriptPrompt = `
 You are an expert YouTube Shorts scriptwriter and growth strategist.
 
 TARGET NICHE: "${settings.targetNiche}"
 TONE: "${settings.geminiTone}"
-
+${selfLearningContext}
 Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
 
 Return a JSON object with EXACTLY these keys:
