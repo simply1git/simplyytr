@@ -22,7 +22,7 @@ export async function callGroq(prompt: string, options?: { temperature?: number;
       'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: 'llama-3.1-8b-instant',
+      model: 'llama3-8b-8192',
       messages: [{ role: 'user', content: prompt }],
       response_format: { type: 'json_object' },
       temperature: options?.temperature ?? 0.8,
