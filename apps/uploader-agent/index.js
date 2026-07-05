@@ -124,7 +124,7 @@ async function waitForShadowDomElement(page, selectors, timeout = 25000) {
 }
 
 async function typeInShadowDom(page, selector, text) {
-  await page.evaluate((sel, txt) => {
+  const typed = await page.evaluate((sel, txt) => {
     function getElement(root, selector) {
       if (root.matches && root.matches(selector)) return root;
       if (root.shadowRoot) {
@@ -141,9 +141,62 @@ async function typeInShadowDom(page, selector, text) {
     if (el) {
       el.focus();
       el.textContent = '';
+      el.dispatchEvent(new Event('input', { bubbles: true }));
       document.execCommand('insertText', false, txt);
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+      el.dispatchEvent(new Event('change', { bubbles: true }));
+      return true;
     }
+    return false;
   }, selector, text);
+
+  // Human-like pause after typing
+  await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+  return typed;
+}
+
+async function extractPublishedVideoId(page) {
+  return await page.evaluate(() => {
+    function searchShadowForId(root) {
+      if (!root) return null;
+      
+      // Look for anchor links with youtu.be or youtube.com/watch
+      const links = root.querySelectorAll ? root.querySelectorAll('a[href*="youtu.be"], a[href*="youtube.com/watch"]') : [];
+      for (const link of links) {
+        const href = link.href || link.getAttribute('href') || '';
+        if (href.includes('youtu.be/')) {
+          const id = href.split('youtu.be/')[1]?.split('?')[0]?.split('&')[0];
+          if (id && id.length >= 10) return id;
+        }
+        if (href.includes('v=')) {
+          const id = href.split('v=')[1]?.split('&')[0];
+          if (id && id.length >= 10) return id;
+        }
+      }
+
+      // Look for share-url elements or text
+      const shareEls = root.querySelectorAll ? root.querySelectorAll('.share-url, ytcp-video-permalink, [id*="video-url"]') : [];
+      for (const el of shareEls) {
+        const txt = el.textContent || el.value || el.getAttribute('href') || '';
+        if (txt.includes('youtu.be/')) {
+          const id = txt.split('youtu.be/')[1]?.split('?')[0]?.split(/\s/)[0];
+          if (id && id.length >= 10) return id;
+        }
+      }
+
+      // Recurse shadowRoot and children
+      if (root.shadowRoot) {
+        const found = searchShadowForId(root.shadowRoot);
+        if (found) return found;
+      }
+      for (const child of Array.from(root.children || [])) {
+        const found = searchShadowForId(child);
+        if (found) return found;
+      }
+      return null;
+    }
+    return searchShadowForId(document.body);
+  });
 }
 
 async function clickInShadowDom(page, selectors) {
@@ -169,7 +222,10 @@ async function clickInShadowDom(page, selectors) {
       }
       return false;
     }, sel);
-    if (clicked) return sel;
+    if (clicked) {
+      await new Promise(r => setTimeout(r, 800 + Math.random() * 400));
+      return sel;
+    }
   }
   return null;
 }
@@ -333,39 +389,44 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     }
 
     // ── Step 8: Next -> Next -> Next -> Visibility ──
-    log('Clicking Next through wizard...');
+    log('Clicking Next through wizard (human pacing)...');
     const nextSelectors = ['#next-button', 'ytcp-button#next-button', '#next-button ytcp-button', 'button[aria-label="Next"]'];
-    for (let i = 0; i < 3; i++) {
-      await clickInShadowDom(page, nextSelectors);
-      await new Promise(r => setTimeout(r, 2500));
+    
+    // Step Details -> Elements
+    await clickInShadowDom(page, nextSelectors);
+    await new Promise(r => setTimeout(r, 3500));
+
+    // Step Elements -> Checks
+    await clickInShadowDom(page, nextSelectors);
+    await new Promise(r => setTimeout(r, 3500));
+
+    // Step Checks -> Visibility
+    await clickInShadowDom(page, nextSelectors);
+    await new Promise(r => setTimeout(r, 3500));
+
+    // ── Step 9: Extract Video Link & Set Visibility = Public ──
+    let publishedId = await extractPublishedVideoId(page);
+    if (publishedId) {
+      log(`Found Video ID in upload dialog: ${publishedId}`);
     }
 
-    // ── Step 9: Visibility = Public ──
     log('Setting visibility to Public...');
-    const publicSelectors = ['tp-yt-paper-radio-button[name="PUBLIC"]', '#first-container tp-yt-paper-radio-button[name="PUBLIC"]'];
+    const publicSelectors = ['tp-yt-paper-radio-button[name="PUBLIC"]', '#first-container tp-yt-paper-radio-button[name="PUBLIC"]', 'tp-yt-paper-radio-button[id="radio-button"][name="PUBLIC"]'];
     await clickInShadowDom(page, publicSelectors);
-    await new Promise(r => setTimeout(r, 1000));
+    await new Promise(r => setTimeout(r, 2000));
 
     // ── Step 10: Publish ──
     log('Clicking Publish...');
     const publishSelectors = ['#done-button', 'ytcp-button#done-button', '#done-button ytcp-button', 'button[aria-label="Publish"]', 'button[aria-label="Save"]'];
     await clickInShadowDom(page, publishSelectors);
 
-    // ── Step 11: Wait for confirmation ──
-    log('Waiting for publish confirmation...');
-    await new Promise(r => setTimeout(r, 12000));
+    // ── Step 11: Wait for confirmation dialog ──
+    log('Waiting for publish confirmation & share dialog...');
+    await new Promise(r => setTimeout(r, 10000));
 
-    // Extract published URL
-    let publishedId = null;
-    try {
-      const href = await page.evaluate(() => {
-        const a = document.querySelector('a[href*="youtu.be"]');
-        return a ? a.href : null;
-      });
-      if (href) {
-        publishedId = href.split('/').pop();
-      }
-    } catch (e) {}
+    if (!publishedId) {
+      publishedId = await extractPublishedVideoId(page);
+    }
 
     log(`✅ Upload complete! Published ID: ${publishedId || 'unknown'}`);
     return publishedId;
