@@ -38,21 +38,23 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
         filter_parts.append(f"{last_v}subtitles={abs_srt_path}:force_style='FontName=Arial,FontSize=36,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2,MarginV=450'[with_subs]")
         last_v = "[with_subs]"
         
+    # Handle Audio (we append to filter_parts here before joining)
+    # Handle Audio
+    if audio_path and os.path.exists(audio_path):
+        cmd.extend(["-i", audio_path])
+        # We ignore the original video's audio [0:a] because it might not exist (Pexels) 
+        # or it might clash with our voiceover. We just use the AI voiceover.
+        filter_parts.append("[2:a]volume=1.0[final_a]")
+        last_a = "[final_a]"
+    else:
+        # Just use original viral video audio (make it optional in case of Pexels)
+        last_a = "0:a?"
+        
     filter_complex = ";".join(filter_parts)
     
     cmd.extend(["-filter_complex", filter_complex])
     cmd.extend(["-map", last_v])
-    
-    # Handle Audio
-    if audio_path:
-        cmd.extend(["-i", audio_path])
-        # Mix original audio (0:a) and voiceover (2:a)
-        # Volume of original video down to 0.3, voiceover at 1.0
-        audio_filter = "[0:a]volume=0.3[orig_a];[2:a]volume=1.0[voice_a];[orig_a][voice_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]"
-        cmd.extend(["-filter_complex", audio_filter, "-map", "[final_a]"])
-    else:
-        # Just use original viral video audio
-        cmd.extend(["-map", "0:a"])
+    cmd.extend(["-map", last_a])
         
     cmd.extend([
         "-c:v", "h264_nvenc",
