@@ -23,11 +23,16 @@ export async function GET(request: NextRequest) {
       data: { status: 'RENDERING', renderedAt: new Date() },
     });
 
+    // Fetch system settings for pipeline parameters
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    const copyPasteMode = settings?.copyPasteMode || 'clone_avatar';
+    const targetChannels = settings?.targetChannels || 'Alex Hormozi, Andrew Huberman, Motivation';
+
     return Response.json({ 
       status: 'success', 
       job: {
         ...updatedJob,
-        jobType: (updatedJob as any).jobType || 'clone'
+        jobType: copyPasteMode === 'split_screen' ? 'aggregator' : (copyPasteMode === 'renarration' ? 'generative' : 'clone')
       },
       config: {
         r2_account_id: process.env.R2_ACCOUNT_ID,
@@ -36,7 +41,9 @@ export async function GET(request: NextRequest) {
         r2_bucket_name: process.env.R2_BUCKET_NAME,
         r2_public_url: process.env.R2_PUBLIC_URL,
         webhook_url: `${process.env.VERCEL_API_URL || 'https://simplyytr.vercel.app'}/api/pipeline/webhook`,
-        pexels_api_key: process.env.PEXELS_API_KEY
+        pexels_api_key: process.env.PEXELS_API_KEY,
+        copy_paste_mode: copyPasteMode,
+        target_channels: targetChannels
       }
     });
   } catch (err) {

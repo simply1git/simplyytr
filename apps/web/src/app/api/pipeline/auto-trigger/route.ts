@@ -37,9 +37,9 @@ INSTRUCTION: Adapt your hook structure and title style to match the pacing and v
 
     // Generate script via Groq
     const scriptPrompt = `
-You are an expert YouTube Shorts scriptwriter and growth strategist.
-
 TARGET NICHE: "${settings.targetNiche}"
+TARGET CHANNELS / INSPIRATION: "${settings.targetChannels || 'Alex Hormozi, Andrew Huberman, Motivation'}"
+COPY-PASTE MODE: "${settings.copyPasteMode || 'clone_avatar'}"
 TONE: "${settings.geminiTone}"
 ${selfLearningContext}
 Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
