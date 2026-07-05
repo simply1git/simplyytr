@@ -58,6 +58,7 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
         
     queries_to_try = [clean_search_keyword(keyword)] + [clean_search_keyword(k) for k in fallback_keywords]
     
+    last_error = "No videos found"
     for kw in queries_to_try:
         logging.info(f"Searching YouTube for viral Shorts using query: '{kw}'...")
         ydl_opts_search = {
@@ -65,7 +66,7 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
             'quiet': True,
             'no_warnings': True
         }
-        search_query = f"ytsearch20:{kw} #shorts"
+        search_query = f"ytsearch20:{kw} short"
         best_video = None
         
         try:
@@ -80,6 +81,7 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
                     if valid_entries:
                         best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
         except Exception as e:
+            last_error = str(e)
             logging.error(f"Error searching query '{kw}': {e}")
 
         if best_video:
@@ -106,10 +108,10 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
                         'description': best_video.get('description', '')
                     }
             except Exception as e:
+                last_error = str(e)
                 logging.error(f"Download failed for {video_url}: {e}")
 
-    logging.error("All search queries failed to produce a valid short.")
-    return None
+    raise Exception(f"Failed to download viral short: {last_error}")
 
 def format_time_ass(seconds):
     hours = int(seconds // 3600)
