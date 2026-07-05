@@ -8,6 +8,11 @@ export async function POST(request: NextRequest) {
   if (!verifyAuth(request)) return unauthorized();
 
   try {
+    const workerVersion = request.headers.get('x-worker-version');
+    if (workerVersion !== '25') {
+      return Response.json({ message: 'Old worker versions are disabled' }, { status: 404 });
+    }
+
     // Fetch system settings
     const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     if (!settings) {
