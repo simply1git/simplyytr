@@ -38,68 +38,77 @@ except ImportError:
 
 # --- INLINED HELPER MODULES ---
 
-def download_viral_short(keyword, temp_dir):
+def clean_search_keyword(kw):
+    if not kw:
+        return "motivation podcast"
+    import re
+    cleaned = re.sub(r'\(.*?\)', '', kw).strip()
+    words = cleaned.split()
+    if len(words) > 4:
+        cleaned = " ".join(words[:4])
+    return cleaned if cleaned else "motivation podcast"
+
+def download_viral_short(keyword, temp_dir, fallback_keywords=None):
     """
-    Searches YouTube for Shorts matching the keyword, sorts by view count,
+    Searches YouTube for Shorts matching the keyword or fallbacks, sorts by view count,
     and downloads the most viral one under 60 seconds.
     """
-    logging.info(f"Searching for viral Shorts using keyword: {keyword}")
-    ydl_opts_search = {
-        'extract_flat': True,
-        'quiet': True,
-        'no_warnings': True
-    }
-    search_query = f"ytsearch20:{keyword} #shorts"
-    best_video = None
+    if fallback_keywords is None:
+        fallback_keywords = ["motivation podcast", "mindset short", "viral speech", "success advice"]
+        
+    queries_to_try = [clean_search_keyword(keyword)] + [clean_search_keyword(k) for k in fallback_keywords]
     
-    try:
-        with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
-            info = ydl.extract_info(search_query, download=False)
-            if 'entries' in info and info['entries']:
-                valid_entries = []
-                for entry in info['entries']:
-                    duration = entry.get('duration')
-                    if duration is not None and duration <= 60:
-                        valid_entries.append(entry)
-                if valid_entries:
-                    best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
-                else:
-                    logging.warning("No shorts found under 60 seconds in search results.")
-            else:
-                logging.warning("No search results found.")
-    except Exception as e:
-        logging.error(f"Error searching for viral short: {e}")
+    for kw in queries_to_try:
+        logging.info(f"Searching YouTube for viral Shorts using query: '{kw}'...")
+        ydl_opts_search = {
+            'extract_flat': True,
+            'quiet': True,
+            'no_warnings': True
+        }
+        search_query = f"ytsearch20:{kw} #shorts"
+        best_video = None
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
+                info = ydl.extract_info(search_query, download=False)
+                if 'entries' in info and info['entries']:
+                    valid_entries = []
+                    for entry in info['entries']:
+                        duration = entry.get('duration')
+                        if duration is not None and duration <= 60:
+                            valid_entries.append(entry)
+                    if valid_entries:
+                        best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
+        except Exception as e:
+            logging.error(f"Error searching query '{kw}': {e}")
 
-    if not best_video:
-        return None
-
-    video_url = best_video['url']
-    video_title = best_video.get('title', 'viral_short')
-    logging.info(f"Found viral short: '{video_title}' with {best_video.get('view_count', 'unknown')} views.")
-    
-    output_path = os.path.join(temp_dir, "viral_short.mp4")
-    ydl_opts_download = {
-        'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-        'outtmpl': output_path,
-        'noplaylist': True,
-        'quiet': False
-    }
-    
-    try:
-        logging.info(f"Downloading to {output_path}...")
-        with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
-            ydl.download([video_url])
-        if os.path.exists(output_path):
-            logging.info("Download complete.")
-            return {
-                'filepath': output_path,
-                'title': video_title,
-                'url': video_url,
-                'view_count': best_video.get('view_count', 0),
-                'description': best_video.get('description', '')
+        if best_video:
+            video_url = best_video['url']
+            video_title = best_video.get('title', 'viral_short')
+            logging.info(f"Found viral short: '{video_title}' for query '{kw}'. Downloading...")
+            output_path = os.path.join(temp_dir, "viral_short.mp4")
+            ydl_opts_download = {
+                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
+                'outtmpl': output_path,
+                'noplaylist': True,
+                'quiet': False
             }
-    except Exception as e:
-        logging.error(f"Download failed: {e}")
+            try:
+                with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
+                    ydl.download([video_url])
+                if os.path.exists(output_path):
+                    logging.info("Download complete.")
+                    return {
+                        'filepath': output_path,
+                        'title': video_title,
+                        'url': video_url,
+                        'view_count': best_video.get('view_count', 0),
+                        'description': best_video.get('description', '')
+                    }
+            except Exception as e:
+                logging.error(f"Download failed for {video_url}: {e}")
+
+    logging.error("All search queries failed to produce a valid short.")
     return None
 
 def format_time_ass(seconds):
