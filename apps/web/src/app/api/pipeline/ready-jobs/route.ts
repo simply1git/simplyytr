@@ -20,7 +20,6 @@ export async function GET(request: NextRequest) {
         videoUrl: true,
         thumbnailUrl: true,
         voiceName: true,
-        niche: true,
         createdAt: true,
       },
     });
