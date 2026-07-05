@@ -75,7 +75,7 @@ def download_viral_short(keyword, temp_dir, fallback_keywords=None):
                     valid_entries = []
                     for entry in info['entries']:
                         duration = entry.get('duration')
-                        if duration is not None and duration <= 600:
+                        if duration is not None and duration <= 1800:
                             valid_entries.append(entry)
                     if valid_entries:
                         best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
