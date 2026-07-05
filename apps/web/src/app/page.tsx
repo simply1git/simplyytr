@@ -106,6 +106,36 @@ export default function HybridDashboard() {
     }
   };
 
+  const handleControlAction = async (action: 'start' | 'stop' | 'clear', mode: string = 'all') => {
+    if (action === 'clear') {
+      if (!confirm(`Are you sure you want to CLEAR ${mode === 'all' ? 'ALL' : mode.toUpperCase()} jobs from the queue?`)) return;
+    }
+    setLoading(true);
+    const tId = toast.loading(`Executing ${action.toUpperCase()} command...`);
+    try {
+      const res = await fetch("/api/pipeline/control", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026'}`
+        },
+        body: JSON.stringify({ action, mode })
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        toast.success(data.message, { id: tId });
+        fetchJobs();
+        fetchSettings();
+      } else {
+        toast.error(data.error || "Control Action Failed", { id: tId });
+      }
+    } catch (err) {
+      toast.error("Network Error", { id: tId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     const config: Record<string, { bg: string, text: string, border: string }> = {
       'PENDING': { bg: 'bg-gray-500/10', text: 'text-gray-400', border: 'border-gray-500/20' },
@@ -150,17 +180,45 @@ export default function HybridDashboard() {
             </p>
           </div>
           
-          <button 
-            onClick={triggerPipeline} 
-            disabled={loading}
-            className="group relative inline-flex items-center justify-center px-8 py-3.5 text-base font-bold text-white transition-all duration-200 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 hover:shadow-[0_0_40px_rgba(168,85,247,0.4)] overflow-hidden"
-          >
-            <div className="absolute inset-0 w-full h-full -mt-1 rounded-lg opacity-30 bg-gradient-to-b from-transparent via-transparent to-black"></div>
-            <span className="relative flex items-center gap-2">
-              {loading ? <span className="animate-spin text-xl">⚪</span> : <BoltIcon />}
-              TRIGGER PIPELINE
-            </span>
-          </button>
+          {/* Action Control Suite */}
+          <div className="flex flex-wrap items-center gap-3">
+            {/* START BUTTON */}
+            <button
+              onClick={() => handleControlAction('start')}
+              disabled={loading}
+              className="px-5 py-3 text-xs font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 rounded-xl hover:bg-emerald-500/20 hover:shadow-[0_0_20px_rgba(16,185,129,0.3)] transition-all flex items-center gap-2"
+            >
+              <span>▶</span> START
+            </button>
+
+            {/* STOP BUTTON */}
+            <button
+              onClick={() => handleControlAction('stop')}
+              disabled={loading}
+              className="px-5 py-3 text-xs font-bold text-rose-300 bg-rose-500/10 border border-rose-500/30 rounded-xl hover:bg-rose-500/20 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all flex items-center gap-2"
+            >
+              <span>⏹</span> STOP
+            </button>
+
+            {/* CLEAR BUTTON */}
+            <button
+              onClick={() => handleControlAction('clear', 'all')}
+              disabled={loading}
+              className="px-5 py-3 text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/30 rounded-xl hover:bg-amber-500/20 hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-all flex items-center gap-2"
+            >
+              <span>🗑</span> CLEAR QUEUE
+            </button>
+
+            {/* TRIGGER 1 JOB BUTTON */}
+            <button 
+              onClick={triggerPipeline} 
+              disabled={loading}
+              className="px-6 py-3 text-xs font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 border border-purple-500/30 rounded-xl hover:shadow-[0_0_30px_rgba(168,85,247,0.4)] transition-all flex items-center gap-2"
+            >
+              {loading ? <span className="animate-spin text-sm">⚪</span> : <BoltIcon />}
+              TRIGGER 1 JOB
+            </button>
+          </div>
         </div>
 
         {/* Stats Row */}
