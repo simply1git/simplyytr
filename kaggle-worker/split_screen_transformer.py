@@ -67,6 +67,7 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
         "-c:a", "aac",
         "-b:a", "192k",
         "-shortest", # End when the shortest stream ends (usually the top video)
+        "-t", "59",  # Hard cap at 59 seconds for YouTube Shorts
         output_path
     ])
     
