@@ -191,28 +191,13 @@ def run_ffmpeg_command(cmd):
                     fallback_cmd.append("libx264")
                 else:
                     fallback_cmd.append(arg)
-            try:
-                subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
-            except subprocess.CalledProcessError as fallback_e:
-                raise Exception(f"FFmpeg fallback failed: {fallback_e.stderr}")
+            subprocess.run(fallback_cmd, check=True, capture_output=True, text=True)
         else:
-            raise Exception(f"FFmpeg failed: {e.stderr}")
+            raise
 
 def create_split_screen_video(top_video, bottom_video, output_path, audio_path=None, srt_path=None):
     logging.info("Building split-screen complex filtergraph...")
-    
-    # Calculate duration to trim inputs
-    audio_duration = 60.0
-    if audio_path and os.path.exists(audio_path):
-        try:
-            res = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", audio_path], stdout=subprocess.PIPE, text=True)
-            audio_duration = float(res.stdout.strip()) + 2.0
-        except:
-            pass
-
-    cmd = ["ffmpeg", "-y"]
-    cmd.extend(["-t", str(audio_duration), "-i", top_video])
-    cmd.extend(["-stream_loop", "-1", "-t", str(audio_duration), "-i", bottom_video])
+    cmd = ["ffmpeg", "-y", "-i", top_video, "-stream_loop", "-1", "-i", bottom_video]
     
     filter_parts = [
         "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,format=yuv420p[top]",
@@ -228,10 +213,10 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
 
     if audio_path and os.path.exists(audio_path):
         cmd.extend(["-i", audio_path])
-        filter_parts.append("[2:a]volume=1.0[final_a]")
+        filter_parts.append("[0:a]volume=0.3[orig_a];[2:a]volume=1.0[voice_a];[orig_a][voice_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]")
         last_a = "[final_a]"
     else:
-        last_a = "0:a?"
+        last_a = "0:a"
         
     filter_complex = ";".join(filter_parts)
     cmd.extend(["-filter_complex", filter_complex])
@@ -511,7 +496,7 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
     cmd.extend([
         "-filter_complex", filter_complex,
         "-map", last_v,
-        "-map", "0:a?",
+        "-map", "0:a",
         "-c:v", "h264_nvenc",
         "-preset", "p2",
         "-c:a", "aac",
@@ -590,12 +575,12 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
-                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
             
             config_res.raise_for_status()
             config_data = config_res.json()
@@ -745,18 +730,11 @@ def main():
                 
                 filter_complex = ";".join(filter_complex_parts)
                 
-                audio_duration = 60.0
-                try:
-                    res = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", cloned_audio_path], stdout=subprocess.PIPE, text=True)
-                    audio_duration = float(res.stdout.strip()) + 2.0
-                except:
-                    pass
-
                 cmd = [
                     "ffmpeg", "-y",
-                    "-t", str(audio_duration), "-i", viral_video_path,
-                    "-t", str(audio_duration), "-i", avatar_video_path,
-                    "-t", str(audio_duration), "-i", cloned_audio_path,
+                    "-i", viral_video_path,
+                    "-i", avatar_video_path,
+                    "-i", cloned_audio_path,
                     "-filter_complex", filter_complex,
                     "-map", "[final_v]",
                     "-map", "[final_a]",
