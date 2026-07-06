@@ -8,8 +8,8 @@ export async function GET(request: NextRequest) {
 
   try {
     const workerVersion = request.headers.get('x-worker-version');
-    if (workerVersion !== '34') {
-      return Response.json({ error: 'Outdated Kaggle Worker. Update to version 34' }, { status: 404 });
+    if (workerVersion !== '35') {
+      return Response.json({ error: 'Outdated Kaggle Worker. Update to version 35' }, { status: 404 });
     }
 
     // Find the oldest SCRIPTED job

@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const workerVersion = request.headers.get('x-worker-version');
-    if (workerVersion !== '34') {
+    if (workerVersion !== '35') {
       return Response.json({ message: 'Old worker versions are disabled' }, { status: 404 });
     }
 

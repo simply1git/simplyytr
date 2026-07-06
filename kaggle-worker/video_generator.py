@@ -223,12 +223,18 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
     
     if srt_path and os.path.exists(srt_path):
         abs_srt_path = os.path.abspath(srt_path).replace('\\', '/').replace(':', '\\:')
-        filter_parts.append(f"{last_v}subtitles='{abs_srt_path}':force_style='FontName=Arial,FontSize=36,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2,MarginV=450'[with_subs]")
+        if srt_path.endswith('.ass'):
+            filter_parts.append(f"{last_v}ass='{abs_srt_path}'[with_subs]")
+        else:
+            filter_parts.append(f"{last_v}subtitles='{abs_srt_path}':force_style='FontName=Arial,FontSize=36,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=3,Shadow=2,Alignment=2,MarginV=450'[with_subs]")
         last_v = "[with_subs]"
 
     if audio_path and os.path.exists(audio_path):
         cmd.extend(["-i", audio_path])
-        filter_parts.append("[2:a]volume=1.0[final_a]")
+        if has_audio_stream(top_video):
+            filter_parts.append("[0:a]volume=0.3[orig_a];[2:a]volume=1.0[voice_a];[orig_a][voice_a]amix=inputs=2:duration=first:dropout_transition=2[final_a]")
+        else:
+            filter_parts.append("[2:a]volume=1.0[final_a]")
         last_a = "[final_a]"
     else:
         last_a = "0:a?"
@@ -451,6 +457,13 @@ def get_media_duration(filepath):
     except:
         return 0.0
 
+def has_audio_stream(filepath):
+    try:
+        res = subprocess.run(["ffprobe", "-i", filepath, "-show_streams", "-select_streams", "a", "-loglevel", "error"], capture_output=True, text=True)
+        return "codec_type=audio" in res.stdout
+    except:
+        return False
+
 def compose_video(audio_path, srt_path, clip_paths, output_path):
     logging.info("Composing final video using FFmpeg complex filtergraph...")
     if not clip_paths:
@@ -502,7 +515,10 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
 
     if srt_path and os.path.exists(srt_path):
         abs_srt_path = os.path.abspath(srt_path).replace('\\', '/').replace(':', '\\:')
-        filter_parts.append(f"{last_out}subtitles='{abs_srt_path}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=10'[final_v]")
+        if srt_path.endswith('.ass'):
+            filter_parts.append(f"{last_out}ass='{abs_srt_path}'[final_v]")
+        else:
+            filter_parts.append(f"{last_out}subtitles='{abs_srt_path}':force_style='FontName=Arial,FontSize=24,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=0,Alignment=2,MarginV=10'[final_v]")
         last_v = "[final_v]"
     else:
         last_v = last_out
@@ -590,12 +606,12 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
-                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "34"})
+                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
             
             config_res.raise_for_status()
             config_data = config_res.json()
@@ -667,6 +683,11 @@ def main():
                 
                 send_status_update(job_id, "Generating AI Commentary...", VERCEL_URL, PIPELINE_SECRET)
                 audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+                
+                send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
+                ass_path = os.path.join(temp_dir, "subtitles.ass")
+                generate_kinetic_ass(audio_path, ass_path)
+                srt_path = ass_path
                 
                 send_status_update(job_id, "Building split-screen video...", VERCEL_URL, PIPELINE_SECRET)
                 create_split_screen_video(top_video, bottom_video, final_video_path, audio_path, srt_path)
@@ -778,6 +799,11 @@ def main():
                 logging.info("Starting Generative Pipeline...")
                 send_status_update(job_id, "Generating voiceover...", VERCEL_URL, PIPELINE_SECRET)
                 audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+                
+                send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
+                ass_path = os.path.join(temp_dir, "subtitles.ass")
+                generate_kinetic_ass(audio_path, ass_path)
+                srt_path = ass_path
                 
                 send_status_update(job_id, "Downloading Pexels video clips...", VERCEL_URL, PIPELINE_SECRET)
                 clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
