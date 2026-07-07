@@ -1,6 +1,36 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, callGroq, prisma } from '../../lib/utils';
 
+async function fetchTrendingTopics(): Promise<string[]> {
+  try {
+    const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    const titles: string[] = [];
+    let match;
+    while ((match = itemRegex.exec(text)) !== null) {
+      const itemContent = match[1];
+      const titleMatch = itemContent.match(/<title>(.*?)<\/title>/);
+      if (titleMatch && titleMatch[1]) {
+        const title = titleMatch[1]
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+        titles.push(title.trim());
+      }
+    }
+    return titles.slice(0, 10);
+  } catch (err) {
+    console.error('Failed to fetch trending topics:', err);
+    return [];
+  }
+}
+
 // POST /api/pipeline/auto-trigger
 // Called by the Kaggle Python worker in a continuous loop.
 // Generates a single script and returns the job data immediately for processing.
@@ -18,6 +48,17 @@ export async function POST(request: NextRequest) {
     if (!settings) {
       return Response.json({ error: 'System settings not configured' }, { status: 500 });
     }
+
+    // Fetch live trends from Google Trends RSS
+    const trendingTopics = await fetchTrendingTopics();
+    const trendsContext = trendingTopics.length > 0
+      ? `
+CURRENT REAL-TIME DAILY TRENDS:
+${trendingTopics.map((t, idx) => `- "${t}"`).join('\n')}
+
+INSTRUCTION: You MUST select one of the daily trending topics/queries/celebrities above (e.g. FIFA World Cup, or a trending celebrity/event) to base the script on, making it highly versatile, relevant, and adaptive to what the world is searching for right now.
+`
+      : "";
 
     // Fetch top performing videos for Self-Learning AI prompt engineering
     let selfLearningContext = "";
@@ -42,10 +83,11 @@ INSTRUCTION: Adapt your hook structure and title style to match the pacing and v
 
     // Generate script via Groq
     const scriptPrompt = `
-TARGET NICHE: "${settings.targetNiche}"
+TARGET NICHE / TOPIC AREA: "${settings.targetNiche}"
 TARGET CHANNELS / INSPIRATION: "${settings.targetChannels || 'Alex Hormozi, Andrew Huberman, Motivation'}"
 COPY-PASTE MODE: "${settings.copyPasteMode || 'clone_avatar'}"
 TONE: "${settings.geminiTone}"
+${trendsContext}
 ${selfLearningContext}
 Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
 

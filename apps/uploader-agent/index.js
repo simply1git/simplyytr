@@ -230,6 +230,53 @@ async function clickInShadowDom(page, selectors) {
   return null;
 }
 
+async function waitForUploadCompletion(page, timeoutMs = 600000) {
+  log('Waiting for upload completion (checking progress)...');
+  const startTime = Date.now();
+  while (Date.now() - startTime < timeoutMs) {
+    const progress = await page.evaluate(() => {
+      function getProgressText(root) {
+        if (!root) return null;
+        const el = root.querySelector('.progress-label, ytcp-video-upload-progress, .upload-state, .status-area');
+        if (el) return el.textContent || '';
+        
+        if (root.shadowRoot) {
+          const txt = getProgressText(root.shadowRoot);
+          if (txt) return txt;
+        }
+        for (const child of Array.from(root.children || [])) {
+          const txt = getProgressText(child);
+          if (txt) return txt;
+        }
+        return null;
+      }
+      return getProgressText(document.body);
+    });
+
+    if (progress) {
+      const text = progress.toLowerCase();
+      log(`Current upload status: "${progress.trim()}"`);
+      if (text.includes('uploading') && !text.includes('complete')) {
+        // Still uploading, do nothing
+      } else {
+        log('Upload completed/processing started!');
+        return true;
+      }
+    } else {
+      const isDone = await page.evaluate(() => {
+        return !!document.querySelector('ytcp-video-share-dialog, #close-button');
+      });
+      if (isDone) {
+        log('Publish dialog/close button detected.');
+        return true;
+      }
+      log('No progress element detected, checking again...');
+    }
+    await new Promise(r => setTimeout(r, 5000));
+  }
+  throw new Error('Upload verification timed out.');
+}
+
 // ─────────────────────────────────────────────────────────
 // Shorts Detection
 // ─────────────────────────────────────────────────────────
@@ -420,9 +467,8 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     const publishSelectors = ['#done-button', 'ytcp-button#done-button', '#done-button ytcp-button', 'button[aria-label="Publish"]', 'button[aria-label="Save"]'];
     await clickInShadowDom(page, publishSelectors);
 
-    // ── Step 11: Wait for confirmation dialog ──
-    log('Waiting for publish confirmation & share dialog...');
-    await new Promise(r => setTimeout(r, 10000));
+    // ── Step 11: Wait for upload completion ──
+    await waitForUploadCompletion(page);
 
     if (!publishedId) {
       publishedId = await extractPublishedVideoId(page);
