@@ -198,6 +198,13 @@ def run_ffmpeg_command(cmd):
         else:
             raise Exception(f"FFmpeg failed: {e.stderr}")
 
+def has_audio_stream(filepath):
+    try:
+        res = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "a", "-show_entries", "stream=codec_type", "-of", "default=noprint_wrappers=1:nokey=1", filepath], stdout=subprocess.PIPE, text=True)
+        return 'audio' in res.stdout
+    except:
+        return False
+
 def create_split_screen_video(top_video, bottom_video, output_path, audio_path=None, srt_path=None):
     logging.info("Building split-screen complex filtergraph...")
     
@@ -209,6 +216,12 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
             audio_duration = float(res.stdout.strip()) + 2.0
         except:
             pass
+    else:
+        try:
+            res = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", top_video], stdout=subprocess.PIPE, text=True)
+            audio_duration = float(res.stdout.strip())
+        except:
+            pass
 
     cmd = ["ffmpeg", "-y"]
     cmd.extend(["-t", str(audio_duration), "-i", top_video])
@@ -216,10 +229,11 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
     
     filter_parts = [
         "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,format=yuv420p[top]",
-        "[1:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,format=yuv420p[bottom]",
-        "[top][bottom]vstack=inputs=2[stacked]"
+        "[1:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,eq=saturation=1.2:contrast=1.1,setsar=1,fps=30,format=yuv420p[bottom_graded]",
+        "[top][bottom_graded]vstack=inputs=2[stacked]",
+        "[stacked]drawbox=x=0:y=955:w=1080:h=10:color=white@0.8:t=fill[with_divider]"
     ]
-    last_v = "[stacked]"
+    last_v = "[with_divider]"
     
     if srt_path and os.path.exists(srt_path):
         abs_srt_path = os.path.abspath(srt_path).replace('\\', '/').replace(':', '\\:')
@@ -606,12 +620,12 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
+            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
-                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
+                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "35"})
+                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
             
             config_res.raise_for_status()
             config_data = config_res.json()
@@ -664,7 +678,7 @@ def main():
                 keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else job.get('niche', 'trending'))
                 send_status_update(job_id, f"Downloading viral short for '{keyword}'...", VERCEL_URL, PIPELINE_SECRET)
                 try:
-                    viral_data = download_viral_short(keyword, temp_dir)
+                    viral_data = download_viral_short(keyword, temp_dir, VERCEL_URL, PIPELINE_SECRET)
                 except Exception as e:
                     logging.warning(f"YouTube block detected in aggregator: {e}. Falling back to Pexels...")
                     viral_data = None
@@ -681,8 +695,14 @@ def main():
 
                 bottom_video = filler_clip_paths[0] if filler_clip_paths else top_video
                 
-                send_status_update(job_id, "Generating AI Commentary...", VERCEL_URL, PIPELINE_SECRET)
-                audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
+                if viral_data and not viral_data.get('is_pexels'):
+                    send_status_update(job_id, "Extracting original audio (NO AI voiceover)...", VERCEL_URL, PIPELINE_SECRET)
+                    subprocess.run(["ffmpeg", "-y", "-i", top_video, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", audio_path], check=False)
+                    audio_to_mix = None
+                else:
+                    send_status_update(job_id, "Generating AI Commentary...", VERCEL_URL, PIPELINE_SECRET)
+                    audio_path, _ = generate_voiceover(full_script, voice, audio_path)
+                    audio_to_mix = audio_path
                 
                 send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
                 ass_path = os.path.join(temp_dir, "subtitles.ass")
@@ -690,8 +710,8 @@ def main():
                 srt_path = ass_path
                 
                 send_status_update(job_id, "Building split-screen video...", VERCEL_URL, PIPELINE_SECRET)
-                create_split_screen_video(top_video, bottom_video, final_video_path, audio_path, srt_path)
-                generate_thumbnail(viral_data['title'], thumbnail_path)
+                create_split_screen_video(top_video, bottom_video, final_video_path, audio_to_mix, srt_path)
+                generate_thumbnail(viral_data['title'] if viral_data else title, thumbnail_path)
                 
             elif job_type == 'clone':
                 logging.info("Starting Clone Pipeline...")
@@ -701,7 +721,7 @@ def main():
                 
                 send_status_update(job_id, f"Searching YouTube for viral short ({keyword})...", VERCEL_URL, PIPELINE_SECRET)
                 try:
-                    viral_data = download_viral_short(keyword, temp_dir)
+                    viral_data = download_viral_short(keyword, temp_dir, VERCEL_URL, PIPELINE_SECRET)
                 except Exception as e:
                     logging.warning(f"YouTube block detected: {e}. Falling back to Pexels...")
                     viral_data = None
@@ -818,6 +838,14 @@ def main():
             thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
             voice_url = upload_to_r2(audio_path, f"{job_id}_voice{voice_ext}", r2_config)
             
+            if viral_data and 'youtube.com' in viral_data.get('url', ''):
+                youtube_id = viral_data['url'].split('v=')[-1].split('&')[0]
+                try:
+                    requests.post(f"{VERCEL_URL}/api/pipeline/history", json={"youtubeId": youtube_id}, headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
+                    logging.info(f"Registered {youtube_id} in history.")
+                except Exception as e:
+                    logging.warning(f"Failed to register history: {e}")
+
             payload = {
                 "jobId": job_id,
                 "videoUrl": video_url,
