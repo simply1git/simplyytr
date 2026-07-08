@@ -552,21 +552,25 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
     
     run_ffmpeg_command(cmd)
 
-def upload_to_r2(file_path, object_name, r2_config):
+def upload_to_r2(file_path, object_name, r2_config, retries=3):
     logging.info(f"Uploading {file_path} to R2 bucket {r2_config['bucket']}...")
     s3 = boto3.client('s3',
         endpoint_url=f"https://{r2_config['account_id']}.r2.cloudflarestorage.com",
         aws_access_key_id=r2_config['access_key'],
         aws_secret_access_key=r2_config['secret_key']
     )
-    try:
-        s3.upload_file(file_path, r2_config['bucket'], object_name)
-        public_url = f"{r2_config['public_url']}/{object_name}"
-        logging.info(f"Upload successful. URL: {public_url}")
-        return public_url
-    except Exception as e:
-        logging.error(f"R2 Upload failed: {e}")
-        raise
+    for attempt in range(retries):
+        try:
+            s3.upload_file(file_path, r2_config['bucket'], object_name)
+            public_url = f"{r2_config['public_url']}/{object_name}"
+            logging.info(f"Upload successful. URL: {public_url}")
+            return public_url
+        except Exception as e:
+            logging.error(f"R2 Upload attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                time.sleep(5 * (attempt + 1))
+            else:
+                raise
 
 def send_webhook(webhook_url, payload, secret, retries=3):
     logging.info("Sending completion webhook...")
