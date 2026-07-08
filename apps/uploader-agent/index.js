@@ -530,7 +530,14 @@ async function markJobComplete(jobId, publishedYoutubeId, error = null) {
 // ─────────────────────────────────────────────────────────
 // Main Processing Loop (with Exponential Backoff Retries)
 // ─────────────────────────────────────────────────────────
+let isProcessing = false;
+
 async function processReadyJobs() {
+  if (isProcessing) {
+    log('Already processing ready jobs, skipping this poll.');
+    return;
+  }
+  isProcessing = true;
   log('Polling for ready jobs...');
   try {
     const res = await fetch(`${VERCEL_API_URL}/api/pipeline/ready-jobs`, {
@@ -625,6 +632,8 @@ async function processReadyJobs() {
     }
   } catch (err) {
     log(`Polling error: ${err.message}`);
+  } finally {
+    isProcessing = false;
   }
 }
 
