@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
         renderedAt: true,
         uploadedAt: true,
         publishedYoutubeId: true,
+        videoUrl: true,
+        thumbnailUrl: true,
       },
     });
 
