@@ -276,13 +276,22 @@ async function waitForUploadCompletion(page, timeoutMs = 600000) {
     if (progress && progress.trim().length > 0) {
       const text = progress.toLowerCase();
       log(`Current upload status: "${progress.trim()}"`);
-      if (text.includes('uploading') && !text.includes('complete')) {
-        // Still uploading, do nothing
-      } else if (text.includes('complete') || text.includes('processing') || text.includes('checks') || text.includes('saved') || text.includes('done') || text.includes('ready')) {
+      
+      const isUploading = text.includes('uploading') || text.includes('%');
+      const isFinished = text.includes('complete') || 
+                         text.includes('processing') || 
+                         text.includes('checks') || 
+                         text.includes('ready') || 
+                         text.includes('done') || 
+                         text.includes('no issues');
+                         
+      if (isUploading) {
+        // Still uploading, keep waiting
+      } else if (isFinished) {
         log('Upload completed/processing started!');
         return true;
       } else {
-        log(`Checking other status: "${progress.trim()}"`);
+        log(`Transient state detected ("${progress.trim()}"), continuing to wait...`);
       }
     } else {
       const isDone = await page.evaluate(() => {
