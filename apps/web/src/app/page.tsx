@@ -18,6 +18,7 @@ const BoltIcon = () => (
 
 export default function HybridDashboard() {
   const [jobs, setJobs] = useState<any[]>([]);
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(false);
   
@@ -282,6 +283,17 @@ export default function HybridDashboard() {
                                 </a>
                               </>
                             )}
+                            {job.videoUrl && (
+                              <>
+                                <span>•</span>
+                                <button 
+                                  onClick={() => setSelectedVideo(job.videoUrl)}
+                                  className="text-emerald-400 hover:underline flex items-center gap-1 bg-transparent border-0 p-0 cursor-pointer font-medium"
+                                >
+                                  👁️ Watch
+                                </button>
+                              </>
+                            )}
                           </div>
                         </div>
                         <div className="shrink-0 flex flex-col items-end gap-2">
@@ -497,6 +509,31 @@ export default function HybridDashboard() {
 
         </div>
       </div>
+
+      {/* Watch Video Modal */}
+      {selectedVideo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in">
+          <div className="relative w-full max-w-sm bg-zinc-900 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-white/10 flex justify-between items-center bg-black/40">
+              <h3 className="font-bold text-white">Video Preview</h3>
+              <button 
+                onClick={() => setSelectedVideo(null)}
+                className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="aspect-[9/16] bg-black flex items-center justify-center">
+              <video 
+                src={selectedVideo} 
+                controls 
+                autoPlay
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
