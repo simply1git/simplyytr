@@ -29,6 +29,7 @@ export default function HybridDashboard() {
     voiceGender: "Male",
     enableSelfLearningAI: false,
     autoPilotEnabled: false,
+    replaceOriginalAudio: false,
     availableVoices: []
   });
 
@@ -369,6 +370,16 @@ export default function HybridDashboard() {
 
                 <div className="space-y-5">
                   <h3 className="text-lg font-bold text-white border-b border-white/10 pb-4">Automation Protocols</h3>
+
+                  <div className="flex items-center justify-between p-5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                    <div>
+                      <p className="font-bold text-white">Replace Original Audio</p>
+                      <p className="text-sm text-zinc-500 mt-1">If enabled, replaces the viral short's original audio with an AI Voice Clone. If disabled, uses the original audio (with AI Avatar & Subtitles).</p>
+                    </div>
+                    <button type="button" onClick={() => setSettings({ ...settings, replaceOriginalAudio: !settings.replaceOriginalAudio })} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${settings.replaceOriginalAudio ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings.replaceOriginalAudio ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                   
                   <div className="flex items-center justify-between p-5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                     <div>

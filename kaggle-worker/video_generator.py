@@ -57,80 +57,7 @@ except ImportError:
 
 # --- INLINED HELPER MODULES ---
 
-def clean_search_keyword(kw):
-    if not kw:
-        return "motivation podcast"
-    import re
-    cleaned = re.sub(r'\(.*?\)', '', kw).strip()
-    words = cleaned.split()
-    if len(words) > 4:
-        cleaned = " ".join(words[:4])
-    return cleaned if cleaned else "motivation podcast"
-
-def download_viral_short(keyword, temp_dir, fallback_keywords=None):
-    """
-    Searches YouTube for Shorts matching the keyword or fallbacks, sorts by view count,
-    and downloads the most viral one under 60 seconds.
-    """
-    if fallback_keywords is None:
-        fallback_keywords = ["motivation podcast", "mindset short", "viral speech", "success advice"]
-        
-    queries_to_try = [clean_search_keyword(keyword)] + [clean_search_keyword(k) for k in fallback_keywords]
-    
-    last_error = "No videos found"
-    for kw in queries_to_try:
-        logging.info(f"Searching YouTube for viral Shorts using query: '{kw}'...")
-        ydl_opts_search = {
-            'extract_flat': True,
-            'quiet': True,
-            'no_warnings': True
-        }
-        search_query = f"ytsearch20:{kw} short"
-        best_video = None
-        
-        try:
-            with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
-                info = ydl.extract_info(search_query, download=False)
-                if 'entries' in info and info['entries']:
-                    valid_entries = []
-                    for entry in info['entries']:
-                        duration = entry.get('duration')
-                        if duration is not None and duration <= 1800:
-                            valid_entries.append(entry)
-                    if valid_entries:
-                        best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
-        except Exception as e:
-            last_error = str(e)
-            logging.error(f"Error searching query '{kw}': {e}")
-
-        if best_video:
-            video_url = best_video['url']
-            video_title = best_video.get('title', 'viral_short')
-            logging.info(f"Found viral short: '{video_title}' for query '{kw}'. Downloading...")
-            output_path = os.path.join(temp_dir, "viral_short.mp4")
-            ydl_opts_download = {
-                'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-                'outtmpl': output_path,
-                'noplaylist': True,
-                'quiet': False
-            }
-            try:
-                with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
-                    ydl.download([video_url])
-                if os.path.exists(output_path):
-                    logging.info("Download complete.")
-                    return {
-                        'filepath': output_path,
-                        'title': video_title,
-                        'url': video_url,
-                        'view_count': best_video.get('view_count', 0),
-                        'description': best_video.get('description', '')
-                    }
-            except Exception as e:
-                last_error = str(e)
-                logging.error(f"Download failed for {video_url}: {e}")
-
-    raise Exception(f"Failed to download viral short: {last_error}")
+from trend_scraper import download_viral_short
 
 def format_time_ass(seconds):
     hours = int(seconds // 3600)
@@ -247,10 +174,10 @@ def create_split_screen_video(top_video, bottom_video, output_path, audio_path=N
     cmd.extend(["-stream_loop", "-1", "-t", str(audio_duration), "-i", bottom_video])
     
     filter_parts = [
-        "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,format=yuv420p[top]",
-        "[1:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,eq=saturation=1.2:contrast=1.1,setsar=1,fps=30,format=yuv420p[bottom_graded]",
+        "[0:v]scale=1080:1080:force_original_aspect_ratio=increase,crop=1080:1080,eq=saturation=1.1:contrast=1.05:gamma=1.0,setsar=1,fps=30,format=yuv420p[top]",
+        "[1:v]scale=1080:840:force_original_aspect_ratio=increase,crop=1080:840,eq=saturation=1.2:contrast=1.15:gamma=0.95,setsar=1,fps=30,format=yuv420p[bottom_graded]",
         "[top][bottom_graded]vstack=inputs=2[stacked]",
-        "[stacked]drawbox=x=0:y=955:w=1080:h=10:color=white@0.8:t=fill[with_divider]"
+        "[stacked]drawbox=x=0:y=1076:w=1080:h=8:color=black@1.0:t=fill[with_divider]"
     ]
     last_v = "[with_divider]"
     
@@ -796,9 +723,13 @@ def main():
                     with open(reference_audio, 'wb') as f:
                         f.write(b'RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00')
                 
-                send_status_update(job_id, "Synthesizing AI voice clone/narration...", VERCEL_URL, PIPELINE_SECRET)
                 cloned_audio_path = os.path.join(temp_dir, "cloned_audio.wav")
-                clone_voice(full_script, reference_audio, cloned_audio_path, voice)
+                if config.get('replace_original_audio', False) or viral_data.get('is_pexels'):
+                    send_status_update(job_id, "Synthesizing AI voice clone/narration...", VERCEL_URL, PIPELINE_SECRET)
+                    clone_voice(full_script, reference_audio, cloned_audio_path, voice)
+                else:
+                    send_status_update(job_id, "Keeping original audio for avatar & subtitles...", VERCEL_URL, PIPELINE_SECRET)
+                    shutil.copyfile(reference_audio, cloned_audio_path)
                 
                 send_status_update(job_id, "Generating avatar video...", VERCEL_URL, PIPELINE_SECRET)
                 avatar_base_img = os.path.join(temp_dir, "avatar_base.jpg")

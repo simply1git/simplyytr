@@ -293,17 +293,19 @@ async function waitForUploadCompletion(page, timeoutMs = 600000) {
       log(`Current upload status: "${progress.trim()}"`);
       
       const isUploading = text.includes('uploading') || text.includes('%');
-      const isFinished = text.includes('complete') || 
+      const isFinished = text.includes('upload complete') || 
                          text.includes('processing') || 
-                         text.includes('checks') || 
+                         text.includes('checking') || 
                          text.includes('ready') || 
-                         text.includes('done') || 
+                         text.includes('checks complete') || 
                          text.includes('no issues');
                          
       if (isUploading) {
         // Still uploading, keep waiting
       } else if (isFinished) {
         log('Upload completed/processing started!');
+        // Add a safety delay to ensure bytes are fully flushed before continuing
+        await new Promise(r => setTimeout(r, 10000));
         return true;
       } else {
         log(`Transient state detected ("${progress.trim()}"), continuing to wait...`);
@@ -519,7 +521,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     await clickInShadowDom(page, publishSelectors);
 
     log('Waiting for confirmation and share dialog...');
-    await new Promise(r => setTimeout(r, 15000));
+    await new Promise(r => setTimeout(r, 20000));
 
     if (!publishedId) {
       publishedId = await extractPublishedVideoId(page);
