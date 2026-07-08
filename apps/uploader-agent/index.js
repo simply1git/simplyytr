@@ -24,6 +24,26 @@ function log(msg) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
+function cleanupOldDownloads() {
+  log('Cleaning up old downloaded files from previous runs...');
+  try {
+    const files = fs.readdirSync(DOWNLOAD_DIR);
+    for (const file of files) {
+      const filePath = path.join(DOWNLOAD_DIR, file);
+      if (fs.statSync(filePath).isFile()) {
+        try {
+          fs.unlinkSync(filePath);
+          log(`Deleted leftover file: ${file}`);
+        } catch (e) {
+          log(`Failed to delete leftover file ${file}: ${e.message}`);
+        }
+      }
+    }
+  } catch (err) {
+    log(`Failed to read downloads directory: ${err.message}`);
+  }
+}
+
 // ─────────────────────────────────────────────────────────
 // Telegram Notifications
 // ─────────────────────────────────────────────────────────
@@ -624,6 +644,7 @@ if (process.argv.includes('--manual-login')) {
   log(`   Poll interval: ${POLL_INTERVAL / 1000}s`);
   log(`   Max retries: ${MAX_RETRIES}`);
   log(`   Telegram: ${TELEGRAM_BOT_TOKEN ? 'Enabled ✅' : 'Disabled ❌'}`);
+  cleanupOldDownloads();
   processReadyJobs();
   setInterval(processReadyJobs, POLL_INTERVAL);
 }
