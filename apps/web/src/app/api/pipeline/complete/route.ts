@@ -43,7 +43,57 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return Response.json({ status: 'success', jobId, message: 'Video marked as UPLOADED' });
+    // Delete files from R2 after successful upload to save storage space/cost
+    try {
+      const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+      const s3 = new S3Client({
+        region: 'auto',
+        endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+        credentials: {
+          accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+        },
+      });
+
+      const bucket = process.env.R2_BUCKET_NAME || '';
+      const deletePromises = [];
+
+      if (existingJob.videoUrl) {
+        const videoKey = existingJob.videoUrl.split('/').pop();
+        if (videoKey) {
+          deletePromises.push(
+            s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: videoKey }))
+              .then(() => console.log(`[R2 Cleanup] Deleted video: ${videoKey}`))
+              .catch((e: any) => console.error(`[R2 Cleanup] Failed to delete video ${videoKey}:`, e))
+          );
+        }
+      }
+
+      if (existingJob.thumbnailUrl) {
+        const thumbKey = existingJob.thumbnailUrl.split('/').pop();
+        if (thumbKey) {
+          deletePromises.push(
+            s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: thumbKey }))
+              .then(() => console.log(`[R2 Cleanup] Deleted thumbnail: ${thumbKey}`))
+              .catch((e: any) => console.error(`[R2 Cleanup] Failed to delete thumbnail ${thumbKey}:`, e))
+          );
+        }
+      }
+
+      // Cleanup any voiceover file key (if generated)
+      const voiceKey = `${jobId}_voice.mp3`;
+      deletePromises.push(
+        s3.send(new DeleteObjectCommand({ Bucket: bucket, Key: voiceKey }))
+          .then(() => console.log(`[R2 Cleanup] Deleted voiceover: ${voiceKey}`))
+          .catch((e: any) => {})
+      );
+
+      await Promise.all(deletePromises);
+    } catch (r2Err) {
+      console.error('[R2 Cleanup] Failed to delete objects:', r2Err);
+    }
+
+    return Response.json({ status: 'success', jobId, message: 'Video marked as UPLOADED and cleaned up from R2' });
   } catch (err) {
     console.error('[Pipeline Complete] Error:', err);
     return Response.json({ error: String(err) }, { status: 500 });

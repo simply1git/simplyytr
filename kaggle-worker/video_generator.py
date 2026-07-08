@@ -298,22 +298,26 @@ def setup_openvoice():
 
 def clone_voice(text, reference_audio_path, output_path, voice_name="en-US-GuyNeural"):
     logging.info(f"Cloning voice/generating voiceover for text: {text[:30]}...")
-    # Generate edge-tts voiceover as standard robust fallback
-    subtitle_path = output_path.replace('.wav', '.vtt').replace('.mp3', '.vtt')
-    cmd = [
-        "edge-tts",
-        "--text", text,
-        "--voice", voice_name,
-        "--write-media", output_path
-    ]
     try:
-        subprocess.run(cmd, check=True, capture_output=True, text=True)
-        logging.info("TTS voice synthesis complete.")
-        return output_path
+        from voice_cloner import clone_voice as run_clone
+        return run_clone(text, reference_audio_path, output_path, voice_name)
     except Exception as e:
-        logging.error(f"TTS synthesis failed, copying reference audio: {e}")
-        shutil.copyfile(reference_audio_path, output_path)
-        return output_path
+        logging.error(f"Failed to run voice_cloner: {e}. Falling back to Edge-TTS...")
+        subtitle_path = output_path.replace('.wav', '.vtt').replace('.mp3', '.vtt')
+        cmd = [
+            "edge-tts",
+            "--text", text,
+            "--voice", voice_name,
+            "--write-media", output_path
+        ]
+        try:
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
+            logging.info("TTS voice synthesis complete.")
+            return output_path
+        except Exception as tts_err:
+            logging.error(f"TTS synthesis failed, copying reference audio: {tts_err}")
+            shutil.copyfile(reference_audio_path, output_path)
+            return output_path
 
 def setup_sadtalker():
     if not os.path.exists("SadTalker"):
