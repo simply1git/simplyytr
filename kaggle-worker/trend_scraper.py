@@ -2,6 +2,7 @@ import yt_dlp
 import logging
 import os
 import requests
+import time
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -74,10 +75,24 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
     }
     
     logging.info(f"Downloading to {output_path}...")
-    with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
-        ydl.download([video_url])
-        
-    if os.path.exists(output_path):
+    
+    retries = 3
+    success = False
+    for attempt in range(retries):
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts_download) as ydl:
+                ydl.download([video_url])
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                success = True
+                break
+        except Exception as e:
+            logging.error(f"Download attempt {attempt + 1}/{retries} failed: {e}")
+            if attempt < retries - 1:
+                # Try fallback format and sleep
+                ydl_opts_download['format'] = 'best'
+                time.sleep(5 * (attempt + 1))
+                
+    if success:
         logging.info("Download complete.")
         # Return a dictionary with metadata and file path
         return {
@@ -88,7 +103,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
             'description': best_video.get('description', '')
         }
     else:
-        logging.error("Download failed or file not found.")
+        logging.error("Download failed after all retry attempts.")
         return None
 
 if __name__ == "__main__":

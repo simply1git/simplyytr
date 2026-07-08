@@ -367,7 +367,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     await page.setViewport({ width: 1280, height: 900 });
 
     log('Navigating to YouTube Studio...');
-    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2', timeout: 35000 });
+    await page.goto('https://studio.youtube.com', { waitUntil: 'networkidle2', timeout: 60000 });
 
     // Check if logged in
     const url = page.url();
@@ -387,9 +387,9 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
       'ytcp-button[label="Upload videos"]',
       'ytcp-button[id="create-icon"]'
     ];
-    await waitForShadowDomElement(page, createSelectors, 25000);
+    await waitForShadowDomElement(page, createSelectors, 40000);
     await clickInShadowDom(page, createSelectors);
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 4000));
 
     const uploadOptionSelectors = [
       'tp-yt-paper-item#text-item-0',
@@ -402,11 +402,11 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
 
     // ── Step 2: Upload Video File ──
     log('Waiting for file input...');
-    await page.waitForSelector('input[type="file"]', { timeout: 20000 });
+    await page.waitForSelector('input[type="file"]', { timeout: 35000 });
     const fileInput = await page.$('input[type="file"]');
     await fileInput.uploadFile(videoPath);
-    log('Video file selected. Waiting for upload dialog...');
-    await new Promise(r => setTimeout(r, 6000));
+    log('Video file selected. Waiting for upload dialog to fully initialize...');
+    await new Promise(r => setTimeout(r, 12000));
 
     // ── Step 3: Title ──
     const title = (job.generatedTitle || 'Untitled Video').substring(0, 100);
@@ -429,7 +429,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
         if (thumbInput) {
           await thumbInput.uploadFile(thumbnailPath);
           log('Thumbnail uploaded successfully.');
-          await new Promise(r => setTimeout(r, 2000));
+          await new Promise(r => setTimeout(r, 4000));
         }
       } catch (thumbErr) {
         log(`Thumbnail upload failed (non-fatal): ${thumbErr.message}`);
@@ -449,7 +449,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     log('Expanding "Show More" for tags...');
     try {
       await clickInShadowDom(page, ['#toggle-button', 'ytcp-button#toggle-button']);
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 3000));
       const tagsInput = '#text-input[aria-label="Tags"]';
       const tags = [job.topic || job.niche, 'shorts', 'viral', 'trending', 'fyp', 'ai'].filter(Boolean).join(',');
       await typeInShadowDom(page, tagsInput, tags);
@@ -464,15 +464,15 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     
     // Step Details -> Elements
     await clickInShadowDom(page, nextSelectors);
-    await new Promise(r => setTimeout(r, 3500));
+    await new Promise(r => setTimeout(r, 7000));
 
     // Step Elements -> Checks
     await clickInShadowDom(page, nextSelectors);
-    await new Promise(r => setTimeout(r, 3500));
+    await new Promise(r => setTimeout(r, 7000));
 
     // Step Checks -> Visibility
     await clickInShadowDom(page, nextSelectors);
-    await new Promise(r => setTimeout(r, 3500));
+    await new Promise(r => setTimeout(r, 7000));
 
     // ── Step 9: Extract Video Link & Set Visibility = Public ──
     let publishedId = await extractPublishedVideoId(page);
@@ -483,7 +483,7 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     log('Setting visibility to Public...');
     const publicSelectors = ['tp-yt-paper-radio-button[name="PUBLIC"]', '#first-container tp-yt-paper-radio-button[name="PUBLIC"]', 'tp-yt-paper-radio-button[id="radio-button"][name="PUBLIC"]'];
     await clickInShadowDom(page, publicSelectors);
-    await new Promise(r => setTimeout(r, 2000));
+    await new Promise(r => setTimeout(r, 5000));
 
     // ── Step 10: Publish ──
     log('Clicking Publish...');
