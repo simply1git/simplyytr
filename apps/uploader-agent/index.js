@@ -255,22 +255,37 @@ async function waitForUploadCompletion(page, timeoutMs = 600000) {
   const startTime = Date.now();
   while (Date.now() - startTime < timeoutMs) {
     const progress = await page.evaluate(() => {
-      function getProgressText(root) {
-        if (!root) return null;
-        const el = root.querySelector('.progress-label, ytcp-video-upload-progress, .upload-state, .status-area');
-        if (el) return el.textContent || '';
+      function getAllProgressTexts(root) {
+        let texts = [];
+        if (!root) return texts;
         
+        // Find matching selectors in the current root
+        const matches = root.querySelectorAll && root.querySelectorAll('.progress-label, ytcp-video-upload-progress, .upload-state, .status-area');
+        if (matches) {
+          for (const el of Array.from(matches)) {
+            if (el.textContent) {
+              texts.push(el.textContent.trim());
+            }
+          }
+        }
+        
+        // Traverse shadow root
         if (root.shadowRoot) {
-          const txt = getProgressText(root.shadowRoot);
-          if (txt) return txt;
+          texts = texts.concat(getAllProgressTexts(root.shadowRoot));
         }
-        for (const child of Array.from(root.children || [])) {
-          const txt = getProgressText(child);
-          if (txt) return txt;
+        
+        // Traverse children
+        if (root.children) {
+          for (const child of Array.from(root.children)) {
+            texts = texts.concat(getAllProgressTexts(child));
+          }
         }
-        return null;
+        
+        return texts;
       }
-      return getProgressText(document.body);
+      
+      const allTexts = getAllProgressTexts(document.body);
+      return allTexts.filter(Boolean).join(' | ');
     });
 
     if (progress && progress.trim().length > 0) {
