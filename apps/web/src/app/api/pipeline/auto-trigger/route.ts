@@ -139,7 +139,7 @@ Rules:
         visualPrompts: job.visualPrompts,
         voiceName: job.voiceName,
         generatedTitle: job.generatedTitle,
-        jobType: 'clone' // Force clone pipeline for Phase 2 SOTA
+        jobType: settings.copyPasteMode === 'split_screen' ? 'aggregator' : (settings.copyPasteMode === 'renarration' ? 'generative' : 'clone')
       }
     });
   } catch (err) {
