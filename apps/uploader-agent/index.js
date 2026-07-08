@@ -578,8 +578,22 @@ async function processReadyJobs() {
         await sendTelegramNotification(`❌ *Job Failed:* ${err.message}`);
       } finally {
         // Cleanup downloaded files
-        if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
-        if (fs.existsSync(thumbnailPath)) fs.unlinkSync(thumbnailPath);
+        try {
+          if (fs.existsSync(videoPath)) {
+            fs.unlinkSync(videoPath);
+            log(`Successfully cleaned up temporary video file: ${videoPath}`);
+          }
+        } catch (cleanupErr) {
+          log(`Failed to clean up temporary video file ${videoPath}: ${cleanupErr.message}`);
+        }
+        try {
+          if (fs.existsSync(thumbnailPath)) {
+            fs.unlinkSync(thumbnailPath);
+            log(`Successfully cleaned up temporary thumbnail file: ${thumbnailPath}`);
+          }
+        } catch (cleanupErr) {
+          log(`Failed to clean up temporary thumbnail file ${thumbnailPath}: ${cleanupErr.message}`);
+        }
       }
     }
   } catch (err) {
