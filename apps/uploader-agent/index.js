@@ -273,24 +273,27 @@ async function waitForUploadCompletion(page, timeoutMs = 600000) {
       return getProgressText(document.body);
     });
 
-    if (progress) {
+    if (progress && progress.trim().length > 0) {
       const text = progress.toLowerCase();
       log(`Current upload status: "${progress.trim()}"`);
       if (text.includes('uploading') && !text.includes('complete')) {
         // Still uploading, do nothing
-      } else {
+      } else if (text.includes('complete') || text.includes('processing') || text.includes('checks') || text.includes('saved') || text.includes('done') || text.includes('ready')) {
         log('Upload completed/processing started!');
         return true;
+      } else {
+        log(`Checking other status: "${progress.trim()}"`);
       }
     } else {
       const isDone = await page.evaluate(() => {
-        return !!document.querySelector('ytcp-video-share-dialog, #close-button');
+        // Look for the specific final published popup/dialog, NOT the generic wizard close-button
+        return !!document.querySelector('ytcp-video-share-dialog, ytcp-video-info, .dialog-header[title="Video published"]');
       });
       if (isDone) {
-        log('Publish dialog/close button detected.');
+        log('Upload verified via published dialog detection!');
         return true;
       }
-      log('No progress element detected, checking again...');
+      log('Waiting for upload progress or confirmation dialog...');
     }
     await new Promise(r => setTimeout(r, 5000));
   }
