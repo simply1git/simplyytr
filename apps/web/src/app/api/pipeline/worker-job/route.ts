@@ -48,7 +48,8 @@ export async function GET(request: NextRequest) {
         webhook_url: `${process.env.VERCEL_API_URL || 'https://simplyytr.vercel.app'}/api/pipeline/webhook`,
         pexels_api_key: process.env.PEXELS_API_KEY,
         copy_paste_mode: copyPasteMode,
-        target_channels: targetChannels
+        target_channels: targetChannels,
+        replace_original_audio: settings?.replaceOriginalAudio ?? false
       }
     });
   } catch (err) {

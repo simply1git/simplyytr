@@ -158,6 +158,7 @@ model SystemSettings {
   overlayText           String   @default("Wait for the end...")
   overlayPosition       String   @default("CENTER")
   overlayFontSize       Int      @default(80)
+  replaceOriginalAudio  Boolean  @default(false)
 
   updatedAt             DateTime @updatedAt
 }
