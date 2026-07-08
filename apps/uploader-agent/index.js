@@ -287,7 +287,7 @@ async function waitForUploadCompletion(page, timeoutMs = 600000) {
     } else {
       const isDone = await page.evaluate(() => {
         // Look for the specific final published popup/dialog, NOT the generic wizard close-button
-        return !!document.querySelector('ytcp-video-share-dialog, ytcp-video-info, .dialog-header[title="Video published"]');
+        return !!document.querySelector('ytcp-video-share-dialog, .dialog-header[title="Video published"]');
       });
       if (isDone) {
         log('Upload verified via published dialog detection!');
@@ -485,13 +485,17 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     await clickInShadowDom(page, publicSelectors);
     await new Promise(r => setTimeout(r, 5000));
 
-    // ── Step 10: Publish ──
+    // ── Step 10: Wait for upload completion BEFORE clicking Publish ──
+    log('Visibility set to Public. Verifying upload bytes are 100% complete before publishing...');
+    await waitForUploadCompletion(page);
+
+    // ── Step 11: Publish ──
     log('Clicking Publish...');
     const publishSelectors = ['#done-button', 'ytcp-button#done-button', '#done-button ytcp-button', 'button[aria-label="Publish"]', 'button[aria-label="Save"]'];
     await clickInShadowDom(page, publishSelectors);
 
-    // ── Step 11: Wait for upload completion ──
-    await waitForUploadCompletion(page);
+    log('Waiting for confirmation and share dialog...');
+    await new Promise(r => setTimeout(r, 15000));
 
     if (!publishedId) {
       publishedId = await extractPublishedVideoId(page);
