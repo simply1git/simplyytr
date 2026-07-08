@@ -28,6 +28,25 @@ import srt
 import yt_dlp
 from PIL import Image, ImageDraw, ImageFont
 
+PREMIUM_SATISFYING_QUERIES = [
+    "satisfying kinetic sand",
+    "minecraft parkour gameplay",
+    "satisfying ASMR slime",
+    "soap cutting satisfying",
+    "wood carving art",
+    "fluid art painting",
+    "subway surfers gameplay",
+    "relaxing looping animation",
+    "gta 5 ramp jumps",
+    "hydraulic press crush",
+    "satisfying paint mixing",
+    "marble run physics",
+    "nature landscape drone",
+    "city neon rain walk",
+    "calm ocean waves",
+    "relaxing mountain view"
+]
+
 # Attempt importing faster_whisper conditionally
 try:
     from faster_whisper import WhisperModel
@@ -414,27 +433,48 @@ def download_pexels_videos(prompts, pexels_api_key, temp_dir):
     headers = {"Authorization": pexels_api_key}
     
     for idx, prompt in enumerate(prompts):
-        url = f"https://api.pexels.com/videos/search?query={prompt}&orientation=portrait&per_page=3"
+        # Request up to 15 results to have a diverse pool
+        url = f"https://api.pexels.com/videos/search?query={prompt}&orientation=portrait&per_page=15"
         try:
             response = requests.get(url, headers=headers)
             response.raise_for_status()
             data = response.json()
             
-            if data.get('videos') and len(data['videos']) > 0:
-                video = data['videos'][0]
-                video_files = video.get('video_files', [])
-                video_files = sorted(
-                    [f for f in video_files if f.get('width') and f.get('height') and f['height'] > f['width']], 
-                    key=lambda x: (x.get('height', 0) * x.get('width', 0)), 
-                    reverse=True
-                )
+            videos = data.get('videos', [])
+            if videos:
+                # Shuffle the results so we don't always pick the first one
+                random.shuffle(videos)
                 
-                if video_files:
-                    best_file_url = video_files[0]['link']
-                    clip_path = os.path.join(temp_dir, f"clip_{idx}.mp4")
-                    download_file(best_file_url, clip_path)
-                    downloaded_clips.append(clip_path)
-                    logging.info(f"Downloaded clip for prompt '{prompt}'")
+                found_video = False
+                for video in videos:
+                    video_files = video.get('video_files', [])
+                    vertical_files = [f for f in video_files if f.get('width') and f.get('height') and f['height'] > f['width']]
+                    
+                    if vertical_files:
+                        # Sort by resolution descending to get best quality vertical stream
+                        vertical_files = sorted(
+                            vertical_files, 
+                            key=lambda x: (x.get('height', 0) * x.get('width', 0)), 
+                            reverse=True
+                        )
+                        best_file_url = vertical_files[0]['link']
+                        clip_path = os.path.join(temp_dir, f"clip_{idx}.mp4")
+                        download_file(best_file_url, clip_path)
+                        downloaded_clips.append(clip_path)
+                        logging.info(f"Downloaded random clip {video['id']} for prompt '{prompt}'")
+                        found_video = True
+                        break
+                        
+                if not found_video:
+                    # Fallback to the first video
+                    video = videos[0]
+                    video_files = video.get('video_files', [])
+                    if video_files:
+                        best_file_url = video_files[0]['link']
+                        clip_path = os.path.join(temp_dir, f"clip_{idx}.mp4")
+                        download_file(best_file_url, clip_path)
+                        downloaded_clips.append(clip_path)
+                        logging.info(f"Downloaded fallback clip for prompt '{prompt}'")
         except Exception as e:
             logging.error(f"Failed to fetch Pexels video for prompt '{prompt}': {e}")
             
@@ -688,7 +728,8 @@ def main():
                     viral_data = None
 
                 send_status_update(job_id, "Downloading filler clips from Pexels...", VERCEL_URL, PIPELINE_SECRET)
-                filler_clip_paths = download_pexels_videos(["satisfying kinetic sand minecraft parkour", "nature landscape beautiful"], pexels_key, temp_dir)
+                random_queries = random.sample(PREMIUM_SATISFYING_QUERIES, min(2, len(PREMIUM_SATISFYING_QUERIES)))
+                filler_clip_paths = download_pexels_videos(random_queries, pexels_key, temp_dir)
                 
                 if not viral_data:
                     if not filler_clip_paths:
@@ -732,7 +773,8 @@ def main():
                 
                 if not viral_data:
                     send_status_update(job_id, "YouTube blocked. Falling back to Pexels background...", VERCEL_URL, PIPELINE_SECRET)
-                    pexels_clips = download_pexels_videos(["satisfying kinetic sand minecraft parkour"], pexels_key, temp_dir)
+                    random_queries = [random.choice(PREMIUM_SATISFYING_QUERIES)]
+                    pexels_clips = download_pexels_videos(random_queries, pexels_key, temp_dir)
                     if not pexels_clips:
                         raise Exception("Failed to download viral short AND failed to download Pexels fallback.")
                     viral_data = {'filepath': pexels_clips[0], 'title': f"{keyword} Motivation", 'is_pexels': True}
