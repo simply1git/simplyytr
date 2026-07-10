@@ -1,6 +1,36 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, callGroq, prisma } from '../../lib/utils';
 
+async function fetchTrendingTopics(): Promise<string[]> {
+  try {
+    const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }
+    });
+    if (!res.ok) return [];
+    const text = await res.text();
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    const titles: string[] = [];
+    let match;
+    while ((match = itemRegex.exec(text)) !== null) {
+      const itemContent = match[1];
+      const titleMatch = itemContent.match(/<title>(.*?)<\/title>/);
+      if (titleMatch && titleMatch[1]) {
+        const title = titleMatch[1]
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+        titles.push(title.trim());
+      }
+    }
+    return titles.slice(0, 10);
+  } catch (err) {
+    console.error('Failed to fetch trending topics:', err);
+    return [];
+  }
+}
+
 // POST /api/pipeline/trigger
 // Called by GitHub Actions cron or manually from the dashboard.
 // Generates a script using Groq and creates a render job in the database.
@@ -47,6 +77,17 @@ Generate content that follows patterns from top performers and avoids patterns f
       }
     }
 
+    // Fetch live trends from Google Trends RSS
+    const trendingTopics = await fetchTrendingTopics();
+    const trendsContext = trendingTopics.length > 0
+      ? `
+CURRENT REAL-TIME DAILY TRENDS:
+${trendingTopics.map((t, idx) => `- "${t}"`).join('\n')}
+
+INSTRUCTION: You MUST select one of the daily trending topics/queries/celebrities above (e.g. FIFA World Cup, or a trending celebrity/event) to base the script on, making it highly versatile, relevant, and adaptive to what the world is searching for right now.
+`
+      : "";
+
     const jobs = [];
     for (let i = 0; i < count; i++) {
       // Generate script via Groq
@@ -55,6 +96,7 @@ You are an expert YouTube Shorts scriptwriter and growth strategist.
 
 TARGET NICHE: "${settings.targetNiche}"
 TONE: "${settings.geminiTone}"
+${trendsContext}
 ${performanceContext}
 
 Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
