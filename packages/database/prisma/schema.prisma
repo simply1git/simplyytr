@@ -159,6 +159,8 @@ model SystemSettings {
   overlayPosition       String   @default("CENTER")
   overlayFontSize       Int      @default(80)
   replaceOriginalAudio  Boolean  @default(false)
+  useGpu                Boolean  @default(false)
+  workerLastActiveAt    DateTime?
 
   updatedAt             DateTime @updatedAt
 }
