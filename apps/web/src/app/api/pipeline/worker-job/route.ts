@@ -12,6 +12,12 @@ export async function GET(request: NextRequest) {
       return Response.json({ error: 'Outdated Kaggle Worker. Update to version 36' }, { status: 404 });
     }
 
+    // Update worker active status on any poll
+    await prisma.systemSettings.update({
+      where: { id: 1 },
+      data: { workerLastActiveAt: new Date() }
+    }).catch(err => console.error("Failed to update worker activity status:", err));
+
     // Find the oldest SCRIPTED job
     const job = await prisma.renderJob.findFirst({
       where: { status: 'SCRIPTED' },

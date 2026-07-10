@@ -30,6 +30,7 @@ export default function HybridDashboard() {
     enableSelfLearningAI: false,
     autoPilotEnabled: false,
     replaceOriginalAudio: false,
+    useGpu: false,
     availableVoices: []
   });
 
@@ -161,6 +162,13 @@ export default function HybridDashboard() {
       try { return JSON.parse(settings.availableVoices); } catch(e) { return []; }
     }
     return Array.isArray(settings.availableVoices) ? settings.availableVoices : [];
+  };
+
+  const isWorkerOnline = () => {
+    if (!settings.workerLastActiveAt) return false;
+    const lastActive = new Date(settings.workerLastActiveAt).getTime();
+    const now = Date.now();
+    return (now - lastActive) < 120000; // 2 minutes threshold
   };
 
   return (
@@ -380,6 +388,16 @@ export default function HybridDashboard() {
                       <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings.replaceOriginalAudio ? 'translate-x-6' : 'translate-x-1'}`} />
                     </button>
                   </div>
+
+                  <div className="flex items-center justify-between p-5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
+                    <div>
+                      <p className="font-bold text-white">Enable Kaggle GPU Mode</p>
+                      <p className="text-sm text-zinc-500 mt-1">If enabled, requests a GPU kernel on Kaggle (faster rendering, requires GPU quota). If disabled, uses free CPU instances.</p>
+                    </div>
+                    <button type="button" onClick={() => setSettings({ ...settings, useGpu: !settings.useGpu })} className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${settings.useGpu ? 'bg-emerald-500' : 'bg-zinc-700'}`}>
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${settings.useGpu ? 'translate-x-6' : 'translate-x-1'}`} />
+                    </button>
+                  </div>
                   
                   <div className="flex items-center justify-between p-5 bg-black/20 rounded-xl border border-white/5 hover:border-white/10 transition-colors">
                     <div>
@@ -500,12 +518,20 @@ export default function HybridDashboard() {
                   </div>
                   <span className="text-xs text-emerald-400 font-medium animate-pulse">OpenVoice</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
+                <div className={`flex items-center justify-between p-3 rounded-lg bg-black/40 border ${isWorkerOnline() ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-white/5'}`}>
                   <div className="flex items-center gap-3">
                     <span className="text-blue-400 font-bold">3</span>
-                    <span className="text-sm font-medium text-zinc-300">Kaggle GPU (Worker)</span>
+                    <span className="text-sm font-medium text-zinc-300">Kaggle Worker</span>
                   </div>
-                  <span className="text-xs text-zinc-500">Idle / Ready</span>
+                  {isWorkerOnline() ? (
+                    <span className="text-xs text-emerald-400 font-medium animate-pulse">
+                      ● Online ({settings.useGpu ? 'GPU' : 'CPU'})
+                    </span>
+                  ) : (
+                    <span className="text-xs text-red-500 font-medium">
+                      ● Offline
+                    </span>
+                  )}
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg bg-black/40 border border-white/5">
                   <div className="flex items-center gap-3">

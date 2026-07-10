@@ -19,6 +19,12 @@ export async function POST(request: NextRequest) {
       data: { statusMessage: message },
     });
 
+    // Update worker active status
+    await prisma.systemSettings.update({
+      where: { id: 1 },
+      data: { workerLastActiveAt: new Date() }
+    });
+
     return Response.json({ status: 'success' });
   } catch (err) {
     console.error('[Worker Status] Error:', err);
