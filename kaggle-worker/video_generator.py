@@ -118,7 +118,10 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
     ydl_opts_search = {
         'extract_flat': True,
         'quiet': True,
-        'no_warnings': True
+        'no_warnings': True,
+        'nocheckcertificate': True,
+        'socket_timeout': 15,
+        'extractor_args': {'youtube': {'client': ['android', 'ios']}}
     }
     
     best_video = None
@@ -184,7 +187,10 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
         'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
         'outtmpl': output_path,
         'noplaylist': True,
-        'quiet': False
+        'quiet': False,
+        'nocheckcertificate': True,
+        'socket_timeout': 15,
+        'extractor_args': {'youtube': {'client': ['android', 'ios']}}
     }
     
     # Bilibili downloads are more stable with direct 'best' format
