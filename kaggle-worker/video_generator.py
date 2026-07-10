@@ -59,6 +59,23 @@ except ImportError:
 
 import re
 
+def clean_search_keyword(kw):
+    if not kw:
+        return "motivation"
+    import re
+    cleaned = re.sub(r'[^\w\s]', ' ', kw)
+    stop_words = {
+        'secret', 'secrets', 'shocking', 'unstoppable', 'success', 'motivation', 
+        'surprising', 'believe', 'won', 't', 'hack', 'hacks', 'story', 'routine',
+        'discover', 'discovers', 'uncover', 'uncovers', 'amazing', 'insane', 
+        'unbelievable', 'viral', 'trending', 'how', 'to', 'why', 'what', 'is', 'the',
+        'you', 'your', 'daily', 'routine', 'method', 'way'
+    }
+    words = [w.strip() for w in cleaned.split() if w.strip().lower() not in stop_words]
+    if len(words) > 3:
+        words = words[:3]
+    return " ".join(words) if words else "motivation"
+
 def parse_bilibili_duration(duration_str):
     """Convert Bilibili duration format (e.g. '0:50', '1:02:30') to seconds."""
     try:
@@ -103,7 +120,8 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
     If YouTube search fails (e.g., geoblocked or rate-limited), it falls back
     to sourcing content from Bilibili (self-healing / versatile sourcing).
     """
-    logging.info(f"Searching for viral Shorts using keyword: {keyword}")
+    cleaned_kw = clean_search_keyword(keyword)
+    logging.info(f"Searching for viral Shorts using keyword: {keyword} (Cleaned search query: '{cleaned_kw}')")
     
     used_ids = set()
     if vercel_url and pipeline_secret:
@@ -129,7 +147,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
     
     # Try YouTube first
     try:
-        search_query = f"ytsearch20:{keyword} #shorts"
+        search_query = f"ytsearch20:{cleaned_kw} #shorts"
         with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
             info = ydl.extract_info(search_query, download=False)
             if 'entries' in info and info['entries']:
@@ -151,7 +169,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
     # Self-healing fallback to Bilibili
     if not best_video:
         logging.info("Sourcing viral short from Bilibili...")
-        bili_entries = search_bilibili(keyword)
+        bili_entries = search_bilibili(cleaned_kw)
         valid_bili = []
         for entry in bili_entries:
             bili_id = str(entry.get('id') or entry.get('aid'))
