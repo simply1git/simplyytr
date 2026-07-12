@@ -49,6 +49,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'System settings not configured' }, { status: 500 });
     }
 
+    if (!settings.autoPilotEnabled) {
+      return Response.json({ error: 'Auto-pilot is disabled' }, { status: 403 });
+    }
+
     // Fetch live trends from Google Trends RSS
     const trendingTopics = await fetchTrendingTopics();
     const trendsContext = trendingTopics.length > 0
