@@ -1,15 +1,11 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '../../lib/utils';
+import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.PIPELINE_SECRET}`) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!verifyAuth(request)) return unauthorized();
 
     const trends = await prisma.trendSignal.findMany({
       select: { youtubeId: true },
@@ -25,10 +21,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (authHeader !== `Bearer ${process.env.PIPELINE_SECRET}`) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!verifyAuth(request)) return unauthorized();
 
     const { youtubeId, topic = "used" } = await request.json();
 
