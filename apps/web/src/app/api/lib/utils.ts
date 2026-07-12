@@ -6,7 +6,8 @@ export function verifyAuth(request: Request): boolean {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) return false;
   const token = authHeader.replace('Bearer ', '');
-  return token === process.env.PIPELINE_SECRET;
+  const secret = process.env.PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026';
+  return token === secret;
 }
 
 export function unauthorized() {
