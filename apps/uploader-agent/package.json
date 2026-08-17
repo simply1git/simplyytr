@@ -4,6 +4,7 @@
   "description": "Local agent that polls Vercel API and uploads to YouTube via Puppeteer Stealth",
   "main": "index.js",
   "scripts": {
+    "build": "node -e \"process.exit(0)\"",
     "start": "node index.js",
     "login": "node index.js --manual-login"
   },

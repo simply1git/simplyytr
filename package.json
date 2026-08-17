@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=@youtubbot/backend\" \"npm run dev --workspace=web\"",
-    "build": "npm run build --workspaces",
+    "build": "npm run build --workspace=web",
+    "postinstall": "prisma generate --schema=packages/database/prisma/schema.prisma",
     "start": "npm run start --workspaces",
     "uploader": "npm run start --workspace=@youtubbot/uploader-agent"
   },
