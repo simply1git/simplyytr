@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Community &amp; Protocol Audit | simplyytr</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-background": "#e5e2e3",
+                        "secondary-fixed": "#e9ddff",
+                        "on-tertiary-container": "#006e16",
+                        "on-primary-fixed-variant": "#004f54",
+                        "primary": "#dbfcff",
+                        "surface-dim": "#131314",
+                        "on-surface-variant": "#b9cacb",
+                        "outline-variant": "#3b494b",
+                        "error": "#ffb4ab",
+                        "surface-bright": "#3a393a",
+                        "secondary": "#d1bcff",
+                        "surface-container-high": "#2a2a2b",
+                        "background": "#131314",
+                        "on-secondary-container": "#ddcdff",
+                        "inverse-surface": "#e5e2e3",
+                        "surface-container-lowest": "#0e0e0f",
+                        "surface-tint": "#00dbe9",
+                        "surface-container-highest": "#353436",
+                        "on-tertiary": "#003907",
+                        "surface": "#131314",
+                        "surface-container": "#201f20",
+                        "inverse-on-surface": "#313031",
+                        "tertiary-container": "#00fb40",
+                        "error-container": "#93000a",
+                        "on-primary-container": "#006970",
+                        "on-primary-fixed": "#002022",
+                        "tertiary": "#ddffd3",
+                        "surface-container-low": "#1c1b1c",
+                        "surface-variant": "#353436",
+                        "on-tertiary-fixed": "#002203",
+                        "inverse-primary": "#006970",
+                        "tertiary-fixed-dim": "#00e639",
+                        "on-tertiary-fixed-variant": "#00530e",
+                        "on-surface": "#e5e2e3",
+                        "on-secondary-fixed": "#23005b",
+                        "primary-container": "#00f0ff",
+                        "secondary-container": "#7000ff",
+                        "on-secondary": "#3c0090",
+                        "tertiary-fixed": "#72ff70",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "on-error-container": "#ffdad6",
+                        "on-primary": "#00363a",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "on-error": "#690005",
+                        "primary-fixed": "#7df4ff",
+                        "outline": "#849495"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "max-width": "1440px",
+                        "margin-mobile": "16px",
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-xl": ["Sora"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg": ["Sora"],
+                        "headline-lg-mobile": ["Sora"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom Utilities */
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            background-image: linear-gradient(theme('colors.outline-variant') 1px, transparent 1px),
+                              linear-gradient(90deg, theme('colors.outline-variant') 1px, transparent 1px);
+            background-size: 32px 32px;
+            background-position: center;
+        }
+
+        .bg-grid-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image: linear-gradient(theme('colors.outline-variant') 1px, transparent 1px),
+                              linear-gradient(90deg, theme('colors.outline-variant') 1px, transparent 1px);
+            background-size: 32px 32px;
+            opacity: 0.05;
+            z-index: -1;
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+        
+        .glass-panel:hover {
+            border-color: rgba(0, 240, 255, 0.3);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+
+        .glow-sm {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .cursor-terminal {
+            cursor: text;
+        }
+        
+        /* Strobe animation for progress/loading */
+        @keyframes strobe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .animate-strobe {
+            animation: strobe 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Blinking cursor */
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        .animate-blink {
+            animation: blink 1s step-end infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex font-body-md text-body-md relative">
+<div class="bg-grid-overlay"></div>
+<!-- SideNavBar -->
+<nav class="hidden md:flex bg-surface-container-lowest/90 backdrop-blur-xl h-screen w-64 fixed left-0 top-0 border-r border-outline-variant/20 flex-col h-full py-8 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<img alt="System Core Avatar" class="w-10 h-10 rounded-full border border-primary/30" data-alt="A stylized, glowing AI avatar representing a system core, set against a dark void background. The avatar is highly detailed with neon cyan and deep purple accents, evoking a Cyber-Tech Noir aesthetic. The lighting is dramatic, emphasizing the digital, glowing nature of the entity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDfikjvspxOS7EW4o4QRWDaT6wJIT4OZowmLq2hgE4sUT4ymNVG0zMB5l7qXIvax31jiMvyApFjOHlj0yyY0U-5-j2_gT7p1uep73rHkn8V8GvKqyk3gH_KL9-D93cJiS5c0CNh8fWabuVXe8oUmZwNGYZ1qN6RHKCMRCSxYT2EFSTewfA2NYK9iTFDYs2htuR-7Brl7mBTC7U4IhLj7lE8eepKnYQZlxGOIPWa7ehv9GW1j8nP9vfB"/>
+<div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter uppercase">SYSTEM_LOG</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant">v4.0.2-stable</p>
+</div>
+</div>
+<div class="flex-1 space-y-2">
+<!-- Active Tab Context Logic: This is the Protocol Audit screen, closest match is Analytics or Stack. Let's use Stack as it represents infrastructure. -->
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+                Core
+            </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="troubleshoot">troubleshoot</span>
+                Deep Dive
+            </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+                Analytics
+            </a>
+<a class="bg-secondary-container/20 text-tertiary-container border-r-4 border-tertiary-container flex items-center gap-4 px-6 py-4 cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+                Stack
+            </a>
+</div>
+<div class="px-6 mt-auto">
+<button class="w-full mb-6 border border-primary text-primary hover:bg-primary/10 transition-colors py-2 font-code-sm text-code-sm uppercase flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">sync</span>
+                Initialize Sync
+            </button>
+<div class="space-y-2">
+<a class="text-on-surface-variant flex items-center gap-4 py-2 hover:text-primary transition-colors font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="settings">settings</span>
+                    Settings
+                </a>
+<a class="text-on-surface-variant flex items-center gap-4 py-2 hover:text-primary transition-colors font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined text-[18px]" data-icon="menu_book">menu_book</span>
+                    Docs
+                </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen">
+<!-- TopAppBar (Mobile & Desktop Header context) -->
+<header class="bg-background/80 backdrop-blur-xl sticky top-0 w-full border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.15)] z-40">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
+<div class="flex items-center gap-4">
+<!-- Mobile Hamburger -->
+<button class="md:hidden text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<span class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg tracking-tighter text-primary uppercase">simplyytr</span>
+</div>
+<div class="flex items-center gap-6">
+<!-- Nav items for desktop context if needed, but per prompt SideNav is main on Web. Using TopNav for trailing actions -->
+<div class="hidden md:flex items-center gap-4">
+<a class="text-on-surface-variant font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95 transition-transform" href="#">Audit</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95 transition-transform" href="#">Protocol</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<img alt="AI Learning Core Status" class="w-8 h-8 rounded-full border border-primary/50 hidden md:block" data-alt="A small, stylized profile image representing an AI Learning Core Status. It features an abstract geometric pattern with a bright neon green glowing core, surrounded by dark obsidian structures, fitting the Cyber-Tech Noir aesthetic perfectly." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2F9_q8uiseu6nya3WP05lMF-0djv6z7fMHQJMT44INV2j-pwwIK3pY92ZEHLDnGLFlTlVK1ciPn4RHEMW15U8rME3uN3Lt3OEWoKSoWTLkfqsfestukFpETuZg8c2FAEnFOgIucMEYS1GXozUffFgWmvKbTEF6lNcl0ex6wSv_MkqLtYH1ob4FFfEdsGgh8o1AhCEmnCXUrQw0p3KzWr_1fL0RT4GVxzQA4nM8bJtJ9uRat9SBCbl"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Canvas Body -->
+<div class="p-margin-mobile md:p-margin-desktop max-w-max-width mx-auto w-full flex-1 flex flex-col gap-8">
+<!-- Page Header -->
+<div class="border-b border-outline-variant/30 pb-6 mb-4">
+<h2 class="font-headline-xl text-headline-xl text-primary mb-2">PROTOCOL_AUDIT <span class="animate-blink text-secondary-container">|</span></h2>
+<p class="text-on-surface-variant font-code-sm text-code-sm">NULL_BUDGET_INITIATIVE // OPEN_SOURCE_DNA</p>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Public Ledger (Infrastructure Costs) -->
+<div class="md:col-span-8 glass-panel rounded p-6 flex flex-col">
+<div class="flex justify-between items-center mb-6 border-b border-outline-variant/30 pb-4">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="account_balance">account_balance</span>
+                            PUBLIC_LEDGER
+                        </h3>
+<span class="bg-secondary-container/20 text-secondary border border-secondary-container/50 px-2 py-1 rounded-sm font-label-caps text-label-caps">$0.00 / MO</span>
+</div>
+<div class="space-y-4 font-code-sm text-code-sm text-on-surface-variant">
+<div class="flex justify-between items-center group hover:bg-surface-container/50 p-2 rounded transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">cloud</span>
+<span>Hosting (Vercel Hobby)</span>
+</div>
+<span class="text-tertiary">FREE_TIER</span>
+</div>
+<div class="flex justify-between items-center group hover:bg-surface-container/50 p-2 rounded transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">database</span>
+<span>Database (Supabase Free)</span>
+</div>
+<span class="text-tertiary">FREE_TIER</span>
+</div>
+<div class="flex justify-between items-center group hover:bg-surface-container/50 p-2 rounded transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">smart_toy</span>
+<span>LLM API (Local/OpenRouter Free)</span>
+</div>
+<span class="text-tertiary">FREE_TIER</span>
+</div>
+<div class="flex justify-between items-center group hover:bg-surface-container/50 p-2 rounded transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-container text-[20px]">api</span>
+<span>Edge Functions</span>
+</div>
+<span class="text-tertiary">FREE_TIER</span>
+</div>
+</div>
+<div class="mt-auto pt-6">
+<div class="h-1 w-full bg-surface-container-highest rounded overflow-hidden">
+<div class="h-full bg-tertiary-container w-[100%] animate-strobe"></div>
+</div>
+<p class="font-label-caps text-label-caps text-outline mt-2 text-right">BUDGET_UTILIZATION: 0%</p>
+</div>
+</div>
+<!-- Codebase Integrity -->
+<div class="md:col-span-4 glass-panel rounded p-6 flex flex-col justify-between">
+<div>
+<div class="flex justify-between items-center mb-6 border-b border-outline-variant/30 pb-4">
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-primary" data-icon="code">code</span>
+                                INTEGRITY
+                            </h3>
+</div>
+<p class="font-code-sm text-code-sm text-on-surface-variant mb-6">
+                            Source code available under MIT License. Continuous integration checks passing.
+                        </p>
+<a class="block w-full border border-primary/50 bg-primary/5 hover:bg-primary/10 p-4 rounded transition-all hover:glow-sm group" href="https://github.com/simply1git/simplyytr" target="_blank">
+<div class="flex justify-between items-center mb-2">
+<span class="font-code-sm text-code-sm text-primary">simply1git/simplyytr</span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors text-[20px]">open_in_new</span>
+</div>
+<div class="flex gap-3 font-label-caps text-label-caps text-on-surface-variant">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-tertiary-container inline-block"></span> TS</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">star</span> 128</span>
+<span class="flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">call_split</span> 42</span>
+</div>
+</a>
+</div>
+</div>
+<!-- Fork / Contribution Portal -->
+<div class="md:col-span-12 glass-panel rounded p-6 border-l-4 border-l-secondary-container">
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+<div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-background mb-2">CONTRIBUTION_PORTAL</h3>
+<p class="font-body-md text-on-surface-variant max-w-2xl">
+                                Expand the protocol. Propose optimizations, submit bug fixes, or integrate new open-source models. The system relies on decentralized intelligence.
+                            </p>
+</div>
+<div class="flex gap-4">
+<button class="bg-primary/10 border border-primary text-primary hover:bg-primary hover:text-background transition-colors px-6 py-3 font-label-caps text-label-caps rounded flex items-center gap-2 glow-sm">
+<span class="material-symbols-outlined" data-icon="call_split">call_split</span>
+                                FORK_REPO
+                            </button>
+<button class="border border-outline-variant text-on-surface hover:border-on-surface transition-colors px-6 py-3 font-label-caps text-label-caps rounded flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="bug_report">bug_report</span>
+                                OPEN_ISSUE
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="bg-background w-full py-8 mt-auto border-t border-outline-variant/10 flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-gutter z-40">
+<div class="font-label-caps text-label-caps text-on-surface-variant">
+                SIMPLYYTR // OPEN_SOURCE_DNA // NULL_BUDGET_INITIATIVE
+            </div>
+<div class="flex gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Source</a>
+<a class="font-label-caps text-label-caps text-tertiary hover:text-primary transition-opacity hover:opacity-80" href="#">Audit</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Protocol</a>
+</div>
+</footer>
+</main>
+</body></html>

@@ -1,21 +1,105 @@
 @import "tailwindcss";
 
-@theme {
-  --color-background: #09090b;
-  --color-foreground: #fafafa;
-  --color-card: #18181b;
-  --color-card-foreground: #fafafa;
-  --color-primary: #3b82f6;
-  --color-primary-foreground: #ffffff;
-  --color-muted: #27272a;
-  --color-muted-foreground: #a1a1aa;
-  --color-border: #27272a;
+@layer base {
+  :root {
+    --bg-surface: #131314;
+    --bg-surface-matte: #0e0e0f;
+    --bg-surface-low: #1c1b1c;
+    --bg-surface-container: #201f20;
+    --bg-surface-high: #2a2a2b;
+    --bg-surface-highest: #353436;
+    
+    --color-cyan: #00f0ff;
+    --color-cyan-dim: #00dbe9;
+    --color-mint: #72ff70;
+    --color-mint-bright: #00fb40;
+    --color-orange: #ff8c00;
+    --color-text-main: #e5e2e3;
+    --color-text-muted: #b9cacb;
+    --color-border: #3b494b;
+    --color-border-subtle: #242c2e;
+  }
+
+  body {
+    background-color: #0e0e0f;
+    color: #e5e2e3;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-image: 
+      linear-gradient(rgba(59, 73, 75, 0.18) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59, 73, 75, 0.18) 1px, transparent 1px);
+    background-size: 32px 32px;
+    background-position: center;
+  }
 }
 
-@layer base {
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: 'Inter', sans-serif;
-  }
+/* Typography Utility Classes */
+.font-sora {
+  font-family: 'Sora', sans-serif;
+}
+
+.font-mono-terminal {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Glassmorphism & Cyber Elements */
+.glass-panel {
+  background-color: rgba(28, 27, 28, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(59, 73, 75, 0.6);
+}
+
+.glass-panel-glow {
+  background-color: rgba(28, 27, 28, 0.85);
+  backdrop-filter: blur(16px);
+  border: 1px solid #00f0ff;
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.15);
+}
+
+.glow-cyan-sm {
+  box-shadow: 0 0 12px rgba(0, 240, 255, 0.35);
+}
+
+.glow-mint-sm {
+  box-shadow: 0 0 12px rgba(0, 251, 64, 0.35);
+}
+
+.glow-orange-sm {
+  box-shadow: 0 0 12px rgba(255, 140, 0, 0.35);
+}
+
+.strobe-line {
+  animation: strobe 2.5s linear infinite;
+}
+
+@keyframes strobe {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.blinking-cursor {
+  animation: blink 1s step-start infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Cyber Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0e0e0f;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3b494b;
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00f0ff;
 }

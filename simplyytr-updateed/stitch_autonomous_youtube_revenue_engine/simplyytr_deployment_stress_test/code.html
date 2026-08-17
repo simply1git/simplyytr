@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>System Finalization &amp; Deployment</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary": "#00363a",
+                        "inverse-surface": "#dce4e5",
+                        "primary": "#dbfcff",
+                        "tertiary": "#fff5de",
+                        "on-tertiary-fixed-variant": "#554500",
+                        "on-tertiary-fixed": "#231b00",
+                        "obsidian-deep": "#0e0e0f",
+                        "on-primary-container": "#006970",
+                        "secondary-fixed": "#e5e2e3",
+                        "on-background": "#dce4e5",
+                        "surface-dim": "#0d1515",
+                        "primary-fixed-dim": "#00dbe9",
+                        "on-surface": "#dce4e5",
+                        "primary-container": "#00f0ff",
+                        "terminal-green": "#00fb40",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container-low": "#151d1e",
+                        "tertiary-fixed": "#ffe179",
+                        "background": "#0d1515",
+                        "secondary-fixed-dim": "#c8c6c7",
+                        "error": "#ffb4ab",
+                        "secondary-container": "#49494a",
+                        "outline": "#849495",
+                        "tertiary-fixed-dim": "#eac324",
+                        "tertiary-container": "#fed639",
+                        "surface": "#0d1515",
+                        "on-tertiary-container": "#715d00",
+                        "system-red": "#ffb4ab",
+                        "alert-orange": "#ff8c00",
+                        "surface-container-high": "#232b2c",
+                        "outline-variant": "#3b494b",
+                        "inverse-on-surface": "#2a3233",
+                        "on-secondary-fixed": "#1c1b1c",
+                        "error-container": "#93000a",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-fixed": "#002022",
+                        "glow-cyan": "#00f0ff",
+                        "surface-bright": "#333b3b",
+                        "inverse-primary": "#006970",
+                        "surface-tint": "#00dbe9",
+                        "on-secondary": "#313031",
+                        "on-surface-variant": "#b9cacb",
+                        "surface-container-lowest": "#080f10",
+                        "primary-fixed": "#7df4ff",
+                        "surface-container": "#192122",
+                        "on-secondary-fixed-variant": "#474647",
+                        "on-tertiary": "#3b2f00",
+                        "surface-variant": "#2e3637",
+                        "on-error": "#690005",
+                        "on-secondary-container": "#bab8b9",
+                        "surface-container-highest": "#2e3637",
+                        "secondary": "#c8c6c7"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-lg": "32px",
+                        "margin-safe": "32px",
+                        "gutter": "16px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "stack-md": "16px",
+                        "stack-xs": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Sora", "sans-serif"],
+                        "headline-xl": ["Sora", "sans-serif"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "headline-lg-mobile": ["Sora", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"],
+                        "label-caps": ["JetBrains Mono", "monospace"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.15em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #0d1515;
+            color: #dce4e5;
+        }
+        .glow-active {
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+        }
+        .glow-warning {
+            box-shadow: 0 0 12px rgba(255, 140, 0, 0.25);
+        }
+        .glass-panel {
+            background: rgba(21, 29, 30, 0.8);
+            backdrop-filter: blur(16px);
+        }
+        .log-entry {
+            animation: pulse-green 1s ease-out;
+        }
+        @keyframes pulse-green {
+            0% { color: #00fb40; }
+            100% { color: #dce4e5; }
+        }
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        /* Custom scrollbar for terminal */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1515;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3b494b;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen bg-background font-body-md text-body-md">
+<!-- TopAppBar -->
+<header class="bg-background dark:bg-background docked full-width top-0 border-b border-outline-variant shadow-[0_0_12px_rgba(0,240,255,0.1)] flex justify-between items-center w-full px-margin-safe h-16 z-50">
+<div class="flex items-center gap-gutter">
+<span class="material-symbols-outlined text-glow-cyan" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-headline-lg text-headline-lg text-glow-cyan tracking-tighter">SIMPLYYTR Terminal</span>
+</div>
+<div class="flex items-center gap-gutter">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded cursor-pointer" data-icon="memory">memory</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded cursor-pointer" data-icon="sensors">sensors</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded cursor-pointer" data-icon="terminal">terminal</span>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden pt-16 pb-16">
+<!-- SideNavBar -->
+<nav class="hidden lg:flex bg-surface-container-lowest dark:bg-surface-container-lowest docked left-0 h-full w-64 border-r border-outline-variant flex flex-col h-full py-stack-lg flex-shrink-0">
+<div class="px-gutter mb-stack-lg">
+<div class="text-glow-cyan font-bold font-label-caps text-label-caps mb-1">OPERATOR_01</div>
+<div class="text-on-surface-variant font-code-sm text-code-sm">LEVEL_4_ACCESS</div>
+</div>
+<div class="flex-1 flex flex-col gap-unit px-unit">
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-lg">
+<span class="material-symbols-outlined">memory</span>
+<span class="font-label-caps text-label-caps">Core</span>
+</div>
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-lg">
+<span class="material-symbols-outlined">search_insights</span>
+<span class="font-label-caps text-label-caps">Deep Dive</span>
+</div>
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-lg">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</div>
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-primary bg-primary-container rounded-lg font-bold shadow-[0_0_12px_rgba(0,240,255,0.25)] hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">layers</span>
+<span class="font-label-caps text-label-caps">Stack</span>
+</div>
+</div>
+<div class="px-gutter mt-auto mb-stack-md">
+<button class="w-full border border-glow-cyan text-glow-cyan font-label-caps text-label-caps py-2 rounded-DEFAULT hover:bg-surface-container-high transition-colors text-center">
+                    EXECUTE_SYNC
+                </button>
+</div>
+<div class="flex flex-col gap-unit px-unit border-t border-outline-variant pt-stack-md">
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-lg">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-label-caps text-label-caps">Settings</span>
+</div>
+<div class="flex items-center gap-gutter px-gutter py-2 text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-lg">
+<span class="material-symbols-outlined">list_alt</span>
+<span class="font-label-caps text-label-caps">Logs</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 overflow-y-auto p-gutter md:p-margin-safe bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc4JyBoZWlnaHQ9JzgnPgo8cmVjdCB3aWR0aD0nOCcgaGVpZ2h0PSc4JyBmaWxsPScjMGQxNTE1Jy8+CjxwYXRoIGQ9J00wIDBMOCA4Wk04IDBMMCA4Wicgc3Ryb2tlPScjMTVlMGUxJyBzdHJva2Utd2lkdGg9JzAuNScgb3BhY2l0eT0nMC4xJy8+Cjwvc3ZnPg==')] bg-repeat">
+<div class="max-w-[1600px] mx-auto flex flex-col gap-margin-safe">
+<!-- Header Module -->
+<div class="border border-outline-variant bg-surface-container-low rounded-lg p-stack-lg glass-panel relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-alert-orange"></div>
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-stack-md">
+<div>
+<h1 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-on-surface mb-2">SIMPLYYTR // DEPLOYMENT STRESS TEST</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant">CLUSTER_ALPHA // HANDSHAKE PROTOCOL ACTIVE</p>
+</div>
+<div class="flex items-center gap-gutter bg-surface-container border border-alert-orange/50 px-4 py-2 rounded-DEFAULT glow-warning">
+<span class="material-symbols-outlined text-alert-orange animate-pulse">warning</span>
+<span class="font-label-caps text-label-caps text-alert-orange">AWAITING DEPLOYMENT</span>
+</div>
+</div>
+</div>
+<!-- Main Grid -->
+<div class="grid grid-cols-1 xl:grid-cols-24 gap-gutter h-full">
+<!-- Pre-Flight Checklist (Col 1-8) -->
+<div class="xl:col-span-8 flex flex-col gap-gutter">
+<div class="border border-outline-variant bg-surface-container rounded-lg p-stack-md flex-1"><div class="flex items-center justify-between border-b border-outline-variant pb-2 mb-stack-md"><span class="font-label-caps text-label-caps text-on-surface">RENDERING NODES (0x1F - 0x4A)</span><span class="material-symbols-outlined text-glow-cyan text-sm">grid_view</span></div><div class="grid grid-cols-2 gap-stack-md"><div class="p-2 border border-outline-variant rounded bg-surface-container-low"><div class="flex justify-between text-[10px] font-label-caps mb-1"><span>NODE_0x1F</span><span class="text-terminal-green">ACTIVE</span></div><div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden"><div class="bg-glow-cyan h-full w-[88%]"></div></div><div class="flex justify-between text-[9px] mt-1 opacity-60"><span>88% LOAD</span><span>42°C</span></div></div><div class="p-2 border border-outline-variant rounded bg-surface-container-low"><div class="flex justify-between text-[10px] font-label-caps mb-1"><span>NODE_0x2B</span><span class="text-terminal-green">ACTIVE</span></div><div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden"><div class="bg-glow-cyan h-full w-[94%]"></div></div><div class="flex justify-between text-[9px] mt-1 opacity-60"><span>94% LOAD</span><span>48°C</span></div></div><div class="p-2 border border-outline-variant rounded bg-surface-container-low"><div class="flex justify-between text-[10px] font-label-caps mb-1"><span>NODE_0x3C</span><span class="text-terminal-green">ACTIVE</span></div><div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden"><div class="bg-glow-cyan h-full w-[72%]"></div></div><div class="flex justify-between text-[9px] mt-1 opacity-60"><span>72% LOAD</span><span>39°C</span></div></div><div class="p-2 border border-outline-variant rounded bg-surface-container-low"><div class="flex justify-between text-[10px] font-label-caps mb-1"><span>NODE_0x4A</span><span class="text-terminal-green">ACTIVE</span></div><div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden"><div class="bg-glow-cyan h-full w-[91%]"></div></div><div class="flex justify-between text-[9px] mt-1 opacity-60"><span>91% LOAD</span><span>45°C</span></div></div></div></div>
+<!-- System Health Matrix -->
+<div class="border border-outline-variant bg-surface-container rounded-lg p-stack-md flex-1">
+<div class="flex items-center justify-between border-b border-outline-variant pb-2 mb-stack-md">
+<span class="font-label-caps text-label-caps text-on-surface">SYSTEM HEALTH MATRIX</span>
+<span class="material-symbols-outlined text-glow-cyan text-sm">health_and_safety</span>
+</div>
+<div class="flex items-center justify-center h-[150px]">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<!-- Fake SVG Chart -->
+<svg class="absolute inset-0 w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#2e3637" stroke-width="10"></circle>
+<circle class="glow-active drop-shadow-[0_0_8px_rgba(0,240,255,0.5)]" cx="50" cy="50" fill="none" r="45" stroke="#00f0ff" stroke-dasharray="283" stroke-dashoffset="0" stroke-width="10"></circle>
+</svg>
+<div class="text-center z-10 flex flex-col items-center">
+<span class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-glow-cyan leading-none">99.8<span class="text-lg">%</span></span>
+<span class="font-label-caps text-[10px] text-on-surface-variant mt-1">READY</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Center Console - DEPLOY (Col 9-16) -->
+<div class="xl:col-span-8 border border-outline-variant bg-surface-container-low rounded-lg p-stack-lg flex flex-col items-center justify-center relative overflow-hidden min-h-[400px]">
+<!-- Background graphic accent -->
+<div class="absolute inset-0 opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at center, #ff8c00 0%, transparent 60%);"></div>
+<div class="text-center mb-stack-lg z-10">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant mb-2 tracking-[0.3em]">FINAL AUTHORIZATION</h2>
+<p class="font-code-sm text-code-sm text-on-surface max-w-[280px] mx-auto text-center opacity-80">All systems nominal. Awaiting operator confirmation to initiate production push.</p>
+</div>
+<button class="relative group z-10">
+<!-- Outer rotating border ring (simulated) -->
+<div class="absolute -inset-2 rounded-full border-2 border-dashed border-alert-orange/30 group-hover:border-alert-orange/60 transition-colors animate-[spin_10s_linear_infinite]"></div>
+<!-- The Button -->
+<div class="w-48 h-48 rounded-full bg-alert-orange border-4 border-[#ffb4ab] flex flex-col items-center justify-center shadow-[0_0_40px_rgba(255,140,0,0.4)] group-hover:shadow-[0_0_60px_rgba(255,140,0,0.6)] group-hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer overflow-hidden animate-pulse"><div class="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent pointer-events-none"></div><span class="material-symbols-outlined text-[48px] text-on-primary-fixed mb-2" style="font-variation-settings: 'FILL' 1;">bolt</span><span class="font-headline-lg text-[18px] font-black text-on-primary-fixed leading-none tracking-tighter text-center px-4">ENGAGE PRODUCTION CYCLE</span><span class="font-label-caps text-[10px] text-on-primary-fixed mt-1 opacity-80">STRESS TEST MODE</span></div>
+</button>
+</div>
+<!-- Live Execution Log (Col 17-24) -->
+<div class="xl:col-span-8 border border-outline-variant bg-[#080f10] rounded-lg flex flex-col overflow-hidden relative">
+<div class="bg-surface-container-high px-gutter py-2 flex justify-between items-center border-b border-outline-variant shrink-0">
+<span class="font-label-caps text-label-caps text-on-surface">LIVE_EXECUTION_LOG</span>
+<div class="flex gap-2">
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<div class="w-2 h-2 rounded-full bg-outline"></div>
+<div class="w-2 h-2 rounded-full bg-glow-cyan animate-pulse"></div>
+</div>
+</div>
+<div class="p-gutter font-code-sm text-[13px] text-on-surface-variant flex-1 overflow-y-auto leading-relaxed" id="terminal-output"><div class="mb-1 opacity-50">[ffmpeg] frame= 1248 fps= 62 q=28.0 size= 14592kB time=00:00:42.12 bitrate=2837.4kbits/s speed=2.1x</div><div class="mb-1 opacity-50">[ffmpeg] frame= 1312 fps= 61 q=28.0 size= 15872kB time=00:00:44.24 bitrate=2934.1kbits/s speed=2.0x</div><div class="text-terminal-green mb-1">[STRESS] Node_0x1F: Throughput 442 MB/s - STABLE</div><div class="mb-1 opacity-50">[ffmpeg] frame= 1384 fps= 62 q=28.0 size= 17152kB time=00:00:46.56 bitrate=3012.8kbits/s speed=2.1x</div><div class="text-glow-cyan mb-1">&gt; Handshake verified for Cluster_Alpha...</div><div class="mb-1 opacity-50">[ffmpeg] frame= 1456 fps= 60 q=28.0 size= 18432kB time=00:00:48.88 bitrate=3104.2kbits/s speed=2.0x</div><div class="text-alert-orange mb-1">[WARN] Thermal threshold reached on Node_0x2B (48°C)</div><div class="mb-1 opacity-50">[ffmpeg] frame= 1528 fps= 61 q=28.0 size= 19712kB time=00:00:51.20 bitrate=3188.5kbits/s speed=2.1x</div><div class="text-terminal-green mb-1">[STRESS] Global Handshake: 100% SUCCESS</div><div class="flex mt-4"><span class="text-glow-cyan mr-2">operator@node-1f:~$</span><span class="text-on-surface w-2 h-4 bg-glow-cyan inline-block cursor-blink mt-1"></span></div></div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-container-low docked bottom-0 full-width border-t border-outline-variant flex justify-between items-center px-gutter py-unit w-full fixed bottom-0 z-50 h-8">
+<span class="font-code-sm text-code-sm font-code-sm text-terminal-green">SYSTEM_STABLE // 0.4ms LATENCY</span>
+<div class="flex gap-stack-md">
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-terminal-green transition-colors" href="#">REAL_TIME_LOGS</a>
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-terminal-green transition-colors" href="#">NODE_0x1F</a>
+</div>
+</footer>
+<script>
+        // Simple script to simulate terminal text appending if deploy was clicked
+        document.querySelector('button.group').addEventListener('click', function() {
+            const terminal = document.getElementById('terminal-output');
+            
+            // Remove cursor line
+            const cursorLine = terminal.lastElementChild;
+            cursorLine.remove();
+
+            const lines = [
+                { text: "> INITIATING DEPLOYMENT SEQUENCE...", color: "text-alert-orange", delay: 100 },
+                { text: "> Locking repository state...", color: "text-on-surface", delay: 600 },
+                { text: "[OK] State locked.", color: "text-terminal-green", delay: 1200 },
+                { text: "> Pushing artifacts to edge nodes...", color: "text-on-surface", delay: 1500 },
+                { text: "  - Edge Region EU-W (100%)", color: "text-outline", delay: 2000 },
+                { text: "  - Edge Region US-E (100%)", color: "text-outline", delay: 2200 },
+                { text: "[OK] Edge push complete.", color: "text-terminal-green", delay: 2800 },
+                { text: "> SWAPPING TRAFFIC...", color: "text-glow-cyan", delay: 3500 },
+                { text: "SUCCESS: V1.0.0 is LIVE.", color: "text-terminal-green font-bold", delay: 4500 }
+            ];
+
+            let currentDelay = 0;
+            lines.forEach(line => {
+                setTimeout(() => {
+                    const el = document.createElement('div');
+                    el.className = `${line.color} mb-1 log-entry`;
+                    el.textContent = line.text;
+                    terminal.appendChild(el);
+                    terminal.scrollTop = terminal.scrollHeight;
+                }, line.delay);
+            });
+
+            // re-add cursor
+            setTimeout(() => {
+                 const el = document.createElement('div');
+                 el.className = "flex mt-4";
+                 el.innerHTML = `<span class="text-glow-cyan mr-2">operator@node-1f:~$</span>
+                                <span class="text-on-surface w-2 h-4 bg-glow-cyan inline-block cursor-blink mt-1"></span>`;
+                 terminal.appendChild(el);
+                 terminal.scrollTop = terminal.scrollHeight;
+            }, 5000);
+        });
+    </script>
+</body></html>

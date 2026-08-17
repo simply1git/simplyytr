@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Research Engine Dashboard - Deep Dive</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&amp;family=JetBrains+Mono:wght@500;700&amp;family=Inter:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "inverse-primary": "#006970",
+                      "surface-bright": "#3a393a",
+                      "background": "#131314",
+                      "on-background": "#e5e2e3",
+                      "primary": "#dbfcff",
+                      "error": "#ffb4ab",
+                      "tertiary-fixed": "#72ff70",
+                      "on-secondary-container": "#ddcdff",
+                      "error-container": "#93000a",
+                      "secondary-fixed-dim": "#d1bcff",
+                      "on-tertiary": "#003907",
+                      "on-secondary": "#3c0090",
+                      "on-primary-fixed": "#002022",
+                      "surface-container-lowest": "#0e0e0f",
+                      "on-primary": "#00363a",
+                      "tertiary-container": "#00fb40",
+                      "on-error-container": "#ffdad6",
+                      "on-error": "#690005",
+                      "primary-fixed": "#7df4ff",
+                      "surface-tint": "#00dbe9",
+                      "secondary": "#d1bcff",
+                      "primary-fixed-dim": "#00dbe9",
+                      "secondary-fixed": "#e9ddff",
+                      "surface-container-highest": "#353436",
+                      "surface-variant": "#353436",
+                      "on-tertiary-container": "#006e16",
+                      "on-surface": "#e5e2e3",
+                      "surface-container-low": "#1c1b1c",
+                      "surface-dim": "#131314",
+                      "outline": "#849495",
+                      "primary-container": "#00f0ff",
+                      "secondary-container": "#7000ff",
+                      "surface-container-high": "#2a2a2b",
+                      "on-secondary-fixed": "#23005b",
+                      "on-tertiary-fixed": "#002203",
+                      "on-primary-container": "#006970",
+                      "on-tertiary-fixed-variant": "#00530e",
+                      "on-secondary-fixed-variant": "#5700c9",
+                      "inverse-surface": "#e5e2e3",
+                      "tertiary-fixed-dim": "#00e639",
+                      "tertiary": "#ddffd3",
+                      "on-surface-variant": "#b9cacb",
+                      "inverse-on-surface": "#313031",
+                      "on-primary-fixed-variant": "#004f54",
+                      "surface-container": "#201f20",
+                      "surface": "#131314",
+                      "outline-variant": "#3b494b"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px",
+                      "max-width": "1440px",
+                      "unit": "4px",
+                      "gutter": "16px"
+              },
+              "fontFamily": {
+                      "headline-xl": ["Sora"],
+                      "code-sm": ["JetBrains Mono"],
+                      "body-md": ["Inter"],
+                      "headline-lg": ["Sora"],
+                      "headline-lg-mobile": ["Sora"],
+                      "label-caps": ["JetBrains Mono"]
+              },
+              "fontSize": {
+                      "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                      "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                      "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                      "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                      "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                      "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+              }
+            }
+          }
+        }
+    </script>
+<style>
+        body {
+            background-color: #131314;
+            color: #e5e2e3;
+        }
+        /* Cyber-tech grid overlay */
+        .grid-overlay {
+            background-image: 
+                linear-gradient(to right, rgba(132, 148, 149, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(132, 148, 149, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+        /* Glassmorphic Card */
+        .glass-card {
+            background-color: rgba(14, 14, 15, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(59, 73, 75, 0.3);
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.05);
+            border-radius: 0.25rem;
+        }
+        .glass-card-header {
+            border-bottom: 1px solid rgba(59, 73, 75, 0.3);
+        }
+        /* Blinking cursor */
+        .cursor-blink {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        /* Strobe animation for loading */
+        .strobe {
+            animation: strobe 2s linear infinite;
+        }
+        @keyframes strobe {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; box-shadow: 0 0 10px rgba(0, 251, 64, 0.5); }
+            100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden font-body-md text-body-md relative">
+<div class="absolute inset-0 pointer-events-none grid-overlay z-0"></div>
+<!-- SideNavBar (Shared Component) -->
+<nav class="hidden md:flex flex-col h-full py-8 bg-surface-container-lowest/90 backdrop-blur-xl border-r border-outline-variant/20 h-screen w-64 fixed left-0 top-0 z-50">
+<div class="px-6 mb-8">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-primary tracking-tighter">SYSTEM_LOG</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant mt-1">v4.0.2-stable</p>
+</div>
+<div class="flex-1 space-y-2">
+<!-- Core (Inactive) -->
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">memory</span>
+                Core
+            </a>
+<!-- Deep Dive (Active) -->
+<a class="bg-secondary-container/20 text-tertiary-container border-r-4 border-tertiary-container flex items-center gap-4 px-6 py-4 font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">troubleshoot</span>
+                Deep Dive
+            </a>
+<!-- Analytics (Inactive) -->
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">insights</span>
+                Analytics
+            </a>
+<!-- Stack (Inactive) -->
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-terminal font-code-sm text-code-sm uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined">layers</span>
+                Stack
+            </a>
+</div>
+<div class="mt-auto px-6 space-y-4">
+<button class="w-full py-2 px-4 border border-primary text-primary font-code-sm text-code-sm uppercase tracking-widest hover:bg-primary/10 transition-colors shadow-[0_0_15px_rgba(0,240,255,0.15)] flex items-center justify-center gap-2">
+                Initialize Sync
+            </button>
+<div class="pt-4 border-t border-outline-variant/20 flex flex-col gap-2">
+<a class="text-on-surface-variant flex items-center gap-4 py-2 hover:text-primary transition-colors font-code-sm text-code-sm uppercase tracking-widest cursor-terminal" href="#">
+<span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+<a class="text-on-surface-variant flex items-center gap-4 py-2 hover:text-primary transition-colors font-code-sm text-code-sm uppercase tracking-widest cursor-terminal" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                    Docs
+                </a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-margin-mobile md:p-margin-desktop h-full overflow-y-auto z-10 w-full max-w-max-width mx-auto">
+<!-- Header -->
+<header class="mb-8 flex justify-between items-end border-b border-outline-variant/30 pb-4">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-primary tracking-tighter uppercase flex items-center gap-3">
+                    Deep Dive
+                    <span class="w-3 h-3 bg-tertiary-container rounded-full strobe inline-block ml-2"></span>
+</h2>
+<p class="font-code-sm text-code-sm text-on-surface-variant mt-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-base">sensors</span>
+                    Live Telemetry Array Online
+                </p>
+</div>
+<div class="text-right hidden md:block">
+<div class="font-code-sm text-code-sm text-on-surface-variant mb-1">Global Status</div>
+<div class="font-label-caps text-label-caps text-tertiary px-3 py-1 bg-tertiary/10 border border-tertiary/30 rounded-full inline-block">
+                    OPTIMIZING
+                </div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- System Knowledge Graph (Span 8) -->
+<div class="glass-card md:col-span-8 flex flex-col relative overflow-hidden min-h-[400px]">
+<div class="glass-card-header px-4 py-3 flex justify-between items-center z-10 bg-surface-container-lowest/50">
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined">network_node</span>
+                        System Knowledge Graph
+                    </h3>
+<span class="font-label-caps text-label-caps text-on-surface-variant">NODE_COUNT: 84,201</span>
+</div>
+<div class="flex-1 relative w-full h-full bg-black/50">
+<div class="absolute inset-0 bg-cover bg-center opacity-70" data-alt="A highly detailed cyber-tech noir data visualization representing an AI knowledge graph. The graph features complex, interconnected nodes and glowing pathways in neon cyan and electric green, set against a deep obsidian void background. The style is raw, functional, and deeply technical, resembling a living motherboard or neural network in a dark, high-contrast system-core aesthetic. The scene is illuminated by the luminescence of the data points, creating a sense of depth and vast intelligence." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCEA0_VEv3H4ALbbi1YF5pRavYNUz7tRDY3irJMmtcPvsJZa0p4rPFeSk67ldo8ILGpQ3Q_XDj5am9OpS67evgKArizw0DAmdDIXM8z_brE-njguNkcaz5s-2_Aq0JacZWd2zE1gfGdrTxnOJZLfFiFgEaVgwdEIPWZ5si64js7VaO8je1l-7OH4z88OofrwIub9TRmUJk9mTrJkhaO__2i1Rv0UnsST5U9lIM0EKLFBbwEqMnpIXQn')"></div>
+<!-- Overlay Elements -->
+<div class="absolute bottom-4 left-4 flex gap-2 z-10">
+<span class="font-code-sm text-code-sm bg-secondary-container/30 text-on-secondary-container border border-secondary/50 rounded-full px-3 py-1 backdrop-blur-md">
+                            Clustering Analysis
+                        </span>
+<span class="font-code-sm text-code-sm bg-primary-container/20 text-on-primary-container border border-primary/30 rounded-full px-3 py-1 backdrop-blur-md">
+                            Real-time
+                        </span>
+</div>
+</div>
+</div>
+<!-- Active Scrapers (Span 4) -->
+<div class="glass-card md:col-span-4 flex flex-col">
+<div class="glass-card-header px-4 py-3">
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined">travel_explore</span>
+                        Active Scrapers
+                    </h3>
+</div>
+<div class="p-4 flex-1 flex flex-col gap-4">
+<!-- Scraper Item -->
+<div class="border border-outline-variant/20 bg-surface/50 p-3 flex items-center justify-between hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">code</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-background">GitHub Repos</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Rate: 140/min</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-code-sm text-code-sm text-primary">Researching</span>
+</div>
+</div>
+<!-- Scraper Item -->
+<div class="border border-outline-variant/20 bg-surface/50 p-3 flex items-center justify-between hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">article</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-background">Medium Articles</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Rate: 45/min</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-container strobe"></span>
+<span class="font-code-sm text-code-sm text-tertiary-container">Learning</span>
+</div>
+</div>
+<!-- Scraper Item -->
+<div class="border border-outline-variant/20 bg-surface/50 p-3 flex items-center justify-between hover:border-primary/50 transition-colors">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant">rss_feed</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-background">TechCrunch</div>
+<div class="font-label-caps text-label-caps text-on-surface-variant">Rate: 12/min</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-secondary"></span>
+<span class="font-code-sm text-code-sm text-secondary">Optimizing</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Method Extraction (Span 7) -->
+<div class="glass-card md:col-span-7 flex flex-col">
+<div class="glass-card-header px-4 py-3">
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined">functions</span>
+                        Method Extraction Log
+                    </h3>
+</div>
+<div class="p-0 overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 bg-surface/50">
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Method Signature</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Origin Source</th>
+<th class="py-2 px-4 font-label-caps text-label-caps text-on-surface-variant uppercase">Impact Value</th>
+</tr>
+</thead>
+<tbody class="font-code-sm text-code-sm">
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high/50 transition-colors">
+<td class="py-3 px-4 text-tertiary">[ETH_RPC_BYPASS_V2]</td>
+<td class="py-3 px-4 text-on-background">GitHub: crypto-core/utils</td>
+<td class="py-3 px-4 text-primary">High (0.89)</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high/50 transition-colors">
+<td class="py-3 px-4 text-tertiary">[NLP_SENTIMENT_TUNING]</td>
+<td class="py-3 px-4 text-on-background">Arxiv: 2310.1145v2</td>
+<td class="py-3 px-4 text-secondary">Medium (0.55)</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-container-high/50 transition-colors">
+<td class="py-3 px-4 text-tertiary">[MEMORY_ALLOC_OPT]</td>
+<td class="py-3 px-4 text-on-background">StackOverflow: 7821449</td>
+<td class="py-3 px-4 text-on-surface-variant">Low (0.12)</td>
+</tr>
+<tr class="hover:bg-surface-container-high/50 transition-colors">
+<td class="py-3 px-4 text-tertiary">[CACHE_INVALIDATION]</td>
+<td class="py-3 px-4 text-on-background">Medium: engineering-blog</td>
+<td class="py-3 px-4 text-primary">High (0.91)</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- System Terminal Log (Span 5) -->
+<div class="glass-card md:col-span-5 flex flex-col bg-black/80">
+<div class="glass-card-header px-4 py-3 flex justify-between items-center">
+<h3 class="font-code-sm text-code-sm text-on-surface-variant uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined">terminal</span>
+                        Terminal Output
+                    </h3>
+<div class="flex gap-1">
+<div class="w-3 h-3 rounded-full bg-error-container"></div>
+<div class="w-3 h-3 rounded-full bg-outline-variant"></div>
+<div class="w-3 h-3 rounded-full bg-tertiary-container"></div>
+</div>
+</div>
+<div class="p-4 flex-1 overflow-y-auto font-code-sm text-code-sm text-on-surface-variant leading-relaxed h-[200px]">
+<div class="opacity-50">14:02:10 SYS_INIT :: Boot sequence verified.</div>
+<div class="opacity-70">14:02:11 MODULE_LOAD :: Initializing vector database connection... OK.</div>
+<div class="text-tertiary-container">14:02:12 SCRAPE_DAEMON :: GitHub rate limit optimal. Digesting repo metrics.</div>
+<div class="opacity-70">14:02:15 NEURAL_NET :: Optimizing weights for layer 4 attention heads...</div>
+<div class="text-primary">14:02:18 EXTRACTOR :: Found matching pattern [ETH_RPC_BYPASS_V2].</div>
+<div class="text-tertiary-container">14:02:19 KNOWLEDGE_GRAPH :: Node inserted successfully. Relationship updated.</div>
+<div class="opacity-70">14:02:22 SYS_MONITOR :: Memory allocation stable at 42%.</div>
+<div class="flex">
+<span class="text-primary mr-2">&gt;</span>
+<span class="cursor-blink">|</span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIMPLYYTR // SYSTEM INIT</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#006970",
+                        "surface-bright": "#3a393a",
+                        "background": "#131314",
+                        "on-background": "#e5e2e3",
+                        "primary": "#dbfcff",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#72ff70",
+                        "on-secondary-container": "#ddcdff",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "on-tertiary": "#003907",
+                        "on-secondary": "#3c0090",
+                        "on-primary-fixed": "#002022",
+                        "surface-container-lowest": "#0e0e0f",
+                        "on-primary": "#00363a",
+                        "tertiary-container": "#00fb40",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "primary-fixed": "#7df4ff",
+                        "surface-tint": "#00dbe9",
+                        "secondary": "#d1bcff",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-container-highest": "#353436",
+                        "surface-variant": "#353436",
+                        "on-tertiary-container": "#006e16",
+                        "on-surface": "#e5e2e3",
+                        "surface-container-low": "#1c1b1c",
+                        "surface-dim": "#131314",
+                        "outline": "#849495",
+                        "primary-container": "#00f0ff",
+                        "secondary-container": "#7000ff",
+                        "surface-container-high": "#2a2a2b",
+                        "on-secondary-fixed": "#23005b",
+                        "on-tertiary-fixed": "#002203",
+                        "on-primary-container": "#006970",
+                        "on-tertiary-fixed-variant": "#00530e",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "inverse-surface": "#e5e2e3",
+                        "tertiary-fixed-dim": "#00e639",
+                        "tertiary": "#ddffd3",
+                        "on-surface-variant": "#b9cacb",
+                        "inverse-on-surface": "#313031",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container": "#201f20",
+                        "surface": "#131314",
+                        "outline-variant": "#3b494b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "max-width": "1440px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Sora"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Sora"],
+                        "headline-lg-mobile": ["Sora"],
+                        "label-caps": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Cyber-Tech Grid Pattern */
+        .bg-grid-pattern {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(132, 148, 149, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(132, 148, 149, 0.05) 1px, transparent 1px);
+        }
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex flex-col relative overflow-x-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- Background Grid -->
+<div class="absolute inset-0 z-0 bg-grid-pattern pointer-events-none"></div>
+<!-- Background Ambient Glow -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 w-3/4 h-96 bg-primary-container/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+<!-- TopAppBar -->
+<nav class="sticky top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.15)]">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
+<!-- Brand -->
+<div class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg tracking-tighter text-primary uppercase">
+                simplyytr
+            </div>
+<!-- Trailing Icons -->
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary-container transition-all duration-300 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] active:scale-95">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-container transition-all duration-300 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] active:scale-95">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-container transition-all duration-300 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] active:scale-95">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="flex-grow z-10 relative">
+<!-- Hero Section -->
+<section class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-24 md:py-32 flex flex-col lg:flex-row items-center gap-16 lg:gap-24">
+<!-- Hero Copy -->
+<div class="w-full lg:w-1/2 flex flex-col gap-8">
+<div>
+<div class="inline-flex items-center gap-2 px-3 py-1 bg-secondary-container/20 border border-secondary-container/50 rounded-sm mb-6">
+<span class="w-2 h-2 rounded-full bg-tertiary-container animate-pulse"></span>
+<span class="font-code-sm text-code-sm text-secondary uppercase tracking-widest text-[10px]">System Online</span>
+</div>
+<h1 class="font-headline-xl text-headline-xl text-primary uppercase drop-shadow-[0_0_15px_rgba(0,240,255,0.2)]">
+                        SIMPLYYTR // THE SELF-IMPROVING REVENUE ENGINE
+                    </h1>
+</div>
+<p class="font-code-sm text-code-sm text-on-surface-variant max-w-xl">
+                    Built on $0 budget. Open-source DNA. Fully autonomous. A persistent intelligence entity designed to seek, analyze, and execute market inefficiencies.
+                </p>
+<div class="mt-4">
+<button class="relative group overflow-hidden border border-primary bg-surface-container-lowest text-primary px-8 py-4 font-code-sm text-code-sm uppercase tracking-widest transition-all hover:shadow-[0_0_20px_rgba(0,240,255,0.4)] active:scale-95">
+<span class="relative z-10 flex items-center gap-3">
+                            Start Initialization
+                            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</span>
+<!-- Hover Glow Effect -->
+<div class="absolute inset-0 bg-primary-container/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out z-0"></div>
+</button>
+</div>
+</div>
+<!-- Hero Visual: Terminal Window -->
+<div class="w-full lg:w-1/2">
+<div class="bg-surface-container-lowest/90 backdrop-blur-xl border border-outline-variant/30 rounded-DEFAULT overflow-hidden shadow-[0_0_30px_rgba(0,240,255,0.05)] flex flex-col h-[400px]">
+<!-- Terminal Header -->
+<div class="bg-surface-container-low border-b border-outline-variant/20 px-4 py-2 flex items-center justify-between">
+<div class="flex gap-2">
+<div class="w-3 h-3 rounded-full border border-outline-variant/50"></div>
+<div class="w-3 h-3 rounded-full border border-outline-variant/50"></div>
+<div class="w-3 h-3 rounded-full border border-outline-variant/50"></div>
+</div>
+<span class="font-code-sm text-code-sm text-outline uppercase text-[10px] tracking-widest">simplyytr_core.exe</span>
+<div class="w-4"></div> <!-- Spacer for balance -->
+</div>
+<!-- Terminal Body -->
+<div class="p-6 font-code-sm text-code-sm text-tertiary-container flex-grow overflow-y-auto space-y-2 opacity-90" id="terminal-logs">
+<div class="text-outline">user@host:~$ ./start_simplyytr --mode=autonomous</div>
+<div class="text-primary-container">[00:00:01] Booting core neural matrices... OK</div>
+<div class="text-primary-container">[00:00:02] Establishing connection to global datasphere... OK</div>
+<div class="text-on-surface-variant text-[12px] pl-4">&gt; Scraping GitHub repos for 'revenue pattern'</div>
+<div class="text-on-surface-variant text-[12px] pl-4">&gt; Parsing 14,203 technical blogs...</div>
+<div class="text-tertiary-container">[00:00:05] Pattern recognized. Confidence: 94.2%</div>
+<div class="text-tertiary-container">[00:00:06] Synthesizing execution protocol...</div>
+<div class="mt-4 flex">
+<span class="text-primary-container mr-2">&gt;</span>
+<span class="blinking-cursor w-2 h-4 bg-primary-container inline-block translate-y-[2px]"></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Bento Grid -->
+<section class="max-w-max-width mx-auto px-margin-mobile md:px-margin-desktop py-24 border-t border-outline-variant/10 relative">
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary-container/30 to-transparent"></div>
+<div class="mb-16">
+<h2 class="font-code-sm text-code-sm text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                    Architecture
+                </h2>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Feature 1 -->
+<div class="bg-surface-container-low/50 backdrop-blur-md border border-outline-variant/20 p-8 flex flex-col group hover:border-primary-container/50 hover:bg-surface-container-low/80 transition-all duration-300 cursor-default">
+<div class="w-12 h-12 flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:border-primary-container/50 group-hover:shadow-[0_0_15px_rgba(0,240,255,0.2)] transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary-container transition-colors" data-icon="troubleshoot">troubleshoot</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-3">Autonomous Research</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Continuously parses public repositories, technical documentation, and market signals without human intervention. Identifies optimal vectors for deployment.
+                    </p>
+</div>
+<!-- Feature 2 -->
+<div class="bg-surface-container-low/50 backdrop-blur-md border border-outline-variant/20 p-8 flex flex-col group hover:border-tertiary-container/50 hover:bg-surface-container-low/80 transition-all duration-300 cursor-default md:-translate-y-4">
+<div class="w-12 h-12 flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:border-tertiary-container/50 group-hover:shadow-[0_0_15px_rgba(0,251,64,0.2)] transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary-container transition-colors" data-icon="memory">memory</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-3">Learning Core</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Adapts to failures and edge cases dynamically. The core weights adjust in real-time based on execution outcomes, ensuring persistent self-improvement loops.
+                    </p>
+</div>
+<!-- Feature 3 -->
+<div class="bg-surface-container-low/50 backdrop-blur-md border border-outline-variant/20 p-8 flex flex-col group hover:border-secondary-container/50 hover:bg-surface-container-low/80 transition-all duration-300 cursor-default">
+<div class="w-12 h-12 flex items-center justify-center border border-outline-variant/30 mb-6 group-hover:border-secondary-container/50 group-hover:shadow-[0_0_15px_rgba(112,0,255,0.3)] transition-all">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary-container transition-colors" data-icon="stacked_line_chart">stacked_line_chart</span>
+</div>
+<h3 class="font-headline-lg-mobile text-headline-lg-mobile text-primary mb-3">Revenue Generation</h3>
+<p class="font-body-md text-body-md text-on-surface-variant flex-grow">
+                        Translates raw processing power and zero-cost structural advantages into actionable, scalable revenue streams. Fully automated yield harvesting.
+                    </p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-8 mt-auto border-t border-outline-variant/10 bg-background flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-gutter z-50">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest text-center md:text-left">
+            SIMPLYYTR // OPEN_SOURCE_DNA // NULL_BUDGET_INITIATIVE
+        </div>
+<div class="flex gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Source</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Audit</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Protocol</a>
+</div>
+</footer>
+</body></html>

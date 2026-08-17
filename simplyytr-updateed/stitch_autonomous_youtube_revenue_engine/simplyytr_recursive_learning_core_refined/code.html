@@ -1,0 +1,448 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>simplyytr // Recursive Learning Core (RLYA)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;family=Inter:wght@400;500;600&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container-low": "#1c1b1c",
+                "tertiary-fixed": "#eaddff",
+                "surface-variant": "#353436",
+                "primary": "#dbfcff",
+                "on-tertiary": "#37265e",
+                "on-secondary": "#003907",
+                "on-tertiary-container": "#675590",
+                "inverse-on-surface": "#313031",
+                "on-primary": "#00363a",
+                "on-secondary-fixed": "#002203",
+                "background": "#131314",
+                "inverse-surface": "#e5e2e3",
+                "inverse-primary": "#006970",
+                "error-container": "#93000a",
+                "error": "#ffb4ab",
+                "data-mint": "#72ff70",
+                "border-subtle": "#3b494b",
+                "on-secondary-container": "#006d16",
+                "primary-fixed-dim": "#00dbe9",
+                "on-secondary-fixed-variant": "#00530e",
+                "tertiary": "#faf3ff",
+                "surface-container-high": "#2a2a2b",
+                "data-cyan": "#00dbe9",
+                "primary-container": "#00f0ff",
+                "surface-matte": "#0e0e0f",
+                "surface-container-lowest": "#0e0e0f",
+                "on-primary-container": "#006970",
+                "surface": "#131314",
+                "on-primary-fixed-variant": "#004f54",
+                "on-surface": "#e5e2e3",
+                "primary-fixed": "#7df4ff",
+                "on-primary-fixed": "#002022",
+                "surface-container-highest": "#353436",
+                "surface-container": "#201f20",
+                "surface-bright": "#39393a",
+                "on-error": "#690005",
+                "tertiary-container": "#e1d2ff",
+                "secondary": "#d5ffcb",
+                "outline-variant": "#3b494b",
+                "surface-tint": "#00dbe9",
+                "outline": "#849495",
+                "on-tertiary-fixed-variant": "#4e3d76",
+                "tertiary-fixed-dim": "#d1bcff",
+                "surface-dim": "#131314",
+                "secondary-fixed": "#72ff71",
+                "on-background": "#e5e2e3",
+                "on-surface-variant": "#b9cacb",
+                "secondary-container": "#00f93f",
+                "on-error-container": "#ffdad6",
+                "secondary-fixed-dim": "#00e63a",
+                "on-tertiary-fixed": "#220f48"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "unit": "4px",
+                "margin-safe": "24px",
+                "gutter": "16px",
+                "container-max": "1440px"
+        },
+        "fontFamily": {
+                "data-lg": [
+                        "JetBrains Mono"
+                ],
+                "label-caps": [
+                        "JetBrains Mono"
+                ],
+                "headline-xl": [
+                        "Sora"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Sora"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Sora"
+                ]
+        },
+        "fontSize": {
+                "data-lg": [
+                        "20px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-caps": [
+                        "11px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-xl": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            background-color: #131314;
+        }
+        
+        .grid-bg {
+            background-image: 
+                linear-gradient(to right, rgba(59, 73, 75, 0.3) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(59, 73, 75, 0.3) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container border-r border-border-subtle z-50 py-8">
+<div class="px-6 mb-8 flex items-center gap-4">
+<img alt="System Core Avatar" class="w-10 h-10 rounded-DEFAULT border border-border-subtle" src="https://lh3.googleusercontent.com/aida/AP1WRLtTeeK5p2fu8yykN-z7U47tx1qDsRLNyS9tZ1tqxUhzUwtm5kB0b2rL8I7HCAgduMOtKcWruMmPTDtsyzpsWio-hK7phuOCafA5ClQYYqkpnJ4zb7s1sRW0Z7Ps1wO_Y6sv_O-IS5G9fkW2PmaQUixLRhrnkm_atu74NSwYnY_CmCQNK4WVwP0LWcDsPGjKKPwLYr86kdH3sTt-pdkoGOrxpYG2-4IrAve3-QNR6ZDXwiiJFZhQh5WRsqE">
+<div>
+<h1 class="font-headline-lg text-headline-lg-mobile text-primary tracking-tighter uppercase">simplyytr</h1>
+<p class="font-code-md text-[12px] text-on-surface-variant">v4.0.2-stable</p>
+</div>
+</div>
+<div class="flex flex-col gap-2 mt-4 flex-grow">
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">memory</span>
+                Core
+            </a>
+<a class="bg-surface-container-highest text-data-mint border-r-4 border-data-mint flex items-center gap-4 px-6 py-4 transition-colors cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">troubleshoot</span>
+                Deep Dive
+            </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">insights</span>
+                Analytics
+            </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">layers</span>
+                Stack
+            </a>
+</div>
+<div class="px-6 mt-auto">
+<button class="w-full bg-surface-container-high border border-border-subtle text-primary py-3 px-4 font-label-caps text-label-caps hover:bg-primary hover:text-on-primary transition-all uppercase rounded-DEFAULT">
+                Initialize Sync
+            </button>
+</div>
+<div class="flex flex-col gap-2 mt-8 pt-4 border-t border-border-subtle px-0">
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-3 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+                Settings
+            </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-3 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer font-code-md text-code-md uppercase tracking-widest" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">menu_book</span>
+                Docs
+            </a>
+</div>
+</nav>
+<!-- TopAppBar Mobile -->
+<header class="md:hidden sticky top-0 w-full bg-surface-container border-b border-border-subtle z-50">
+<div class="flex justify-between items-center px-margin-safe py-4 max-w-container-max mx-auto">
+<div class="font-headline-lg-mobile text-headline-lg-mobile tracking-tighter text-primary uppercase">simplyytr</div>
+<div class="flex gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined">terminal</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined">sensors</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-all duration-300 active:scale-95">
+<span class="material-symbols-outlined">memory</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 w-full md:ml-64 p-margin-safe min-h-screen pb-32">
+<!-- Header Section -->
+<header class="mb-12 border-b border-border-subtle pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 max-w-container-max mx-auto">
+<div>
+<div class="flex items-center gap-3 mb-2">
+<span class="inline-block w-2 h-2 rounded-full bg-data-mint"></span>
+<span class="font-label-caps text-label-caps text-data-mint tracking-widest uppercase">System Online // Feed Active</span>
+</div>
+<h2 class="font-headline-xl text-headline-xl text-primary">Recursive Learning Core (RLYA)</h2>
+<p class="font-body-md text-body-md text-on-surface-variant mt-2 max-w-2xl">Real-time feedback loop analysis. Aggregating audience retention telemetry and autonomously updating linguistic models for next iteration cycle.</p>
+</div>
+<div class="flex gap-4">
+<div class="bg-surface-container rounded-lg border border-border-subtle p-4 border-l-4 border-l-data-cyan">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Learning Velocity</p>
+<div class="flex items-baseline gap-2">
+<span class="font-data-lg text-data-lg text-on-surface">2.4x</span>
+<span class="font-code-md text-code-md text-data-mint flex items-center"><span class="material-symbols-outlined text-[16px]">trending_up</span> 14%</span>
+</div>
+</div>
+<div class="bg-surface-container rounded-lg border border-border-subtle p-4 border-l-4 border-l-tertiary-fixed">
+<p class="font-label-caps text-label-caps text-on-surface-variant mb-1">Iteration Cycle</p>
+<div class="flex items-baseline gap-2">
+<span class="font-data-lg text-data-lg text-on-surface">#409</span>
+<span class="font-code-md text-code-md text-on-surface-variant">Active</span>
+</div>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter max-w-container-max mx-auto">
+<!-- Retention Heatmap Analysis (Span 8) -->
+<section class="lg:col-span-8 bg-surface-container rounded-lg border border-border-subtle flex flex-col overflow-hidden relative">
+<div class="p-4 border-b border-border-subtle flex justify-between items-center bg-surface-container-high">
+<h3 class="font-label-caps text-label-caps text-on-surface tracking-widest flex items-center gap-2 uppercase">
+<span class="material-symbols-outlined text-[18px]">show_chart</span>
+                        Retention Telemetry Map
+                    </h3>
+<span class="font-code-md text-[12px] px-2 py-1 rounded-DEFAULT bg-surface-variant text-on-surface border border-border-subtle">VID_ID: 88A9F2</span>
+</div>
+<div class="p-6 flex-grow flex flex-col relative grid-bg min-h-[300px] bg-surface">
+<!-- Mock Graph Area -->
+<div class="w-full h-48 relative flex items-end mb-8 border-b border-l border-border-subtle pb-0 pl-0">
+<!-- Y-Axis Labels -->
+<div class="absolute -left-8 bottom-0 top-0 flex flex-col justify-between font-code-md text-[10px] text-on-surface-variant py-2">
+<span class="">100%</span>
+<span class="">50%</span>
+<span class="">0%</span>
+</div>
+<!-- Graph Path (SVG) -->
+<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 100 100">
+<path d="M0,20 L10,25 L20,30 L25,60 L30,65 L40,60 L50,70 L60,75 L70,50 L80,55 L90,80 L100,85" fill="none" stroke="#00dbe9" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+
+
+</svg>
+<!-- Highlight Nodes -->
+<div class="absolute w-2 h-2 rounded-full bg-error left-[25%] bottom-[40%] z-10 cursor-pointer hover:scale-150 transition-transform group">
+<div class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-surface-container-high border border-border-subtle rounded-DEFAULT font-code-md text-[10px] z-20 shadow-lg">
+<span class="text-error font-bold">CRITICAL DROP:</span> Visual density low. Engagement -14%.
+                            </div>
+</div>
+<div class="absolute w-2 h-2 rounded-full bg-data-mint left-[70%] bottom-[50%] z-10 cursor-pointer hover:scale-150 transition-transform group">
+<div class="absolute hidden group-hover:block bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-surface-container-high border border-border-subtle rounded-DEFAULT font-code-md text-[10px] z-20 shadow-lg">
+<span class="text-data-mint font-bold">RECOVERY:</span> High action sequence. Engagement +8%.
+                            </div>
+</div>
+</div>
+<!-- X-Axis Labels -->
+<div class="flex justify-between w-full font-code-md text-[10px] text-on-surface-variant px-2 border-t border-border-subtle pt-2 absolute bottom-2 left-0 right-0">
+<span class="">00:00</span>
+<span class="">02:15</span>
+<span class="">05:30</span>
+<span class="">08:45</span>
+<span class="">12:00</span>
+</div>
+<!-- AI Correction Notes Overlay -->
+<div class="mt-auto grid grid-cols-2 gap-4">
+<div class="bg-surface-container-high border border-border-subtle p-3 rounded-DEFAULT">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[14px] text-error">warning</span>
+<span class="font-label-caps text-[10px] text-error">Anomaly Detected @ 02:15</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface">"Hook structure overly complex. Visual density fell below threshold."</p>
+<p class="font-code-md text-[10px] text-on-surface-variant mt-2">&gt; Action: Reduce verbosity by 4s.</p>
+</div>
+<div class="bg-surface-container-high border border-border-subtle p-3 rounded-DEFAULT">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-[14px] text-data-mint">psychology</span>
+<span class="font-label-caps text-[10px] text-data-mint">Pattern Recognized @ 07:10</span>
+</div>
+<p class="font-body-md text-[12px] text-on-surface">"Pacing shift resonated highly with demographic cluster B."</p>
+<p class="font-code-md text-[10px] text-on-surface-variant mt-2">&gt; Action: Emulate cadence in next script.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Sentiment Engine (Span 4) -->
+<section class="lg:col-span-4 bg-surface-container rounded-lg border border-border-subtle flex flex-col h-[500px]">
+<div class="p-4 border-b border-border-subtle bg-surface-container-high">
+<h3 class="font-label-caps text-label-caps text-on-surface tracking-widest flex items-center gap-2 uppercase">
+<span class="material-symbols-outlined text-[18px]">forum</span>
+                        Sentiment Engine
+                    </h3>
+</div>
+<div class="p-4 flex-grow overflow-hidden flex flex-col">
+<div class="flex justify-between items-center mb-4">
+<span class="font-code-md text-code-md text-on-surface-variant">Global Tone</span>
+<div class="w-32 h-2 bg-surface-container-highest rounded-full overflow-hidden flex">
+<div class="h-full bg-error" style="width: 15%"></div>
+<div class="h-full bg-surface-variant" style="width: 25%"></div>
+<div class="h-full bg-data-mint" style="width: 60%"></div>
+</div>
+</div>
+<!-- Scrolling Terminal Log -->
+<div class="bg-surface-matte border border-border-subtle p-3 rounded-DEFAULT flex-grow overflow-y-auto font-code-md text-[11px] relative">
+<div class="space-y-3">
+<div class="flex gap-2">
+<span class="text-data-mint">[+]</span>
+<span class="text-on-surface-variant opacity-70">User_992:</span>
+<span class="text-on-surface">"The deep dive at 4:20 blew my mind."</span>
+</div>
+<div class="flex gap-2">
+<span class="text-error">[-]</span>
+<span class="text-on-surface-variant opacity-70">Anon_X:</span>
+<span class="text-on-surface">"Too slow in the beginning..."</span>
+</div>
+<div class="flex gap-2">
+<span class="text-outline-variant">[=]</span>
+<span class="text-on-surface-variant opacity-70">SysBot:</span>
+<span class="text-on-surface">"Audio mixing noted in 4 comments."</span>
+</div>
+<div class="flex gap-2">
+<span class="text-data-mint">[+]</span>
+<span class="text-on-surface-variant opacity-70">DevL:</span>
+<span class="text-on-surface">"Exactly what I needed for my thesis."</span>
+</div>
+<div class="flex gap-2">
+<span class="text-data-mint">[+]</span>
+<span class="text-on-surface-variant opacity-70">DevL:</span>
+<span class="text-on-surface">"Exactly what I needed for my thesis."</span>
+</div>
+<div class="flex gap-2">
+<span class="text-outline-variant">[=]</span>
+<span class="text-on-surface-variant opacity-70">SysBot:</span>
+<span class="text-on-surface">"Compiling aggregate emotional vector..."</span>
+</div>
+</div>
+</div>
+<div class="mt-4 pt-4 border-t border-border-subtle">
+<p class="font-label-caps text-[10px] text-on-surface-variant mb-2">&gt; Next Gen Tone Modifier:</p>
+<div class="flex flex-wrap gap-2">
+<span class="px-2 py-1 rounded-DEFAULT bg-surface-variant text-on-surface border border-border-subtle font-code-md text-[10px]">+15% Pacing</span>
+<span class="px-2 py-1 rounded-DEFAULT bg-surface-variant text-on-surface border border-border-subtle font-code-md text-[10px]">+5% Technical Depth</span>
+<span class="px-2 py-1 rounded-DEFAULT bg-surface-matte text-on-surface-variant border border-border-subtle font-code-md text-[10px] line-through">-10% Intro Fluff</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Autonomous Script Refinement (Span 12) -->
+<section class="lg:col-span-12 bg-surface-container rounded-lg border border-border-subtle overflow-hidden">
+<div class="p-4 border-b border-border-subtle bg-surface-container-high flex justify-between items-center">
+<h3 class="font-label-caps text-label-caps text-on-surface tracking-widest flex items-center gap-2 uppercase">
+<span class="material-symbols-outlined text-[18px]">code_blocks</span>
+                        Autonomous Script Refinement (Diff View)
+                    </h3>
+<button class="bg-surface-variant border border-border-subtle text-on-surface px-3 py-1 font-label-caps text-[10px] hover:bg-surface-bright transition-colors flex items-center gap-1 rounded-DEFAULT uppercase">
+<span class="material-symbols-outlined text-[14px]">commit</span> Push Updates
+                    </button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-px bg-border-subtle">
+<!-- Original -->
+<div class="bg-surface-matte p-6">
+<div class="flex items-center justify-between mb-4 pb-2 border-b border-border-subtle">
+<span class="font-code-md text-code-md text-on-surface-variant">V1.0 - Original</span>
+<span class="font-code-md text-[10px] bg-error-container/30 text-error px-2 py-0.5 rounded-DEFAULT border border-error-container">Retention Risk</span>
+</div>
+<div class="font-code-md text-[13px] text-on-surface-variant leading-relaxed">
+<p class="mb-2 text-[#b9cacb]">So today we are going to look at the new architecture.</p>
+<p class="bg-error-container/20 text-error px-3 py-1 mb-2 rounded-DEFAULT"><span class="text-error/50 select-none mr-2">-</span>It's a really interesting system that has a lot of moving parts, and honestly, it can be quite confusing when you first look at it. We'll start by breaking down the main module...</p>
+<p class="text-[#b9cacb]">But before that, make sure to like and subscribe.</p>
+</div>
+</div>
+<!-- AI Optimized -->
+<div class="bg-surface-matte p-6 relative">
+<div class="flex items-center justify-between mb-4 pb-2 border-b border-border-subtle relative z-10">
+<span class="font-code-md text-code-md text-on-surface">V1.1 - AI Optimized</span>
+<span class="font-code-md text-[10px] bg-surface-variant text-data-mint px-2 py-0.5 rounded-DEFAULT border border-border-subtle">+18% Proj. Retention</span>
+</div>
+<div class="font-code-md text-[13px] text-on-surface leading-relaxed relative z-10">
+<p class="mb-2 text-[#b9cacb]">So today we are going to look at the new architecture.</p>
+<p class="bg-[#003907]/30 text-data-mint px-3 py-1 mb-2 rounded-DEFAULT"><span class="text-data-mint/50 select-none mr-2">+</span>This system is complex. We're bypassing the fluff and diving straight into the core compute module.</p>
+<p class="text-outline-variant line-through opacity-50 text-[11px] mb-2 italic">// Removed generic CTA block based on 02:15 drop-off data.</p>
+<p class="text-data-cyan bg-surface-variant px-3 py-1 rounded-DEFAULT border border-border-subtle"><span class="text-data-cyan/50 select-none mr-2">&gt;</span>Insert high-density visual here.</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer -->
+<footer class="w-full bg-background border-t border-border-subtle py-8 mt-auto md:ml-64 relative z-40">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-safe max-w-container-max mx-auto gap-gutter">
+<span class="font-label-caps text-label-caps text-on-surface-variant text-center md:text-left">SIMPLYYTR // OPEN_SOURCE_DNA // NULL_BUDGET_INITIATIVE</span>
+<div class="flex gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Source</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Audit</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Protocol</a>
+</div>
+</div>
+</footer>
+
+
+</body></html>

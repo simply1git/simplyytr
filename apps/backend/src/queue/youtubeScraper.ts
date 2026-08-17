@@ -8,27 +8,26 @@ import { addIngestJob } from './ingestQueue';
 const prisma = new PrismaClient();
 
 export async function executeScrape() {
-    console.log('[Scraper] Waking up to find viral videos...');
+    console.log('[Competitive Pulse] Waking up to scan viral topics & competitor velocity...');
     
     try {
         let newDownloadsCount = 0;
         const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
         if (!settings || !settings.autoPilotEnabled) {
-            console.log('[Scraper] Auto-pilot is disabled. Going back to sleep.');
+            console.log('[Competitive Pulse] Auto-pilot is disabled. Going back to sleep.');
             return;
         }
 
         const query = `${settings.targetNiche} shorts`;
-        console.log(`[Scraper] Searching YouTube for: "${query}" (Max: ${settings.maxDownloadsPerRun || 1})`);
+        console.log(`[Competitive Pulse] Searching YouTube for: "${query}" (Max: ${settings.maxDownloadsPerRun || 1})`);
 
-        // Using yt-dlp to search for top 20 results to find new unseen videos
         const storageDir = path.resolve(__dirname, '../../storage/raw');
         
         const ytDlp = spawn('yt-dlp', [
             `ytsearch20:${query}`,
-            '--dump-json', // get metadata
+            '--dump-json',
             '-o', `${storageDir}/%(id)s.%(ext)s`,
-            '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4' // force mp4
+            '-f', 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4'
         ]);
 
         const rl = readline.createInterface({
@@ -40,48 +39,73 @@ export async function executeScrape() {
             try {
                 const metadata = JSON.parse(line);
                 
-                // Check if we already have it
+                // Calculate velocity per hour based on upload timestamp
+                const uploadTimestamp = metadata.timestamp || (Date.now() / 1000 - 86400);
+                const hoursOld = Math.max(0.5, (Date.now() / 1000 - uploadTimestamp) / 3600);
+                const viewCount = metadata.view_count || 1000;
+                const velocityPerHour = Math.round(viewCount / hoursOld);
+                
+                // Predation score (0 to 100)
+                let predationScore = 40.0;
+                if (velocityPerHour > 10000) predationScore = 95.0;
+                else if (velocityPerHour > 4000) predationScore = 80.0;
+                else if (velocityPerHour > 1000) predationScore = 60.0;
+
+                // Check if already processed
                 const existing = await prisma.trendSignal.findUnique({ where: { youtubeId: metadata.id } });
                 if (existing) {
-                    console.log(`[Scraper] Already processed: ${metadata.title}, skipping...`);
+                    // Update velocity
+                    await prisma.trendSignal.update({
+                        where: { youtubeId: metadata.id },
+                        data: {
+                            velocityPerHour,
+                            predationScore,
+                            youtubeViews: viewCount
+                        }
+                    });
                     return;
                 }
 
                 if (newDownloadsCount >= (settings.maxDownloadsPerRun || 1)) {
-                    return; // We reached our quota for this run
+                    return;
                 }
 
-                console.log(`[Scraper] Found NEW viral video: ${metadata.title}`);
+                console.log(`[Competitive Pulse] Found HIGH VELOCITY video: "${metadata.title}" (${velocityPerHour} v/hr, Score: ${predationScore})`);
                 newDownloadsCount++;
 
                 const result = await prisma.trendSignal.upsert({
                     where: { youtubeId: metadata.id },
-                    update: {},
+                    update: {
+                        velocityPerHour,
+                        predationScore,
+                        youtubeViews: viewCount
+                    },
                     create: {
                         youtubeId: metadata.id,
                         topic: metadata.title,
-                        score: metadata.view_count || 0,
+                        score: viewCount,
+                        velocityPerHour,
+                        predationScore,
                         metadata: JSON.stringify(metadata),
                         downloadStatus: 'PENDING',
                     }
                 });
                 
-                // If it was just created (or if we need to force it), queue it for download!
                 if (result.downloadStatus === 'PENDING') {
                     addIngestJob(metadata.id);
                 }
             } catch (e) {
-                // Ignore parse errors from non-json output
+                // Ignore non-json output
             }
         });
 
         ytDlp.on('close', (code) => {
-            console.log(`[Scraper] Download cycle finished with code ${code}`);
+            console.log(`[Competitive Pulse] Scan finished with code ${code}`);
             systemState.setTask("Sleeping / Waiting for Next Task");
         });
 
     } catch (err) {
         systemState.setTask("Sleeping / Waiting for Next Task");
-        console.error('[Scraper] Error during scraping cycle:', err);
+        console.error('[Competitive Pulse] Error during scraping cycle:', err);
     }
 }
