@@ -48,7 +48,7 @@ jobs:
           HOUR=$(date -u +"%H")
           if [ "$HOUR" = "00" ]; then
             curl -s -X POST \
-              "${{ secrets.VERCEL_API_URL }}/api/analytics/sync" \
+              "${{ secrets.VERCEL_API_URL }}/api/cron/analytics" \
               -H "Authorization: Bearer ${{ secrets.PIPELINE_SECRET }}"
             echo "✅ Analytics sync triggered"
           else
