@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>simplyytr // Neural Logic Simulator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "tertiary-fixed": "#72ff70",
+                      "secondary-fixed-dim": "#d1bcff",
+                      "on-background": "#e5e2e3",
+                      "on-primary-fixed": "#002022",
+                      "inverse-surface": "#e5e2e3",
+                      "on-tertiary-fixed": "#002203",
+                      "background": "#131314",
+                      "error": "#ffb4ab",
+                      "surface-container-highest": "#353436",
+                      "tertiary": "#ddffd3",
+                      "on-surface": "#e5e2e3",
+                      "secondary-container": "#7000ff",
+                      "on-tertiary-container": "#006e16",
+                      "tertiary-fixed-dim": "#00e639",
+                      "on-tertiary": "#003907",
+                      "outline-variant": "#3b494b",
+                      "on-error": "#690005",
+                      "error-container": "#93000a",
+                      "surface-container-low": "#1c1b1c",
+                      "on-primary-container": "#006970",
+                      "on-error-container": "#ffdad6",
+                      "secondary": "#d1bcff",
+                      "secondary-fixed": "#e9ddff",
+                      "primary-fixed": "#7df4ff",
+                      "inverse-on-surface": "#313031",
+                      "primary": "#dbfcff",
+                      "surface-variant": "#353436",
+                      "on-secondary-container": "#ddcdff",
+                      "on-secondary": "#3c0090",
+                      "surface": "#131314",
+                      "tertiary-container": "#00fb40",
+                      "surface-container-high": "#2a2a2b",
+                      "on-secondary-fixed-variant": "#5700c9",
+                      "surface-dim": "#131314",
+                      "on-tertiary-fixed-variant": "#00530e",
+                      "on-primary-fixed-variant": "#004f54",
+                      "inverse-primary": "#006970",
+                      "on-surface-variant": "#b9cacb",
+                      "surface-bright": "#3a393a",
+                      "on-secondary-fixed": "#23005b",
+                      "on-primary": "#00363a",
+                      "primary-fixed-dim": "#00dbe9",
+                      "outline": "#849495",
+                      "surface-container": "#201f20",
+                      "surface-container-lowest": "#0e0e0f",
+                      "surface-tint": "#00dbe9",
+                      "primary-container": "#00f0ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "unit": "4px",
+                      "gutter": "16px",
+                      "margin-mobile": "16px",
+                      "max-width": "1440px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "code-sm": [
+                              "JetBrains Mono"
+                      ],
+                      "headline-lg-mobile": [
+                              "Sora"
+                      ],
+                      "headline-xl": [
+                              "Sora"
+                      ],
+                      "headline-lg": [
+                              "Sora"
+                      ],
+                      "label-caps": [
+                              "JetBrains Mono"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "code-sm": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "headline-lg-mobile": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "headline-xl": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "800"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "label-caps": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            background-image: linear-gradient(theme('colors.outline-variant') 1px, transparent 1px),
+                              linear-gradient(90deg, theme('colors.outline-variant') 1px, transparent 1px);
+            background-size: 32px 32px;
+            background-color: theme('colors.surface-container-lowest');
+        }
+        
+        /* Grid overlay opacity */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: theme('colors.surface-container-lowest');
+            opacity: 0.95;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glow-sm {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+        
+        .glow-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 20, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+        
+        .blinking-cursor::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .pulse-line {
+            stroke-dasharray: 10;
+            animation: dash 20s linear infinite;
+        }
+        
+        @keyframes dash {
+            to {
+                stroke-dashoffset: -1000;
+            }
+        }
+        
+        .node-active {
+            animation: pulse-node 2s infinite;
+        }
+        
+        @keyframes pulse-node {
+            0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+        }
+        
+        .log-scroll {
+            mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+            -webkit-mask-image: linear-gradient(to bottom, transparent, black 10%, black 90%, transparent);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md min-h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest text-primary-fixed-dim font-code-sm text-code-sm h-screen w-64 fixed left-0 top-0 border-r border-outline-variant/20 flex flex-col h-full py-gutter z-40 hidden md:flex">
+<div class="px-6 pb-8 border-b border-outline-variant/20 mb-4">
+<div class="flex items-center gap-3 mb-4">
+<div class="w-10 h-10 rounded-full border border-primary-fixed/50 flex items-center justify-center glow-sm relative overflow-hidden">
+<img alt="SIMPLYYTR Neural Core" class="object-cover w-full h-full opacity-80" data-alt="A highly detailed macro shot of a futuristic neural processor core. Glowing cyan energy courses through intricate geometric circuitry on a dark obsidian substrate. High-contrast lighting emphasizes the technical precision and synthetic intelligence theme. Cyber-noir aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAV0IQipFZJoTAvMHLVGtlDzSbJkZSeJU5lJdvv8-R7KUnHsmB9Nr39OepuwsDywFLHKSUCEan5cvp5YqbJ53YCQDWxW9nz21taiqdKeLpSTGPaGg0mSKGVZU2YtZiy63JpOgeMMeZcJmso8VvqJl9XxHAI6In6cblG5w9xeQpkg7wFonF2obncYVaMmGufrrRZOgXg5UMQXGDkhrELOsChIv6taUCcm51I3c1lEYLUCP76sPAqZAsX"/>
+<div class="absolute inset-0 bg-primary-fixed/20 mix-blend-overlay"></div>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary text-xl tracking-tighter">NODE_01</h1>
+<div class="text-[10px] text-tertiary-fixed-dim font-code-sm uppercase tracking-widest flex items-center gap-1">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+                        SYSTEM_ACTIVE
+                    </div>
+</div>
+</div>
+<button class="w-full py-2 border border-primary-fixed text-primary-fixed font-label-caps text-label-caps hover:bg-primary-fixed/10 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] transition-all duration-300 active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">restart_alt</span>
+                REBOOT_CORE
+            </button>
+</div>
+<ul class="flex-1 px-4 space-y-1">
+<li class="px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3 group">
+<span class="material-symbols-outlined group-hover:text-primary-fixed-dim transition-colors" data-weight="fill">memory</span>
+<span class="group-hover:text-primary-fixed-dim transition-colors">Core</span>
+</li>
+<li class="px-4 py-3 rounded bg-secondary-container/20 text-tertiary-fixed-dim border-l-4 border-tertiary-fixed-dim hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3">
+<span class="material-symbols-outlined" data-weight="fill">troubleshoot</span>
+<span>Deep Dive</span>
+</li>
+<li class="px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3 group">
+<span class="material-symbols-outlined group-hover:text-primary-fixed-dim transition-colors" data-weight="fill">insights</span>
+<span class="group-hover:text-primary-fixed-dim transition-colors">Analytics</span>
+</li>
+<li class="px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3 group">
+<span class="material-symbols-outlined group-hover:text-primary-fixed-dim transition-colors" data-weight="fill">layers</span>
+<span class="group-hover:text-primary-fixed-dim transition-colors">Stack</span>
+</li>
+</ul>
+<div class="px-4 mt-auto border-t border-outline-variant/20 pt-4">
+<ul class="space-y-1">
+<li class="px-4 py-2 rounded text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3 group">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary-fixed-dim transition-colors">code</span>
+<span class="group-hover:text-primary-fixed-dim transition-colors">Logs</span>
+</li>
+<li class="px-4 py-2 rounded text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80 flex items-center gap-3 group">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary-fixed-dim transition-colors">shield</span>
+<span class="group-hover:text-primary-fixed-dim transition-colors">Security</span>
+</li>
+</ul>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-64 relative h-screen overflow-y-auto">
+<!-- TopNavBar (Mobile Only) -->
+<header class="bg-background/80 backdrop-blur-xl text-primary-fixed-dim font-label-caps text-label-caps fixed top-0 w-full z-50 border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.15)] md:hidden">
+<div class="flex justify-between items-center px-margin-mobile py-4 mx-auto">
+<div class="font-headline-lg-mobile text-headline-lg-mobile tracking-tighter text-primary-fixed-dim flex items-center gap-2">
+<span class="material-symbols-outlined">troubleshoot</span>
+                    SIMPLYYTR
+                </div>
+<div class="flex gap-4">
+<button class="hover:text-primary-fixed transition-colors"><span class="material-symbols-outlined">hub</span></button>
+<button class="hover:text-primary-fixed transition-colors"><span class="material-symbols-outlined">menu</span></button>
+</div>
+</div>
+</header>
+<div class="p-4 md:p-8 pt-20 md:pt-8 max-w-max-width mx-auto h-full flex flex-col gap-6">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-outline-variant/30 pb-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary glow-text-cyan mb-1 flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim text-3xl">psychology</span>
+                        Neural Logic Simulator
+                    </h2>
+<p class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 bg-tertiary-fixed-dim rounded-full animate-pulse inline-block"></span>
+                        PROCESSING_STREAM // LIVE_DATA_INGEST
+                    </p>
+</div>
+<div class="flex items-center gap-3">
+<div class="bg-secondary-container/10 border border-secondary-container/30 px-3 py-1 rounded font-code-sm text-code-sm text-secondary-fixed-dim flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">sync</span>
+                        AUTO-REFRESH: <span class="text-white">ON</span>
+</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
+<!-- Main Canvas (Logic Tree) -->
+<div class="lg:col-span-9 glass-panel rounded-lg flex flex-col relative overflow-hidden">
+<div class="px-4 py-2 border-b border-outline-variant/30 font-label-caps text-label-caps text-primary-fixed-dim flex justify-between items-center bg-surface-container-low/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                            DECISION_MATRIX // VISUALIZATION
+                        </div>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-white transition-colors">zoom_in</span>
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-white transition-colors">zoom_out</span>
+<span class="material-symbols-outlined text-[16px] cursor-pointer hover:text-white transition-colors">center_focus_strong</span>
+</div>
+</div>
+<div class="flex-1 relative p-8 flex items-center justify-center overflow-auto">
+<!-- Blueprint Grid Background -->
+<div class="absolute inset-0 border-[0.5px] border-primary-fixed/5 bg-[linear-gradient(rgba(0,240,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(0,240,255,0.05)_1px,transparent_1px)] bg-[size:20px_20px]"></div>
+<!-- SVG Connections -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none z-0" style="min-width: 800px; min-height: 500px;">
+<path d="M 200 150 C 350 150, 350 250, 500 250" fill="none" stroke="rgba(125, 244, 255, 0.2)" stroke-width="2"></path>
+<path d="M 200 350 C 350 350, 350 250, 500 250" fill="none" stroke="rgba(125, 244, 255, 0.2)" stroke-width="2"></path>
+<!-- Active path -->
+<path class="pulse-line" d="M 200 350 C 350 350, 350 250, 500 250" fill="none" stroke="rgba(0, 230, 57, 0.6)" stroke-width="2"></path>
+<path class="pulse-line" d="M 500 250 C 650 250, 650 250, 800 250" fill="none" stroke="rgba(0, 230, 57, 0.6)" stroke-width="2"></path>
+</svg>
+<!-- Logic Nodes Container -->
+<div class="relative z-10 w-full max-w-4xl h-full flex justify-between items-center" style="min-width: 800px;">
+<!-- Column 1: Inputs -->
+<div class="flex flex-col gap-16 w-64">
+<!-- Node 1 -->
+<div class="bg-surface border border-outline-variant rounded p-3 relative hover:border-primary-fixed/50 transition-colors group cursor-crosshair">
+<div class="absolute right-0 top-1/2 w-3 h-3 bg-primary-fixed/20 border border-primary-fixed rounded-full translate-x-1.5 -translate-y-1/2"></div>
+<div class="font-code-sm text-code-sm text-on-surface mb-1 flex justify-between">
+<span>GitHub Trends</span>
+<span class="text-on-surface-variant">42k req</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+<div class="bg-primary-fixed h-full w-[45%]"></div>
+</div>
+</div>
+<!-- Node 2 (Active Input) -->
+<div class="bg-surface border border-tertiary-fixed-dim/50 rounded p-3 relative group cursor-crosshair glow-sm">
+<div class="absolute right-0 top-1/2 w-3 h-3 bg-tertiary-fixed-dim border border-tertiary-fixed-dim rounded-full translate-x-1.5 -translate-y-1/2 node-active"></div>
+<div class="absolute -left-1 top-0 bottom-0 w-1 bg-tertiary-fixed-dim rounded-l"></div>
+<div class="font-code-sm text-code-sm text-white mb-1 flex justify-between">
+<span>Research Data</span>
+<span class="text-tertiary-fixed-dim">W: 0.82</span>
+</div>
+<div class="text-[10px] font-label-caps text-on-surface-variant mb-2">Subject: Rust Tech News</div>
+<div class="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
+<div class="bg-tertiary-fixed-dim h-full w-[82%]"></div>
+</div>
+</div>
+</div>
+<!-- Column 2: Processor -->
+<div class="flex flex-col items-center justify-center w-64">
+<div class="bg-surface-container-high border border-primary-fixed/30 rounded-lg p-4 relative text-center w-full shadow-[0_0_20px_rgba(0,240,255,0.1)]">
+<div class="absolute left-0 top-1/2 w-3 h-3 bg-tertiary-fixed-dim border border-tertiary-fixed-dim rounded-full -translate-x-1.5 -translate-y-1/2"></div>
+<div class="absolute right-0 top-1/2 w-3 h-3 bg-tertiary-fixed-dim border border-tertiary-fixed-dim rounded-full translate-x-1.5 -translate-y-1/2"></div>
+<span class="material-symbols-outlined text-4xl text-primary-fixed-dim mb-2 animate-pulse">memory</span>
+<div class="font-headline-lg-mobile text-[16px] text-white mb-1">DECISION_CORE</div>
+<div class="font-code-sm text-[11px] text-primary-fixed-dim">EVALUATING WEIGHTS</div>
+<div class="mt-4 p-2 bg-surface border border-outline-variant/30 rounded font-code-sm text-[10px] text-left text-on-surface-variant h-20 overflow-hidden relative">
+<div class="absolute inset-0 bg-[linear-gradient(transparent,rgba(19,19,20,0.9)_80%)] z-10"></div>
+<div class="flex flex-col gap-1">
+<span>&gt; analyzing rust ecosystem...</span>
+<span class="text-tertiary-fixed-dim">&gt; sentiment: high (0.88)</span>
+<span>&gt; cross-referencing trends...</span>
+<span>&gt; generating output node...</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Column 3: Output -->
+<div class="flex flex-col justify-center w-64">
+<div class="bg-[#002203] border-2 border-tertiary-fixed-dim rounded p-4 relative shadow-[0_0_20px_rgba(0,230,57,0.2)]">
+<div class="absolute left-0 top-1/2 w-3 h-3 bg-tertiary-fixed-dim border border-tertiary-fixed-dim rounded-full -translate-x-1.5 -translate-y-1/2 node-active"></div>
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-tertiary-fixed-dim">check_circle</span>
+<span class="font-headline-lg-mobile text-[18px] text-tertiary-fixed">APPROVED</span>
+</div>
+<div class="font-code-sm text-code-sm text-white mb-1">Niche: Rust Tech News</div>
+<div class="font-code-sm text-[11px] text-tertiary-fixed-dim mb-3">Confidence Threshold Met</div>
+<button class="w-full py-1.5 bg-tertiary-fixed-dim/20 border border-tertiary-fixed-dim text-tertiary-fixed font-label-caps text-[10px] hover:bg-tertiary-fixed-dim/40 transition-colors">
+                                        EXECUTE_ACTION
+                                    </button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Sidebar (Stats & Logs) -->
+<div class="lg:col-span-3 flex flex-col gap-6">
+<!-- Stats Card -->
+<div class="glass-panel rounded-lg p-4">
+<h3 class="font-label-caps text-label-caps text-primary-fixed-dim border-b border-outline-variant/30 pb-2 mb-4">SYSTEM_METRICS</h3>
+<div class="space-y-6">
+<!-- Logic Confidence Level -->
+<div>
+<div class="flex justify-between font-code-sm text-code-sm text-on-surface mb-2">
+<span>Logic Confidence Level</span>
+<span class="text-tertiary-fixed-dim font-bold">94%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden">
+<div class="bg-tertiary-fixed-dim h-full w-[94%] relative">
+<div class="absolute right-0 top-0 bottom-0 w-4 bg-white/50 animate-pulse"></div>
+</div>
+</div>
+</div>
+<!-- Synaptic Load -->
+<div>
+<div class="flex justify-between font-code-sm text-code-sm text-on-surface mb-2">
+<span>Synaptic Load</span>
+<span class="text-primary-fixed-dim">42%</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1.5 rounded-full overflow-hidden flex gap-[1px]">
+<!-- Segmented bar simulation -->
+<div class="bg-primary-fixed-dim h-full w-[10%]"></div>
+<div class="bg-primary-fixed-dim h-full w-[10%]"></div>
+<div class="bg-primary-fixed-dim h-full w-[10%]"></div>
+<div class="bg-primary-fixed-dim h-full w-[10%]"></div>
+<div class="bg-primary-fixed-dim/30 h-full w-[10%]"></div>
+<div class="bg-surface-container-low h-full w-[10%]"></div>
+<div class="bg-surface-container-low h-full w-[10%]"></div>
+<div class="bg-surface-container-low h-full w-[10%]"></div>
+<div class="bg-surface-container-low h-full w-[10%]"></div>
+<div class="bg-surface-container-low h-full w-[10%]"></div>
+</div>
+</div>
+<!-- Active Threads -->
+<div class="flex justify-between items-center bg-surface-container-low p-2 rounded border border-outline-variant/30">
+<span class="font-code-sm text-[12px] text-on-surface-variant">ACTIVE_THREADS</span>
+<span class="font-code-sm text-code-sm text-white bg-secondary-container/30 px-2 py-0.5 border border-secondary-container rounded">1,024</span>
+</div>
+</div>
+</div>
+<!-- Terminal Logs -->
+<div class="glass-panel rounded-lg flex-1 flex flex-col overflow-hidden">
+<div class="px-4 py-2 border-b border-outline-variant/30 font-label-caps text-[10px] text-primary-fixed-dim flex justify-between items-center bg-surface-container-low/50">
+<span>NEURAL_LOGS.TXT</span>
+<div class="flex gap-1">
+<span class="w-2 h-2 rounded-full bg-error-container"></span>
+<span class="w-2 h-2 rounded-full bg-secondary-container"></span>
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim"></span>
+</div>
+</div>
+<div class="p-4 flex-1 bg-[#0a0a0c] font-code-sm text-[11px] text-on-surface-variant overflow-hidden relative">
+<div class="log-scroll h-full flex flex-col justify-end gap-1 font-mono tracking-tight">
+<div class="opacity-30">[14:02:11] INGEST: Parsing GitHub API (repos &gt; 500 stars)</div>
+<div class="opacity-40">[14:02:12] PROCESS: Identifying keywords [rust, async, web]</div>
+<div class="opacity-50">[14:02:14] CALC: Computing relevance score... 0.65</div>
+<div class="opacity-60">[14:02:15] INGEST: Fetching HackerNews RSS feed</div>
+<div class="opacity-70">[14:02:17] PROCESS: Cross-referencing entities...</div>
+<div class="opacity-80 text-secondary-fixed-dim">[14:02:18] MATCH FOUND: "Rust Tech News" node identified.</div>
+<div class="opacity-90">[14:02:18] CALC: Calculating combined weight...</div>
+<div class="text-tertiary-fixed-dim">[14:02:19] WEIGHT: 0.82 (Threshold: 0.75) -&gt; APPROVED</div>
+<div class="text-white flex items-center gap-1 mt-1 blinking-cursor">
+<span class="text-primary-fixed-dim">&gt;</span> Awaiting next instruction
+                                </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

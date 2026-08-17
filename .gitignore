@@ -46,3 +46,10 @@ temp_assets/
 
 # Kaggle API keys
 kaggle.json
+
+# python
+__pycache__/
+*.pyc
+kaggle_logs/
+kaggle-logs/
+temp_repo/

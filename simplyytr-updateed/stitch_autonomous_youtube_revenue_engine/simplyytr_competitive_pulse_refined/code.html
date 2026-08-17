@@ -1,0 +1,403 @@
+<!DOCTYPE html><html class="dark" lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>simplyytr // Competitive Pulse</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&amp;family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet">
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container-low": "#1c1b1c",
+                "tertiary-fixed": "#eaddff",
+                "surface-variant": "#353436",
+                "primary": "#dbfcff",
+                "on-tertiary": "#37265e",
+                "on-secondary": "#003907",
+                "on-tertiary-container": "#675590",
+                "inverse-on-surface": "#313031",
+                "on-primary": "#00363a",
+                "on-secondary-fixed": "#002203",
+                "background": "#131314",
+                "inverse-surface": "#e5e2e3",
+                "inverse-primary": "#006970",
+                "error-container": "#93000a",
+                "error": "#ffb4ab",
+                "data-mint": "#72ff70",
+                "border-subtle": "#3b494b",
+                "on-secondary-container": "#006d16",
+                "primary-fixed-dim": "#00dbe9",
+                "on-secondary-fixed-variant": "#00530e",
+                "tertiary": "#faf3ff",
+                "surface-container-high": "#2a2a2b",
+                "data-cyan": "#00dbe9",
+                "primary-container": "#00f0ff",
+                "surface-matte": "#0e0e0f",
+                "surface-container-lowest": "#0e0e0f",
+                "on-primary-container": "#006970",
+                "surface": "#131314",
+                "on-primary-fixed-variant": "#004f54",
+                "on-surface": "#e5e2e3",
+                "primary-fixed": "#7df4ff",
+                "on-primary-fixed": "#002022",
+                "surface-container-highest": "#353436",
+                "surface-container": "#201f20",
+                "surface-bright": "#39393a",
+                "on-error": "#690005",
+                "tertiary-container": "#e1d2ff",
+                "secondary": "#d5ffcb",
+                "outline-variant": "#3b494b",
+                "surface-tint": "#00dbe9",
+                "outline": "#849495",
+                "on-tertiary-fixed-variant": "#4e3d76",
+                "tertiary-fixed-dim": "#d1bcff",
+                "surface-dim": "#131314",
+                "secondary-fixed": "#72ff71",
+                "on-background": "#e5e2e3",
+                "on-surface-variant": "#b9cacb",
+                "secondary-container": "#00f93f",
+                "on-error-container": "#ffdad6",
+                "secondary-fixed-dim": "#00e63a",
+                "on-tertiary-fixed": "#220f48"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "unit": "4px",
+                "margin-safe": "24px",
+                "gutter": "16px",
+                "container-max": "1440px"
+        },
+        "fontFamily": {
+                "data-lg": [
+                        "JetBrains Mono"
+                ],
+                "label-caps": [
+                        "JetBrains Mono"
+                ],
+                "headline-xl": [
+                        "Sora"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Sora"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Sora"
+                ]
+        },
+        "fontSize": {
+                "data-lg": [
+                        "20px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-caps": [
+                        "11px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-xl": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            font-family: theme('fontFamily.body-md');
+        }
+
+        /* Scrollbar styling for terminal feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.surface-container-lowest');
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.outline-variant');
+            border-radius: theme('borderRadius.DEFAULT');
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.primary-container');
+        }
+      </style>
+</head>
+<body class="min-h-screen flex flex-col relative overflow-x-hidden bg-background">
+<!-- SideNavBar (Desktop) -->
+<nav class="hidden md:flex bg-surface-container-lowest text-primary font-code-md text-code-md uppercase tracking-widest h-screen w-64 fixed left-0 top-0 border-r border-outline-variant flex-col py-8 z-50">
+<div class="px-6 mb-12">
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tighter">simplyytr</h1>
+<p class="text-on-surface-variant font-label-caps text-label-caps mt-2">SYSTEM_LOG // v4.0.2-stable</p>
+</div>
+<div class="flex flex-col gap-2 flex-grow">
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">memory</span>
+<span class="">Core</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">troubleshoot</span>
+<span class="">Deep Dive</span>
+</a>
+<a class="bg-surface-variant text-primary border-l-4 border-primary flex items-center gap-4 px-6 py-4 cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">insights</span>
+<span class="">Analytics</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">layers</span>
+<span class="">Stack</span>
+</a>
+</div>
+<div class="px-6 mt-auto mb-8">
+<button class="w-full py-3 border border-outline-variant text-on-surface font-label-caps text-label-caps hover:bg-surface-variant transition-colors rounded-DEFAULT">
+                Initialize Sync
+            </button>
+</div>
+<div class="flex flex-col gap-2 border-t border-outline-variant pt-4">
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-3 hover:text-primary transition-colors cursor-pointer" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="">Settings</span>
+</a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-3 hover:text-primary transition-colors cursor-pointer" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="">Docs</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar (Mobile & Global Header) -->
+<header class="md:hidden bg-surface-container-lowest text-primary font-headline-lg-mobile text-headline-lg-mobile sticky top-0 w-full border-b border-outline-variant flex justify-between items-center px-margin-safe py-4 z-40">
+<div class="font-headline-lg-mobile text-headline-lg-mobile tracking-tighter text-primary uppercase">simplyytr</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">terminal</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">sensors</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary transition-colors cursor-pointer">memory</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-grow md:ml-64 p-margin-safe max-w-container-max mx-auto flex flex-col gap-gutter w-full">
+<!-- Header Section -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4 border-b border-outline-variant pb-4">
+<div>
+<h2 class="font-headline-xl text-headline-xl text-on-surface tracking-tighter flex items-center gap-4">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">crisis_alert</span>
+                    Competitive Pulse
+                </h2>
+<p class="font-code-md text-code-md text-on-surface-variant mt-2 uppercase tracking-widest">Real-Time Niche Trend-Jacking // Module Active</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 font-label-caps text-label-caps uppercase tracking-widest hover:bg-primary-fixed transition-colors flex items-center gap-2 rounded-DEFAULT">
+<span class="material-symbols-outlined">bolt</span>
+                Initialize Trend-Jacking
+            </button>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Niche Velocity Tracker (Left Column) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<div class="bg-surface-container border border-outline-variant p-4 flex flex-col h-full rounded-lg">
+<div class="flex justify-between items-center mb-4 border-b border-outline-variant pb-2">
+<h3 class="font-code-md text-code-md text-on-surface uppercase tracking-widest">Velocity Tracker</h3>
+<span class="font-label-caps text-label-caps text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-DEFAULT border border-outline-variant">V/HR</span>
+</div>
+<div class="flex flex-col gap-3 overflow-y-auto pr-2 flex-grow max-h-[600px]">
+<!-- Competitor 1: High Alert -->
+<div class="border-l-4 border-error border-y border-r border-y-outline-variant border-r-outline-variant bg-surface-container-low p-3 rounded-DEFAULT flex flex-col gap-2 relative">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface">@TechNodeVoid</span>
+<span class="font-code-md text-code-md text-error">12.4k/hr</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant truncate text-sm">"Why React is dying in 2024"</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-label-caps text-label-caps text-error bg-error-container/20 px-2 py-0.5 rounded-DEFAULT border border-error/30">HIGH PREDATION</span>
+<span class="material-symbols-outlined text-error text-sm cursor-pointer hover:text-on-error-container">target</span>
+</div>
+</div>
+<!-- Competitor 2: Warning -->
+<div class="border-l-4 border-tertiary border-y border-r border-y-outline-variant border-r-outline-variant bg-surface-container-low p-3 rounded-DEFAULT flex flex-col gap-2 relative">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface">@DevSyntax</span>
+<span class="font-code-md text-code-md text-tertiary">5.2k/hr</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant truncate text-sm">"Building AI Agents from scratch"</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-label-caps text-label-caps text-tertiary bg-tertiary-container/20 px-2 py-0.5 rounded-DEFAULT border border-tertiary/30">MED PREDATION</span>
+<span class="material-symbols-outlined text-tertiary text-sm cursor-pointer hover:text-primary">target</span>
+</div>
+</div>
+<!-- Competitor 3: Baseline -->
+<div class="border border-outline-variant bg-surface-container-low p-3 rounded-DEFAULT flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface">@CodeMinimal</span>
+<span class="font-code-md text-code-md text-on-surface-variant">800/hr</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant truncate text-sm">"CSS Grid Tutorial"</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-label-caps text-label-caps text-outline bg-surface-container-high px-2 py-0.5 rounded-DEFAULT border border-outline-variant">LOW PREDATION</span>
+<span class="material-symbols-outlined text-outline text-sm cursor-pointer hover:text-primary">target</span>
+</div>
+</div>
+<!-- Competitor 4: Baseline -->
+<div class="border border-outline-variant bg-surface-container-low p-3 rounded-DEFAULT flex flex-col gap-2">
+<div class="flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface">@SysAdminPro</span>
+<span class="font-code-md text-code-md text-on-surface-variant">650/hr</span>
+</div>
+<div class="font-body-md text-body-md text-on-surface-variant truncate text-sm">"Linux Kernel Updates"</div>
+<div class="flex justify-between items-center mt-2">
+<span class="font-label-caps text-label-caps text-outline bg-surface-container-high px-2 py-0.5 rounded-DEFAULT border border-outline-variant">LOW PREDATION</span>
+<span class="material-symbols-outlined text-outline text-sm cursor-pointer hover:text-primary">target</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Viral Spike & Pulse Map (Right Column) -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Viral Spike Detection Chart -->
+<div class="bg-surface-container border border-outline-variant p-4 h-64 flex flex-col rounded-lg relative overflow-hidden">
+<div class="flex justify-between items-center mb-4 z-10 relative">
+<h3 class="font-code-md text-code-md text-on-surface uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">multiline_chart</span>
+                            Viral Spike Detection
+                        </h3>
+<div class="flex gap-2">
+<span class="font-label-caps text-label-caps text-error bg-error-container/20 px-2 py-1 rounded-DEFAULT border border-error/30 flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-error inline-block"></span>
+                                ANOMALY DETECTED
+                            </span>
+</div>
+</div>
+<!-- Simulated Chart Area -->
+<div class="flex-grow w-full relative flex items-end pb-4 border-b border-l border-outline-variant pl-2">
+<!-- Y Axis Labels -->
+<div class="absolute left-[-24px] top-0 bottom-0 flex flex-col justify-between text-[10px] text-outline font-label-caps py-4">
+<span class="">15k</span>
+<span class="">10k</span>
+<span class="">5k</span>
+<span class="">0</span>
+</div>
+<!-- Chart Bars (Stylized Solid) -->
+<div class="flex items-end justify-around w-full h-full gap-1 pt-8">
+<div class="w-full bg-surface-container-high h-[10%] border border-outline-variant border-b-0"></div>
+<div class="w-full bg-surface-container-high h-[15%] border border-outline-variant border-b-0"></div>
+<div class="w-full bg-surface-container-high h-[12%] border border-outline-variant border-b-0"></div>
+<div class="w-full bg-surface-container-high h-[20%] border border-outline-variant border-b-0"></div>
+<div class="w-full bg-surface-container-high h-[18%] border border-outline-variant border-b-0"></div>
+<div class="w-full bg-tertiary-container h-[35%] border border-tertiary border-b-0 relative"></div>
+<div class="w-full bg-error h-[90%] border border-on-error border-b-0 relative group">
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-surface border border-outline-variant px-2 py-1 text-[10px] font-label-caps text-on-surface whitespace-nowrap z-20 shadow-lg">"React is dying"</div>
+</div>
+<div class="w-full bg-error-container h-[60%] border border-error border-b-0"></div>
+<div class="w-full bg-tertiary h-[25%] border border-on-tertiary border-b-0"></div>
+<div class="w-full bg-surface-container-high h-[15%] border border-outline-variant border-b-0"></div>
+</div>
+</div>
+</div>
+<!-- Pulse Map Visualization -->
+<div class="bg-surface-container border border-outline-variant p-4 flex-grow min-h-[300px] flex flex-col rounded-lg relative overflow-hidden">
+<div class="flex justify-between items-center mb-4 z-10 relative">
+<h3 class="font-code-md text-code-md text-on-surface uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">hub</span>
+                            Niche Topic Pulse Map
+                        </h3>
+</div>
+<!-- Simulated Node Map area -->
+<div class="relative w-full h-full flex-grow bg-surface-container-lowest rounded-DEFAULT border border-outline-variant overflow-hidden">
+<!-- Subtle Map Grid -->
+<div class="absolute inset-0" style="background-image: linear-gradient(to right, rgba(132, 148, 149, 0.05) 1px, transparent 1px), linear-gradient(to bottom, rgba(132, 148, 149, 0.05) 1px, transparent 1px); background-size: 40px 40px;"></div>
+<!-- Center Node (High Alert) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-1 z-20">
+<div class="w-4 h-4 rounded-full bg-error border-2 border-surface-container-lowest"></div>
+<span class="font-label-caps text-[10px] text-on-surface bg-surface-container-high px-2 py-0.5 border border-outline-variant rounded-DEFAULT">React Fallback</span>
+</div>
+<!-- Node 2 -->
+<div class="absolute top-1/4 left-1/4 flex flex-col items-center gap-1 z-10">
+<div class="w-3 h-3 rounded-full bg-tertiary border-2 border-surface-container-lowest"></div>
+<span class="font-label-caps text-[10px] text-on-surface bg-surface-container-high px-2 py-0.5 border border-outline-variant rounded-DEFAULT">AI Agents</span>
+</div>
+<!-- Node 3 -->
+<div class="absolute bottom-1/4 right-1/3 flex flex-col items-center gap-1 z-10">
+<div class="w-3 h-3 rounded-full bg-primary border-2 border-surface-container-lowest"></div>
+<span class="font-label-caps text-[10px] text-on-surface bg-surface-container-high px-2 py-0.5 border border-outline-variant rounded-DEFAULT">NextJS 15</span>
+</div>
+<!-- Connecting Lines -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" stroke-width="1.5">
+<line class="text-outline-variant" stroke="currentColor" stroke-dasharray="4 4" x1="50%" x2="25%" y1="50%" y2="25%"></line>
+<line class="text-outline-variant" stroke="currentColor" stroke-dasharray="4 4" x1="50%" x2="66%" y1="50%" y2="75%"></line>
+</svg>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-surface-container-lowest text-on-surface-variant font-label-caps text-label-caps w-full py-8 mt-auto border-t border-outline-variant flex flex-col md:flex-row justify-between items-center px-margin-safe md:px-margin-safe gap-gutter md:ml-64 relative z-40">
+<div class="text-on-surface-variant">SIMPLYYTR // OPEN_SOURCE_DNA // NULL_BUDGET_INITIATIVE</div>
+<div class="flex gap-4">
+<a class="text-on-surface-variant transition-colors hover:text-primary" href="#">Source</a>
+<a class="text-on-surface-variant transition-colors hover:text-primary" href="#">Audit</a>
+<a class="text-on-surface-variant transition-colors hover:text-primary" href="#">Protocol</a>
+</div>
+</footer>
+
+
+</body></html>

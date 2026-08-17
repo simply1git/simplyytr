@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIMPLYYTR Terminal - Compliance Audit</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Sora:wght@700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "secondary-fixed-dim": "#c8c6c7",
+                        "on-error": "#690005",
+                        "inverse-primary": "#006970",
+                        "on-tertiary-fixed-variant": "#554500",
+                        "on-surface-variant": "#b9cacb",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container-high": "#232b2c",
+                        "surface": "#0d1515",
+                        "surface-container-lowest": "#080f10",
+                        "inverse-on-surface": "#2a3233",
+                        "secondary": "#c8c6c7",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary": "#3b2f00",
+                        "glow-cyan": "#00f0ff",
+                        "on-secondary-container": "#bab8b9",
+                        "on-primary-container": "#006970",
+                        "surface-container-highest": "#2e3637",
+                        "tertiary-fixed-dim": "#eac324",
+                        "obsidian-deep": "#0e0e0f",
+                        "on-background": "#dce4e5",
+                        "secondary-container": "#49494a",
+                        "tertiary-fixed": "#ffe179",
+                        "tertiary": "#fff5de",
+                        "error": "#ffb4ab",
+                        "error-container": "#93000a",
+                        "inverse-surface": "#dce4e5",
+                        "on-secondary-fixed": "#1c1b1c",
+                        "on-surface": "#dce4e5",
+                        "primary-fixed": "#7df4ff",
+                        "primary-container": "#00f0ff",
+                        "background": "#0d1515",
+                        "on-secondary-fixed-variant": "#474647",
+                        "surface-variant": "#2e3637",
+                        "tertiary-container": "#fed639",
+                        "surface-tint": "#00dbe9",
+                        "on-primary-fixed": "#002022",
+                        "surface-dim": "#0d1515",
+                        "terminal-green": "#00fb40",
+                        "surface-container-low": "#151d1e",
+                        "outline": "#849495",
+                        "on-tertiary-container": "#715d00",
+                        "primary-fixed-dim": "#00dbe9",
+                        "system-red": "#ffb4ab",
+                        "on-tertiary-fixed": "#231b00",
+                        "outline-variant": "#3b494b",
+                        "secondary-fixed": "#e5e2e3",
+                        "surface-bright": "#333b3b",
+                        "alert-orange": "#ff8c00",
+                        "on-primary": "#00363a",
+                        "surface-container": "#192122",
+                        "on-secondary": "#313031",
+                        "primary": "#dbfcff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "stack-md": "16px",
+                        "stack-xs": "4px",
+                        "stack-sm": "8px",
+                        "unit": "4px",
+                        "stack-lg": "32px",
+                        "margin-safe": "32px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Sora"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-xl": ["Sora"],
+                        "headline-lg-mobile": ["Sora"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.15em", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700"}],
+                        "code-sm": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                        "headline-xl": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .cyber-border {
+            border: 1px solid var(--tw-colors-outline-variant);
+            position: relative;
+        }
+        .cyber-border::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 240, 255, 0.02);
+            pointer-events: none;
+        }
+        .cyber-glow {
+            box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
+        }
+        .terminal-pulse {
+            animation: pulse-green 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse-green {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .grid-bg {
+            background-size: 24px 24px;
+            background-image: linear-gradient(to right, rgba(59, 73, 75, 0.1) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(59, 73, 75, 0.1) 1px, transparent 1px);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md text-body-md h-screen overflow-hidden flex flex-col grid-bg">
+<!-- TopAppBar -->
+<header class="bg-background dark:bg-background docked full-width top-0 border-b border-outline-variant shadow-[0_0_12px_rgba(0,240,255,0.1)] flex justify-between items-center w-full px-margin-safe h-16 shrink-0 z-10">
+<div class="flex items-center gap-gutter">
+<span class="material-symbols-outlined text-glow-cyan text-2xl">terminal</span>
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-glow-cyan tracking-tighter">SIMPLYYTR Terminal</h1>
+<span class="font-code-sm text-code-sm text-on-surface-variant ml-gutter bg-surface-container-high px-2 py-1 rounded border border-outline-variant">PROXY_AUDIT_V2.1</span>
+</div>
+<div class="flex items-center gap-gutter">
+<button class="text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded-full">
+<span class="material-symbols-outlined">memory</span>
+</button>
+<button class="text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded-full">
+<span class="material-symbols-outlined">sensors</span>
+</button>
+<button class="text-glow-cyan hover:text-glow-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-2 rounded-full">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-lowest dark:bg-surface-container-lowest docked left-0 h-full w-64 border-r border-outline-variant flat no shadows flex flex-col h-full py-stack-lg shrink-0 hidden md:flex">
+<div class="px-gutter mb-stack-lg">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">OPERATOR_01</div>
+<div class="font-code-sm text-code-sm text-glow-cyan font-bold">LEVEL_4_ACCESS</div>
+</div>
+<div class="flex-1 flex flex-col gap-unit px-unit">
+<a class="flex items-center gap-stack-sm px-gutter py-3 rounded-lg text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">memory</span>
+<span class="font-label-caps text-label-caps">Core</span>
+</a>
+<a class="flex items-center gap-stack-sm px-gutter py-3 rounded-lg text-on-primary bg-primary-container rounded-lg font-bold shadow-[0_0_12px_rgba(0,240,255,0.25)] hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">search_insights</span>
+<span class="font-label-caps text-label-caps">Deep Dive</span>
+</a>
+<a class="flex items-center gap-stack-sm px-gutter py-3 rounded-lg text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span class="font-label-caps text-label-caps">Analytics</span>
+</a>
+<a class="flex items-center gap-stack-sm px-gutter py-3 rounded-lg text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined">layers</span>
+<span class="font-label-caps text-label-caps">Stack</span>
+</a>
+</div>
+<div class="px-gutter mb-stack-lg mt-auto">
+<button class="w-full py-2 border border-glow-cyan text-glow-cyan font-label-caps text-label-caps rounded-DEFAULT hover:bg-glow-cyan hover:text-on-primary transition-colors cyber-glow">
+                    EXECUTE_SYNC
+                </button>
+</div>
+<div class="flex flex-col gap-unit px-unit border-t border-outline-variant pt-stack-sm">
+<a class="flex items-center gap-stack-sm px-gutter py-2 rounded-lg text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[18px]">settings</span>
+<span class="font-label-caps text-label-caps text-[10px]">Settings</span>
+</a>
+<a class="flex items-center gap-stack-sm px-gutter py-2 rounded-lg text-on-surface-variant hover:text-glow-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1" href="#">
+<span class="material-symbols-outlined text-[18px]">list_alt</span>
+<span class="font-label-caps text-label-caps text-[10px]">Logs</span>
+</a>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="flex-1 overflow-y-auto p-margin-safe pb-32">
+<div class="max-w-7xl mx-auto flex flex-col gap-stack-lg">
+<!-- Header -->
+<div class="flex justify-between items-end border-b border-outline-variant pb-stack-sm">
+<div>
+<h2 class="font-headline-xl text-headline-lg-mobile md:text-headline-xl text-on-background tracking-tighter">Compliance &amp; Content ID Proxy</h2>
+<p class="font-code-sm text-code-sm text-on-surface-variant mt-2">Target: simplyytr_v4_final_render.mp4 // Status: PRE-FLIGHT AUDIT</p>
+</div>
+<div class="text-right">
+<div class="font-label-caps text-label-caps text-glow-cyan mb-1">MONETIZATION LOCK</div>
+<div class="font-code-sm text-code-sm text-terminal-green terminal-pulse bg-[#00fb40] bg-opacity-10 px-3 py-1 rounded border border-terminal-green inline-block">ENGAGED</div>
+</div>
+</div>
+<!-- Dashboard Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column (8 cols) -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Content ID Simulation -->
+<div class="bg-surface-container cyber-border p-stack-md rounded-lg flex flex-col h-full">
+<div class="flex justify-between items-center mb-stack-md border-b border-outline-variant pb-2">
+<h3 class="font-label-caps text-label-caps text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-glow-cyan">policy</span>
+                                    Content ID Simulation Scan
+                                </h3>
+<span class="font-code-sm text-code-sm text-on-surface-variant">DB_VERSION: 2023.10.BETA</span>
+</div>
+<div class="grid grid-cols-3 gap-gutter mb-stack-md">
+<div class="bg-surface-container-low border border-outline-variant p-3 rounded text-center">
+<div class="font-code-sm text-code-sm text-on-surface-variant mb-1">VISUAL ASSETS</div>
+<div class="font-headline-lg text-headline-lg text-terminal-green">0</div>
+<div class="font-label-caps text-label-caps text-[10px] text-on-surface-variant mt-1">FLAGS</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant p-3 rounded text-center">
+<div class="font-code-sm text-code-sm text-on-surface-variant mb-1">AUDIO TRACKS</div>
+<div class="font-headline-lg text-headline-lg text-alert-orange">1</div>
+<div class="font-label-caps text-label-caps text-[10px] text-on-surface-variant mt-1">WARNING</div>
+</div>
+<div class="bg-surface-container-low border border-glow-cyan p-3 rounded text-center cyber-glow relative overflow-hidden">
+<div class="absolute inset-0 bg-glow-cyan opacity-10"></div>
+<div class="font-code-sm text-code-sm text-glow-cyan mb-1 relative z-10">RISK SCORE</div>
+<div class="font-headline-lg text-headline-lg text-on-background relative z-10">1.2%</div>
+<div class="font-label-caps text-label-caps text-[10px] text-glow-cyan mt-1 relative z-10">SAFE ZONE</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-3 rounded-DEFAULT font-code-sm text-code-sm flex-1 overflow-y-auto max-h-48 custom-scrollbar">
+<div class="flex text-on-surface-variant mb-2"><span class="text-glow-cyan mr-2">[00:01:24]</span> Scanning background layer... OK</div>
+<div class="flex text-on-surface-variant mb-2"><span class="text-glow-cyan mr-2">[00:03:12]</span> Checking B-roll hash #8F2A... OK</div>
+<div class="flex text-alert-orange mb-2"><span class="text-glow-cyan mr-2">[00:05:44]</span> AUDIO MATCH: "LoFi_Beats_03.wav" (Confidence 42%)</div>
+<div class="flex text-on-surface-variant mb-2 pl-6">&gt; Auto-crossreferencing licensed library... MATCH FOUND. Cleared.</div>
+<div class="flex text-on-surface-variant mb-2"><span class="text-glow-cyan mr-2">[00:08:50]</span> Script structure analysis... OK</div>
+<div class="flex text-terminal-green mt-4">&gt; SCAN COMPLETE. NO CRITICAL ISSUES DETECTED.</div>
+</div>
+</div>
+<!-- Ad-Safe Keyword Filter -->
+<div class="bg-surface-container cyber-border p-stack-md rounded-lg">
+<div class="flex justify-between items-center mb-stack-md border-b border-outline-variant pb-2">
+<h3 class="font-label-caps text-label-caps text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-glow-cyan">filter_alt</span>
+                                    Ad-Safe Lexicon Filter
+                                </h3>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-terminal-green">AUTOCORRECT: ON</span>
+<span class="material-symbols-outlined text-[16px] text-terminal-green">toggle_on</span>
+</div>
+</div>
+<table class="w-full font-code-sm text-code-sm text-left">
+<thead>
+<tr class="text-on-surface-variant border-b border-outline-variant">
+<th class="py-2 font-normal">TIMESTAMP</th>
+<th class="py-2 font-normal">ORIGINAL (FLAGGED)</th>
+<th class="py-2 font-normal">REPLACEMENT</th>
+<th class="py-2 font-normal text-right">STATUS</th>
+</tr>
+</thead>
+<tbody>
+<tr class="border-b border-outline-variant/50">
+<td class="py-3 text-glow-cyan">[00:02:15]</td>
+<td class="py-3 text-alert-orange line-through">"killed it"</td>
+<td class="py-3 text-on-background">"crushed it"</td>
+<td class="py-3 text-right text-terminal-green">[APPLIED]</td>
+</tr>
+<tr class="border-b border-outline-variant/50">
+<td class="py-3 text-glow-cyan">[00:04:30]</td>
+<td class="py-3 text-alert-orange line-through">"insane"</td>
+<td class="py-3 text-on-background">"wild"</td>
+<td class="py-3 text-right text-terminal-green">[APPLIED]</td>
+</tr>
+<tr>
+<td class="py-3 text-glow-cyan">[00:07:45]</td>
+<td class="py-3 text-alert-orange line-through">"clickbait"</td>
+<td class="py-3 text-on-background">"highly engaging"</td>
+<td class="py-3 text-right text-terminal-green">[APPLIED]</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Right Column (4 cols) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<!-- Green Dollar Sign Validation -->
+<div class="bg-surface-container cyber-border p-stack-md rounded-lg flex flex-col items-center justify-center py-stack-lg relative overflow-hidden">
+<div class="absolute inset-0 bg-terminal-green opacity-[0.02]"></div>
+<div class="w-24 h-24 rounded-full border-2 border-terminal-green flex items-center justify-center mb-stack-md relative shadow-[0_0_24px_rgba(0,251,64,0.3)]">
+<span class="material-symbols-outlined text-[64px] text-terminal-green" data-weight="fill" style="font-variation-settings: 'FILL' 1;">monetization_on</span>
+<div class="absolute inset-0 rounded-full border border-terminal-green terminal-pulse scale-110"></div>
+</div>
+<h3 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-terminal-green text-center mb-2">READY FOR AD REVENUE</h3>
+<p class="font-code-sm text-code-sm text-on-surface-variant text-center px-4">Content meets all strict advertiser-friendly guidelines. CPM potential maximized.</p>
+<button class="mt-stack-lg w-full py-3 bg-[#00363a] border border-terminal-green text-terminal-green font-label-caps text-label-caps rounded-DEFAULT hover:bg-terminal-green hover:text-on-primary transition-colors shadow-[0_0_12px_rgba(0,251,64,0.2)]">
+                                INITIATE FINAL EXPORT
+                            </button>
+</div>
+<!-- Synthetic Media Disclosure -->
+<div class="bg-surface-container cyber-border p-stack-md rounded-lg">
+<div class="flex justify-between items-center mb-stack-md border-b border-outline-variant pb-2">
+<h3 class="font-label-caps text-label-caps text-on-background flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-glow-cyan">robot</span>
+                                    Synthetic Media
+                                </h3>
+</div>
+<div class="flex items-start gap-3 mb-4">
+<span class="material-symbols-outlined text-alert-orange mt-1">warning</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-background mb-1">Platform Requirement Detected</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant text-xs">Video contains AI-generated voice synthesis elements. Automated labeling required.</div>
+</div>
+</div>
+<div class="bg-surface-container-low border border-outline-variant p-3 rounded-DEFAULT flex justify-between items-center cursor-pointer hover:border-glow-cyan transition-colors">
+<span class="font-label-caps text-label-caps text-on-background">Auto-Label Disclosure</span>
+<span class="material-symbols-outlined text-glow-cyan text-[24px]">toggle_on</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer -->
+<footer class="bg-surface-container-low dark:bg-surface-container-low docked bottom-0 full-width border-t border-outline-variant flat no shadows flex justify-between items-center px-gutter py-unit w-full fixed bottom-0 z-50 h-8">
+<div class="font-code-sm text-code-sm text-terminal-green">SYSTEM_STABLE // 0.4ms LATENCY</div>
+<div class="flex gap-gutter font-code-sm text-code-sm">
+<a class="text-on-surface-variant hover:text-terminal-green transition-colors" href="#">REAL_TIME_LOGS</a>
+<a class="text-on-surface-variant hover:text-terminal-green transition-colors" href="#">NODE_0x1F</a>
+</div>
+</footer>
+<style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: var(--tw-colors-surface-container-lowest);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: var(--tw-colors-outline-variant);
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: var(--tw-colors-glow-cyan);
+        }
+    </style>
+</body></html>

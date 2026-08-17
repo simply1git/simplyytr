@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIMPLYYTR // System Override</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#003907",
+                    "surface-container-highest": "#353436",
+                    "primary-container": "#00f0ff",
+                    "surface-dim": "#131314",
+                    "secondary-fixed": "#e9ddff",
+                    "on-error-container": "#ffdad6",
+                    "on-secondary-container": "#ddcdff",
+                    "inverse-surface": "#e5e2e3",
+                    "error-container": "#93000a",
+                    "surface-container": "#201f20",
+                    "background": "#131314",
+                    "on-primary-container": "#006970",
+                    "outline-variant": "#3b494b",
+                    "surface-container-low": "#1c1b1c",
+                    "surface-container-lowest": "#0e0e0f",
+                    "on-tertiary-fixed": "#002203",
+                    "surface-bright": "#3a393a",
+                    "inverse-primary": "#006970",
+                    "surface": "#131314",
+                    "on-secondary-fixed": "#23005b",
+                    "primary-fixed-dim": "#00dbe9",
+                    "inverse-on-surface": "#313031",
+                    "on-tertiary-container": "#006e16",
+                    "on-tertiary-fixed-variant": "#00530e",
+                    "tertiary-fixed-dim": "#00e639",
+                    "tertiary-container": "#00fb40",
+                    "on-surface": "#e5e2e3",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "surface-variant": "#353436",
+                    "primary-fixed": "#7df4ff",
+                    "on-secondary": "#3c0090",
+                    "tertiary-fixed": "#72ff70",
+                    "surface-container-high": "#2a2a2b",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-primary-fixed-variant": "#004f54",
+                    "on-primary": "#00363a",
+                    "secondary": "#d1bcff",
+                    "on-surface-variant": "#b9cacb",
+                    "on-background": "#e5e2e3",
+                    "primary": "#dbfcff",
+                    "outline": "#849495",
+                    "on-primary-fixed": "#002022",
+                    "on-error": "#690005",
+                    "tertiary": "#ddffd3",
+                    "error": "#ffb4ab",
+                    "surface-tint": "#00dbe9",
+                    "secondary-container": "#7000ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "max-width": "1440px",
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px",
+                    "unit": "4px"
+            },
+            "fontFamily": {
+                    "code-sm": [
+                            "JetBrains Mono"
+                    ],
+                    "label-caps": [
+                            "JetBrains Mono"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-xl": [
+                            "Sora"
+                    ],
+                    "headline-lg-mobile": [
+                            "Sora"
+                    ],
+                    "headline-lg": [
+                            "Sora"
+                    ]
+            },
+            "fontSize": {
+                    "code-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "800"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "700"
+                            }
+                    ]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        /* Base scrolling logic for terminal */
+        #terminal-output { scroll-behavior: smooth; }
+        
+        /* Custom scrollbar for terminal vibe */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #3b494b; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00f0ff; }
+
+        /* Blink animation for cursor */
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .cursor-blink { animation: blink 1s step-end infinite; }
+        
+        /* Subtle scanline effect overlay */
+        .scanlines {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0.1));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface flex min-h-screen overflow-hidden font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- JSON Component: SideNavBar -->
+<nav class="bg-surface-container-low border-r border-outline-variant/30 h-screen w-64 fixed left-0 top-0 overflow-y-auto hidden md:flex flex-col py-margin-desktop gap-unit z-50">
+<!-- Header -->
+<div class="px-gutter mb-8 flex flex-col gap-2">
+<div class="font-headline-lg text-headline-lg text-primary-container">NODE_01</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-container shadow-[0_0_8px_#00fb40]"></span>
+                AI_CORE_ACTIVE
+            </div>
+<div class="mt-4 flex items-center gap-3 p-2 border border-outline-variant/30 rounded bg-surface-container-lowest">
+<div class="w-8 h-8 rounded-full overflow-hidden border border-primary-container/30">
+<img alt="System Administrator" class="w-full h-full object-cover" data-alt="A macro shot of a sleek, futuristic metallic microchip glowing with faint cyan circuitry lines against a deep black background, conveying advanced system administration." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAh7xFkZpkBvCYk8h9GzrWifT6XEi7JMKcXOdGeQEOe0HxKoNalWpsEmp3n_Xgq20Sw5Hopn1p4H2wUQWolSozELidO1AqllRM_YSsCdEmHt36k8I2dWoKIVN55lpiMFQ4YZM6VcouuGaNSJJY4x2qdcOuxSGBbG4LfP4IVwnGqv9ZSFYxjuQYzjvEKn5A-jDCBph1641wpOumz35wsXyvo47udXdLfpVCUntrSCOvX0W2sa7yhobUG"/>
+</div>
+<div class="font-label-caps text-label-caps text-on-surface">SYS_ADMIN</div>
+</div>
+</div>
+<!-- Main Tabs -->
+<div class="flex flex-col w-full flex-1">
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant hover:bg-primary-container/10 hover:text-primary-container transition-colors duration-200 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm">query_stats</span>
+<span class="font-code-sm text-code-sm">Research</span>
+</a>
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant hover:bg-primary-container/10 hover:text-primary-container transition-colors duration-200 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm">video_settings</span>
+<span class="font-code-sm text-code-sm">Content</span>
+</a>
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant hover:bg-primary-container/10 hover:text-primary-container transition-colors duration-200 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm">payments</span>
+<span class="font-code-sm text-code-sm">Revenue</span>
+</a>
+<!-- Active State: Infrastructure (matches "Override/Control" intent) -->
+<a class="flex items-center gap-3 px-gutter py-3 text-primary-container border-r-2 border-primary-container bg-primary-container/5 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm" style="font-variation-settings: 'FILL' 1;">developer_board</span>
+<span class="font-code-sm text-code-sm font-bold">Infrastructure</span>
+</a>
+</div>
+<!-- CTA -->
+<div class="px-gutter mb-4">
+<button class="w-full py-2 border border-primary-container text-primary-container font-code-sm text-code-sm hover:bg-primary-container hover:text-on-primary-container transition-all shadow-[0_0_10px_rgba(0,240,255,0.1)] hover:shadow-[0_0_20px_rgba(0,240,255,0.4)]">
+                INITIALIZE_SYNC
+            </button>
+</div>
+<!-- Footer Tabs -->
+<div class="flex flex-col w-full border-t border-outline-variant/30 pt-4">
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant hover:bg-primary-container/10 hover:text-primary-container transition-colors duration-200 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm">list_alt</span>
+<span class="font-code-sm text-code-sm">Logs</span>
+</a>
+<a class="flex items-center gap-3 px-gutter py-3 text-on-surface-variant hover:bg-primary-container/10 hover:text-primary-container transition-colors duration-200 cursor-pointer group" href="#">
+<span class="material-symbols-outlined font-code-sm text-code-sm">settings</span>
+<span class="font-code-sm text-code-sm">Settings</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Area Wrapper -->
+<div class="flex-1 flex flex-col md:ml-64 w-full h-screen relative">
+<!-- Background Grid Pattern -->
+<div class="absolute inset-0 pointer-events-none opacity-5 bg-[linear-gradient(to_right,#849495_1px,transparent_1px),linear-gradient(to_bottom,#849495_1px,transparent_1px)] bg-[size:32px_32px] z-0"></div>
+<!-- JSON Component: TopNavBar -->
+<header class="bg-surface-dim/80 backdrop-blur-xl w-full h-16 sticky top-0 z-40 border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] flex justify-between items-center px-gutter transition-transform active:scale-[0.99]">
+<div class="font-headline-lg text-headline-lg text-primary-container tracking-tighter hidden md:block">SIMPLYYTR</div>
+<div class="flex-1 flex justify-end md:justify-center px-4">
+<!-- search_bar: on_right logic (placed center-right for balance) -->
+<div class="relative w-full max-w-md hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant font-code-sm">search</span>
+<input class="w-full bg-surface-container-lowest border border-outline-variant/50 focus:border-primary-container focus:ring-1 focus:ring-primary-container text-on-surface font-code-sm text-code-sm py-1.5 pl-10 pr-4 rounded-none placeholder:text-on-surface-variant/50 outline-none transition-all" placeholder="QUERY_SYSTEM..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2">
+<button class="text-on-surface-variant hover:text-primary-container hover:bg-surface-container-highest transition-all duration-300 p-2 rounded-none flex items-center justify-center">
+<span class="material-symbols-outlined font-code-sm">sensors</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-container hover:bg-surface-container-highest transition-all duration-300 p-2 rounded-none flex items-center justify-center">
+<span class="material-symbols-outlined font-code-sm">memory</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary-container hover:bg-surface-container-highest transition-all duration-300 p-2 rounded-none flex items-center justify-center">
+<span class="material-symbols-outlined font-code-sm" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</button>
+</div>
+<div class="w-8 h-8 rounded border border-primary-container/50 overflow-hidden shadow-[0_0_5px_rgba(0,240,255,0.2)]">
+<img alt="AI Core Status" class="w-full h-full object-cover" data-alt="A pulsing geometric core symbolizing AI status, rendered in stark cyan lines on a pitch black background, conveying a high-tech monitoring state." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxzXi-xdif4qk5javv8xqOchIS2zcC4sOnXIgNQtaQXTyV1Y9NDo8RK3eMy3DxEf8858hvuIqw-1qslmQGjHLIeqb2rsHv7QaY6GBamKuCJ1TolW1DXtj_D3giW1yE766lx9GvJNNhrc_QUc4VkCwIiztcDN455Tac1HWLsCQFvvyJdrzZ_NGme8B8yzQAQxq6M3xLA_MujfZ3HAB-GNLWTje58oJS2HAmHtEwil_6NjVO7wgmy51n"/>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-y-auto p-margin-mobile md:p-margin-desktop relative z-10 flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex flex-col gap-1 border-b border-outline-variant/30 pb-4">
+<h1 class="font-headline-xl text-headline-xl text-on-surface tracking-tighter uppercase">System Override</h1>
+<p class="font-code-sm text-code-sm text-error uppercase tracking-widest flex items-center gap-2">
+<span class="material-symbols-outlined text-error">warning</span>
+                    Authorization Level: Omega Required
+                </p>
+</div>
+<!-- Dashboard Bento Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
+<!-- Left Column (Status & Toggles) -->
+<div class="flex flex-col gap-6 lg:col-span-1">
+<!-- Widget: Neural Core Status -->
+<div class="bg-surface-container/40 backdrop-blur-md border border-outline-variant/50 p-6 flex flex-col gap-4 relative overflow-hidden">
+<!-- Glass highlight -->
+<div class="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary-container/50 to-transparent"></div>
+<h2 class="font-label-caps text-label-caps text-on-surface-variant flex justify-between items-center border-b border-outline-variant/20 pb-2">
+                            NEURAL CORE STATUS
+                            <span class="material-symbols-outlined text-tertiary-container animate-pulse">radio_button_checked</span>
+</h2>
+<div class="flex flex-col gap-5 mt-2">
+<!-- CPU Temp -->
+<div>
+<div class="flex justify-between font-code-sm text-code-sm mb-1">
+<span class="text-on-surface">CORE_TEMP</span>
+<span class="text-primary-container">84.2°C</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest relative overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-primary-container w-[84%] shadow-[0_0_10px_#00f0ff]"></div>
+</div>
+</div>
+<!-- Logic Coherence -->
+<div>
+<div class="flex justify-between font-code-sm text-code-sm mb-1">
+<span class="text-on-surface">LOGIC_COHERENCE</span>
+<span class="text-tertiary-container">99.8%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest relative overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-tertiary-container w-[99%] shadow-[0_0_10px_#00fb40]"></div>
+</div>
+</div>
+<!-- Network Load -->
+<div>
+<div class="flex justify-between font-code-sm text-code-sm mb-1">
+<span class="text-on-surface">NET_LOAD</span>
+<span class="text-on-surface-variant">42.1%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-lowest relative overflow-hidden">
+<div class="absolute top-0 left-0 h-full bg-outline w-[42%]"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Widget: Manual Overrides -->
+<div class="bg-surface-container/40 backdrop-blur-md border border-outline-variant/50 p-6 flex flex-col gap-4 flex-1">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant/20 pb-2">MANUAL OVERRIDES</h2>
+<div class="flex flex-col gap-4 mt-2">
+<!-- Toggle 1 -->
+<div class="flex items-center justify-between p-3 border border-outline-variant/30 bg-surface-container-lowest hover:border-primary-container/50 transition-colors group">
+<span class="font-code-sm text-code-sm text-on-surface group-hover:text-primary-container transition-colors">Pause Content Factory</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-dim peer-focus:outline-none border border-outline-variant peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface-variant after:border-outline-variant after:border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container/20 peer-checked:border-primary-container peer-checked:after:bg-primary-container peer-checked:shadow-[0_0_10px_rgba(0,240,255,0.3)]"></div>
+</label>
+</div>
+<!-- Toggle 2 -->
+<div class="flex items-center justify-between p-3 border border-outline-variant/30 bg-surface-container-lowest hover:border-primary-container/50 transition-colors group">
+<span class="font-code-sm text-code-sm text-on-surface group-hover:text-primary-container transition-colors">Reroute Compute</span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-dim peer-focus:outline-none border border-outline-variant peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-on-surface-variant after:border-outline-variant after:border after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-container/20 peer-checked:border-primary-container peer-checked:after:bg-primary-container peer-checked:shadow-[0_0_10px_rgba(0,240,255,0.3)]"></div>
+</label>
+</div>
+<!-- Emergency Toggle -->
+<div class="flex items-center justify-between p-3 border border-error/50 bg-error-container/10 mt-auto">
+<span class="font-code-sm text-code-sm text-error font-bold flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">dangerous</span>
+                                    EMERGENCY SHUTDOWN
+                                </span>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-dim border border-error/50 peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-error/50 after:border-error after:border after:h-5 after:w-5 after:transition-all peer-checked:bg-error/20 peer-checked:border-error peer-checked:after:bg-error peer-checked:shadow-[0_0_15px_rgba(255,180,171,0.5)]"></div>
+</label>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (CLI Terminal) -->
+<div class="lg:col-span-2 flex flex-col border border-primary-container/30 bg-surface-container-lowest relative shadow-[0_0_30px_rgba(0,240,255,0.05)] overflow-hidden min-h-[400px]">
+<!-- Terminal Header Bar -->
+<div class="h-8 bg-surface-container border-b border-primary-container/30 flex items-center px-4 justify-between">
+<span class="font-code-sm text-code-sm text-on-surface-variant/80 text-[10px]">root@simplyytr-core:~</span>
+<div class="flex gap-1.5">
+<div class="w-2.5 h-2.5 bg-outline-variant/50 rounded-none"></div>
+<div class="w-2.5 h-2.5 bg-outline-variant/50 rounded-none"></div>
+<div class="w-2.5 h-2.5 bg-primary-container/50 rounded-none"></div>
+</div>
+</div>
+<!-- Terminal Output Area -->
+<div class="flex-1 p-4 overflow-y-auto font-code-sm text-code-sm text-tertiary-container scanlines relative" id="terminal-output">
+<div class="flex flex-col gap-1 pb-8" id="log-container">
+<div class="opacity-70">Initiating secure connection to Core...</div>
+<div class="opacity-70">Handshake accepted. Identity verified: SYS_ADMIN.</div>
+<div class="opacity-70">Loading kernel modules... OK</div>
+<div class="opacity-70">Mounting abstract data syntax... OK</div>
+<div class="text-primary-container mt-2">SIMPLYYTR COMMAND LINE INTERFACE v9.4.1</div>
+<div class="mb-4">Type 'help' for a list of available commands.</div>
+<div><span class="text-on-surface-variant">&gt; systemctl status ai-generation-engine</span></div>
+<div>● ai-generation-engine.service - High-Throughput Content Matrix</div>
+<div>   Loaded: loaded (/etc/systemd/system/ai-gen.service; enabled; vendor preset: enabled)</div>
+<div>   Active: <span class="text-tertiary-container font-bold">active (running)</span> since Thu 2023-10-26 09:14:32 UTC; 4 days ago</div>
+<div> Main PID: 1048576 (gen_process)</div>
+<div>    Tasks: 4209 (limit: 8192)</div>
+<div>   Memory: 1.2 TB (limit: 2.0 TB)</div>
+<div class="mt-4"><span class="text-on-surface-variant">&gt; tail -f /var/log/simplyytr/fabric.log</span></div>
+<div class="opacity-80">[INFO] Thread-0x9a: Ingesting dataset delta-v4...</div>
+<div class="opacity-80">[INFO] Thread-0x2b: Synthesizing aesthetic parameters [CYBER_NOIR, GLASS]</div>
+<div class="opacity-80">[WARN] Node-7 latency spike detected (45ms). Compensating routing...</div>
+<div class="opacity-80">[INFO] Vector embedding aligned. Confidence score: 0.9982</div>
+</div>
+<!-- Input Line -->
+<div class="flex items-center gap-2 mt-2">
+<span class="text-primary-container font-bold">root@core#</span>
+<span class="w-2.5 h-4 bg-tertiary-container cursor-blink inline-block"></span>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<script>
+        // Simple script to simulate scrolling logs
+        document.addEventListener('DOMContentLoaded', () => {
+            const logContainer = document.getElementById('log-container');
+            const terminalOutput = document.getElementById('terminal-output');
+            
+            const dummyLogs = [
+                "[INFO] Re-calibrating neural weights...",
+                "[INFO] Data stream Alpha-9 secure.",
+                "[WARN] Minor fluctuation in sector 4. Auto-correcting.",
+                "[INFO] Generating asset payload block #8921...",
+                "[DEBUG] Garbage collection routine executed.",
+                "[INFO] Syncing external APIs... 200 OK",
+                "[INFO] Packet loss at 0.0001% - acceptable range."
+            ];
+
+            setInterval(() => {
+                const newLog = document.createElement('div');
+                newLog.className = 'opacity-80 animate-[pulse_0.5s_ease-in-out_1]';
+                const randomLog = dummyLogs[Math.floor(Math.random() * dummyLogs.length)];
+                
+                // Add timestamp
+                const now = new Date();
+                const timeStr = now.toISOString().split('T')[1].slice(0, -1);
+                newLog.textContent = `[${timeStr}] ${randomLog}`;
+                
+                logContainer.appendChild(newLog);
+                
+                // Keep only last 50 lines to prevent DOM bloat
+                if(logContainer.children.length > 50) {
+                    logContainer.removeChild(logContainer.firstChild);
+                }
+
+                // Auto scroll to bottom
+                terminalOutput.scrollTop = terminalOutput.scrollHeight;
+            }, 2500);
+        });
+    </script>
+</body></html>

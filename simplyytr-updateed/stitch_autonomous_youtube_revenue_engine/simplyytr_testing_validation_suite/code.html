@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>simplyytr - Testing &amp; Validation Suite</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&amp;family=Inter:wght@400;500;600&amp;family=Sora:wght@600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-primary-container": "#006970",
+                    "surface-tint": "#00dbe9",
+                    "error": "#ffb4ab",
+                    "inverse-on-surface": "#313031",
+                    "secondary-container": "#7000ff",
+                    "on-primary-fixed": "#002022",
+                    "on-tertiary-fixed": "#002203",
+                    "on-secondary-fixed-variant": "#5700c9",
+                    "surface-container-highest": "#353436",
+                    "background": "#131314",
+                    "on-surface": "#e5e2e3",
+                    "tertiary-fixed": "#72ff70",
+                    "inverse-surface": "#e5e2e3",
+                    "surface-container-low": "#1c1b1c",
+                    "outline": "#849495",
+                    "on-tertiary-fixed-variant": "#00530e",
+                    "surface-variant": "#353436",
+                    "on-tertiary-container": "#006e16",
+                    "tertiary-fixed-dim": "#00e639",
+                    "on-primary-fixed-variant": "#004f54",
+                    "tertiary": "#ddffd3",
+                    "surface-dim": "#131314",
+                    "inverse-primary": "#006970",
+                    "on-secondary-container": "#ddcdff",
+                    "on-error-container": "#ffdad6",
+                    "tertiary-container": "#00fb40",
+                    "secondary-fixed-dim": "#d1bcff",
+                    "on-error": "#690005",
+                    "surface": "#131314",
+                    "on-background": "#e5e2e3",
+                    "surface-bright": "#3a393a",
+                    "on-secondary": "#3c0090",
+                    "on-secondary-fixed": "#23005b",
+                    "primary-fixed-dim": "#00dbe9",
+                    "secondary": "#d1bcff",
+                    "primary-fixed": "#7df4ff",
+                    "on-tertiary": "#003907",
+                    "surface-container-lowest": "#0e0e0f",
+                    "surface-container": "#201f20",
+                    "primary": "#dbfcff",
+                    "primary-container": "#00f0ff",
+                    "on-surface-variant": "#b9cacb",
+                    "secondary-fixed": "#e9ddff",
+                    "surface-container-high": "#2a2a2b",
+                    "error-container": "#93000a",
+                    "on-primary": "#00363a",
+                    "outline-variant": "#3b494b"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px",
+                    "unit": "4px",
+                    "gutter": "16px",
+                    "max-width": "1440px"
+            },
+            "fontFamily": {
+                    "code-sm": [
+                            "JetBrains Mono"
+                    ],
+                    "body-md": [
+                            "Inter"
+                    ],
+                    "headline-lg-mobile": [
+                            "Sora"
+                    ],
+                    "headline-lg": [
+                            "Sora"
+                    ],
+                    "label-caps": [
+                            "JetBrains Mono"
+                    ],
+                    "headline-xl": [
+                            "Sora"
+                    ]
+            },
+            "fontSize": {
+                    "code-sm": [
+                            "14px",
+                            {
+                                    "lineHeight": "20px",
+                                    "fontWeight": "500"
+                            }
+                    ],
+                    "body-md": [
+                            "16px",
+                            {
+                                    "lineHeight": "24px",
+                                    "fontWeight": "400"
+                            }
+                    ],
+                    "headline-lg-mobile": [
+                            "24px",
+                            {
+                                    "lineHeight": "32px",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-lg": [
+                            "32px",
+                            {
+                                    "lineHeight": "40px",
+                                    "letterSpacing": "-0.01em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "label-caps": [
+                            "12px",
+                            {
+                                    "lineHeight": "16px",
+                                    "letterSpacing": "0.1em",
+                                    "fontWeight": "700"
+                            }
+                    ],
+                    "headline-xl": [
+                            "48px",
+                            {
+                                    "lineHeight": "56px",
+                                    "letterSpacing": "-0.02em",
+                                    "fontWeight": "800"
+                            }
+                    ]
+            }
+    },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-image: linear-gradient(rgba(19, 19, 20, 0.95), rgba(19, 19, 20, 0.95)), 
+                              repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(132, 148, 149, 0.05) 31px, rgba(132, 148, 149, 0.05) 32px),
+                              repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(132, 148, 149, 0.05) 31px, rgba(132, 148, 149, 0.05) 32px);
+            background-color: #131314;
+            color: #e5e2e3;
+            min-height: 100vh;
+        }
+        
+        .glow-effect {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+        
+        .glow-effect-strong {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.3);
+        }
+        
+        .glass-panel {
+            background: rgba(28, 27, 28, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+        
+        .terminal-cursor {
+            animation: blink 1s step-end infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .strobe-bar {
+            background: linear-gradient(90deg, transparent, rgba(0, 240, 255, 0.8), transparent);
+            background-size: 200% 100%;
+            animation: strobe 2s infinite linear;
+        }
+        
+        @keyframes strobe {
+            0% { background-position: -100% 0; }
+            100% { background-position: 200% 0; }
+        }
+        
+        /* Custom scrollbar for terminal */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131314;
+            border-left: 1px solid rgba(132, 148, 149, 0.2);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 219, 233, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 219, 233, 0.5);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopNavBar (Shared Component) -->
+<nav class="bg-background/80 backdrop-blur-xl shadow-[0_0_15px_rgba(0,240,255,0.1)] transition-all duration-300 ease-in-out fixed top-0 w-full z-50 flex justify-between items-center px-margin-desktop h-16 border-b border-outline-variant/30 hidden md:flex">
+<div class="flex items-center gap-8">
+<span class="font-headline-lg text-headline-lg tracking-tighter text-surface-tint">simplyytr</span>
+<div class="flex gap-6">
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-variant/20 px-2 py-1 rounded" href="#">Core</a>
+<a class="font-code-sm text-code-sm text-primary-container border-b-2 border-primary-container pb-1" href="#">Deep Dive</a>
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-variant/20 px-2 py-1 rounded" href="#">Analytics</a>
+<a class="font-code-sm text-code-sm text-on-surface-variant hover:text-primary transition-colors hover:bg-surface-variant/20 px-2 py-1 rounded" href="#">Stack</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+<img alt="System Administrator Avatar" class="w-8 h-8 rounded-full border border-surface-tint" data-alt="A sleek, minimalist avatar placeholder for a system administrator in a dark cyber-tech theme, featuring sharp geometric lines, neon cyan accents on a pure black background, conveying a sense of automated precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDVFCoKopjuY3viK2FE8jwh0SU5JzzSNfcdHC3zwYez6ujX9rbej5LxUDpnwSApxE_2DlVJtXmYwsOptVwu6wza-zdWa423eAsAnAkmu3xUtGONkJWSdmLSSKhgm_WV-JGEOpBgTacitZAa0Xooi3FLkAaDAY5MKZe25-AWN-vy9O-A1NQj8mKU-4fzq00CfS5SubkypltJKTm3y_LrcZ_pLlqXcfVyMMF5bkf_kK44j4BR1W5E4M8n"/>
+</div>
+</nav>
+<!-- SideNavBar (Shared Component) -->
+<aside class="bg-surface-container-low/90 backdrop-blur-md border-r border-outline-variant/20 fixed left-0 top-16 h-[calc(100vh-64px)] z-40 flex flex-col docked left-0 w-64 hidden lg:flex">
+<div class="p-6 border-b border-outline-variant/20">
+<div class="flex items-center gap-3">
+<img alt="Core AI Engine" class="w-10 h-10 rounded border border-primary-container" data-alt="A futuristic AI core icon, glowing intensely with a cyan hue against an obsidian background. It represents a powerful, self-improving neural network hub, sharp, clinical, and data-dense." src="https://lh3.googleusercontent.com/aida-public/AB6AXuChhq1bmfNo6tL5Dv2cb1qftHzIZZE0TbANnHEgbKVKsaJrdGtcKcVCqlEpQ5fHjJz91joXYq9lsDfDmGtGt-Z--urnrVopv3yFiwXM1cwyvYbEe9Ss0YQ8g7NrUnmv98n8DU4LBoVyCjrmiDy5l6GBaY5PXZqZFptgS2UdQX-JImKY6EFF_dtFUH9yH_a8hEv2ym6-u1Gff4ccR3NX9nvpmYp756XZkko5LZeRVwBzPgJ2YMTbwNnh"/>
+<div>
+<h2 class="font-code-sm text-code-sm text-surface-tint font-bold">System Core</h2>
+<p class="font-code-sm text-[10px] text-on-surface-variant">v4.0.2-stable</p>
+</div>
+</div>
+<button class="mt-4 w-full border border-primary-container text-primary-container font-code-sm text-code-sm py-2 hover:bg-primary-container/10 transition-colors glow-effect">
+                DEPLOY NODE
+            </button>
+</div>
+<div class="flex-1 py-4 overflow-y-auto">
+<nav class="flex flex-col gap-1 px-3">
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span>
+                    Nodes
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm bg-secondary-container/20 text-primary-container border-r-2 border-primary-container transition-transform translate-x-1" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="insights">insights</span>
+                    Pulse
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_mode">auto_mode</span>
+                    Automation
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="storage">storage</span>
+                    Vault
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+                    Logs
+                </a>
+</nav>
+</div>
+<div class="p-4 border-t border-outline-variant/20">
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+                    Settings
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-colors" href="#">
+<span class="material-symbols-outlined text-[20px]" data-icon="help_outline">help_outline</span>
+                    Support
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="pt-[80px] pb-24 lg:pl-[280px] px-margin-mobile md:px-margin-desktop max-w-max-width mx-auto min-h-screen">
+<!-- Page Header -->
+<header class="mb-8 border-b border-outline-variant/30 pb-4">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<h1 class="font-headline-xl text-headline-xl text-surface-tint flex items-center gap-3">
+<span class="material-symbols-outlined text-[40px]" data-icon="science">science</span>
+                        TEST_SUITE_V4
+                    </h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant mt-2 max-w-2xl">
+                        Autonomous QA Diagnostics. Monitoring pipeline stress, A/B permutations, and LLM inference stability.
+                    </p>
+</div>
+<div class="flex items-center gap-3">
+<div class="px-3 py-1 bg-secondary-container/20 border border-secondary-container/50 rounded-full font-code-sm text-label-caps text-secondary">
+                        STATUS: ACTIVE
+                    </div>
+<button class="px-4 py-2 bg-primary-container text-on-primary-container font-code-sm text-code-sm font-bold glow-effect-strong hover:bg-primary transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span>
+                        RUN ALL TESTS
+                    </button>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6 auto-rows-min">
+<!-- Widget 1: Pipeline Stress Test (Wide) -->
+<section class="glass-panel col-span-1 md:col-span-8 rounded-lg p-5 flex flex-col gap-4">
+<div class="flex justify-between items-center border-b border-outline-variant/30 pb-2">
+<h3 class="font-code-sm text-code-sm text-surface-tint uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="speed">speed</span>
+                        Pipeline Stress Test
+                    </h3>
+<span class="font-code-sm text-code-sm text-tertiary-fixed-dim flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+                        LIVE
+                    </span>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+<div class="p-3 bg-surface-container-highest/50 border border-outline-variant/20 rounded">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">SCRIPT_GEN_LATENCY</div>
+<div class="font-code-sm text-[24px] text-primary-container">240ms</div>
+</div>
+<div class="p-3 bg-surface-container-highest/50 border border-outline-variant/20 rounded">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">RENDER_THROUGHPUT</div>
+<div class="font-code-sm text-[24px] text-tertiary-fixed-dim">1.2x</div>
+</div>
+<div class="p-3 bg-surface-container-highest/50 border border-outline-variant/20 rounded">
+<div class="font-label-caps text-label-caps text-on-surface-variant mb-1">QUEUE_DEPTH</div>
+<div class="font-code-sm text-[24px] text-surface-tint">14</div>
+</div>
+<div class="p-3 bg-surface-container-highest/50 border border-error-container rounded">
+<div class="font-label-caps text-label-caps text-error mb-1">ERROR_RATE</div>
+<div class="font-code-sm text-[24px] text-error">0.02%</div>
+</div>
+</div>
+<div class="flex-1 min-h-[150px] relative border border-outline-variant/20 bg-surface-container-lowest flex items-end p-2 gap-1 overflow-hidden">
+<!-- Simulated Bar Chart -->
+<div class="w-full h-full absolute inset-0 opacity-10 pointer-events-none" style="background-image: repeating-linear-gradient(0deg, transparent, transparent 19px, #00dbe9 19px, #00dbe9 20px);"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[40%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[65%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[30%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[80%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[50%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[90%] border-t border-primary-container relative group strobe-bar"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[45%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-error-container/40 hover:bg-error-container/60 transition-colors h-[95%] border-t border-error relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[60%] border-t border-primary-container relative group"></div>
+<div class="flex-1 bg-primary-container/20 hover:bg-primary-container/40 transition-colors h-[35%] border-t border-primary-container relative group"></div>
+</div>
+</section>
+<!-- Widget 2: Model Validation (Tall) -->
+<section class="glass-panel col-span-1 md:col-span-4 md:row-span-2 rounded-lg p-5 flex flex-col gap-4">
+<div class="flex justify-between items-center border-b border-outline-variant/30 pb-2">
+<h3 class="font-code-sm text-code-sm text-surface-tint uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="model_training">model_training</span>
+                        Model Validation
+                    </h3>
+</div>
+<div class="flex flex-col gap-3">
+<!-- Model Item -->
+<div class="p-3 border border-outline-variant/30 rounded bg-surface-container-low hover:border-primary-container/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">GPT-4-Turbo</span>
+<span class="font-code-sm text-[12px] px-2 py-0.5 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim rounded">PASS</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 mb-2">
+<div class="bg-tertiary-fixed-dim h-1 w-[94%] shadow-[0_0_8px_rgba(0,230,57,0.5)]"></div>
+</div>
+<div class="flex justify-between font-code-sm text-[10px] text-on-surface-variant">
+<span>Logic: 94%</span>
+<span>Speed: 820ms</span>
+</div>
+</div>
+<!-- Model Item -->
+<div class="p-3 border border-outline-variant/30 rounded bg-surface-container-low hover:border-primary-container/50 transition-colors group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">Claude-3-Opus</span>
+<span class="font-code-sm text-[12px] px-2 py-0.5 bg-tertiary-fixed-dim/20 text-tertiary-fixed-dim rounded">PASS</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 mb-2">
+<div class="bg-tertiary-fixed-dim h-1 w-[98%] shadow-[0_0_8px_rgba(0,230,57,0.5)]"></div>
+</div>
+<div class="flex justify-between font-code-sm text-[10px] text-on-surface-variant">
+<span>Logic: 98%</span>
+<span>Speed: 1100ms</span>
+</div>
+</div>
+<!-- Model Item -->
+<div class="p-3 border border-error-container/50 rounded bg-surface-container-low hover:border-error transition-colors group cursor-pointer">
+<div class="flex justify-between items-center mb-2">
+<span class="font-code-sm text-code-sm font-bold text-on-surface">Llama-3-70B-Local</span>
+<span class="font-code-sm text-[12px] px-2 py-0.5 bg-error-container text-error rounded">DEGRADED</span>
+</div>
+<div class="w-full bg-surface-container-highest h-1 mb-2">
+<div class="bg-error h-1 w-[65%] shadow-[0_0_8px_rgba(255,180,171,0.5)]"></div>
+</div>
+<div class="flex justify-between font-code-sm text-[10px] text-on-surface-variant">
+<span>Logic: 65% (Hallucination)</span>
+<span>Speed: 450ms</span>
+</div>
+</div>
+</div>
+<div class="mt-auto pt-4 border-t border-outline-variant/20">
+<button class="w-full py-2 border border-outline text-on-surface-variant font-code-sm text-code-sm hover:text-surface-tint hover:border-surface-tint transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="tune">tune</span>
+                        ADJUST WEIGHTS
+                    </button>
+</div>
+</section>
+<!-- Widget 3: A/B Test Monitor (Medium) -->
+<section class="glass-panel col-span-1 md:col-span-8 rounded-lg p-5 flex flex-col gap-4">
+<div class="flex justify-between items-center border-b border-outline-variant/30 pb-2">
+<h3 class="font-code-sm text-code-sm text-surface-tint uppercase flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]" data-icon="compare_arrows">compare_arrows</span>
+                        A/B Test Monitor
+                    </h3>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant/30 font-label-caps text-label-caps text-outline">
+<th class="pb-2 font-normal">TEST_ID</th>
+<th class="pb-2 font-normal">NICHE/VARIANT</th>
+<th class="pb-2 font-normal">CTR_PREDICT</th>
+<th class="pb-2 font-normal">RETENTION_EST</th>
+<th class="pb-2 font-normal text-right">WINNER</th>
+</tr>
+</thead>
+<tbody class="font-code-sm text-code-sm">
+<tr class="border-b border-outline-variant/10 hover:bg-surface-variant/20 transition-colors">
+<td class="py-3 text-on-surface-variant">#AB-992</td>
+<td class="py-3">Tech Drama vs Review</td>
+<td class="py-3 text-primary-container">12.4% <span class="material-symbols-outlined text-[14px] align-middle" data-icon="arrow_upward">arrow_upward</span></td>
+<td class="py-3">45%</td>
+<td class="py-3 text-right">
+<span class="px-2 py-1 bg-primary-container/10 text-primary-container border border-primary-container/30 rounded text-[10px]">VARIANT_A</span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant/10 hover:bg-surface-variant/20 transition-colors bg-secondary-container/5">
+<td class="py-3 text-on-surface-variant">#AB-993</td>
+<td class="py-3">Neon Thumb vs Dark Thumb</td>
+<td class="py-3 text-secondary">8.9% <span class="material-symbols-outlined text-[14px] align-middle" data-icon="remove">remove</span></td>
+<td class="py-3">38%</td>
+<td class="py-3 text-right text-outline text-[10px]">CALCULATING...</td>
+</tr>
+<tr class="hover:bg-surface-variant/20 transition-colors">
+<td class="py-3 text-on-surface-variant">#AB-994</td>
+<td class="py-3">Aggressive Hook vs Story</td>
+<td class="py-3 text-error">4.2% <span class="material-symbols-outlined text-[14px] align-middle" data-icon="arrow_downward">arrow_downward</span></td>
+<td class="py-3 text-error">12%</td>
+<td class="py-3 text-right">
+<span class="px-2 py-1 bg-surface-variant text-on-surface-variant border border-outline/30 rounded text-[10px]">TERMINATED</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Widget 4: Manual Override Terminal (Full Width) -->
+<section class="col-span-1 md:col-span-12 rounded-lg bg-[#0e0e0f] border border-outline-variant/40 flex flex-col overflow-hidden h-[300px] shadow-[inset_0_0_30px_rgba(0,0,0,0.8)]">
+<div class="bg-surface-container px-4 py-2 border-b border-outline-variant/30 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-error/80"></span>
+<span class="w-3 h-3 rounded-full bg-surface-tint/80"></span>
+<span class="w-3 h-3 rounded-full bg-tertiary-fixed-dim/80"></span>
+<span class="ml-2 font-code-sm text-[12px] text-outline">root@simplyytr-core:~#</span>
+</div>
+<span class="material-symbols-outlined text-[16px] text-outline cursor-pointer hover:text-surface-tint" data-icon="open_in_full">open_in_full</span>
+</div>
+<div class="flex-1 p-4 overflow-y-auto font-code-sm text-code-sm text-outline-variant flex flex-col gap-1">
+<div><span class="text-secondary">[SYS]</span> Initializing diagnostic override module v4.0.2... OK</div>
+<div><span class="text-secondary">[SYS]</span> Connecting to renderer cluster... <span class="text-tertiary-fixed-dim">CONNECTED [3/3 nodes]</span></div>
+<div><span class="text-secondary">[SYS]</span> Tailing pipeline log stream...</div>
+<div class="text-surface-tint/70">-&gt; job_id:7782 [Render] allocating 8GB VRAM</div>
+<div class="text-surface-tint/70">-&gt; job_id:7782 [Render] frame extraction 45%</div>
+<div class="text-error/80">-&gt; job_id:7780 [Script] WARNING: Token limit approached (7890/8192)</div>
+<div class="text-surface-tint/70">-&gt; job_id:7782 [Render] frame extraction 100% - SUCCESS</div>
+<div class="mt-4 flex items-center">
+<span class="text-primary-container mr-2">simplyytr&gt;</span>
+<input class="bg-transparent border-none outline-none focus:ring-0 p-0 m-0 w-full text-on-surface font-code-sm text-code-sm" readonly="" type="text" value="run override_test --force"/>
+<span class="terminal-cursor text-primary-container font-bold">|</span>
+</div>
+</div>
+</section>
+</div>
+</main>
+<!-- Footer (Shared Component) -->
+<footer class="w-full py-4 px-margin-desktop flex flex-col md:flex-row justify-between items-center bg-surface-container-lowest border-t border-outline-variant/10 mt-auto absolute bottom-0 left-0 lg:pl-[280px]">
+<div class="font-code-sm text-code-sm text-on-surface mb-2 md:mb-0">
+            © 2024 SIMPLYYTR | $0 BUDGET PHILOSOPHY
+        </div>
+<div class="flex gap-6">
+<a class="font-label-caps text-label-caps text-outline hover:text-surface-tint opacity-80 hover:opacity-100 transition-opacity" href="#">Open Source</a>
+<a class="font-label-caps text-label-caps text-outline hover:text-surface-tint opacity-80 hover:opacity-100 transition-opacity" href="#">System Protocol</a>
+<a class="font-label-caps text-label-caps text-outline hover:text-surface-tint opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy</a>
+</div>
+</footer>
+</body></html>

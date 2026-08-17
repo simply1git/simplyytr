@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>simplyytr // Revenue Simulation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&amp;family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-lowest": "#0e0e0f",
+                        "on-tertiary-fixed": "#002203",
+                        "secondary-container": "#7000ff",
+                        "on-secondary-fixed": "#23005b",
+                        "error": "#ffb4ab",
+                        "primary-container": "#00f0ff",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-variant": "#353436",
+                        "surface-dim": "#131314",
+                        "background": "#131314",
+                        "tertiary-fixed-dim": "#00e639",
+                        "primary": "#dbfcff",
+                        "inverse-surface": "#e5e2e3",
+                        "outline-variant": "#3b494b",
+                        "on-primary-fixed": "#002022",
+                        "secondary": "#d1bcff",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "tertiary-container": "#00fb40",
+                        "surface-container-highest": "#353436",
+                        "on-primary-container": "#006970",
+                        "surface-container": "#201f20",
+                        "on-surface": "#e5e2e3",
+                        "on-error-container": "#ffdad6",
+                        "inverse-on-surface": "#313031",
+                        "on-secondary-container": "#ddcdff",
+                        "on-secondary": "#3c0090",
+                        "on-tertiary-container": "#006e16",
+                        "on-primary": "#00363a",
+                        "tertiary": "#ddffd3",
+                        "tertiary-fixed": "#72ff70",
+                        "on-surface-variant": "#b9cacb",
+                        "on-error": "#690005",
+                        "primary-fixed": "#7df4ff",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "outline": "#849495",
+                        "inverse-primary": "#006970",
+                        "surface-tint": "#00dbe9",
+                        "on-tertiary": "#003907",
+                        "surface-container-low": "#1c1b1c",
+                        "surface-container-high": "#2a2a2b",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-fixed": "#e9ddff",
+                        "on-tertiary-fixed-variant": "#00530e",
+                        "surface-bright": "#3a393a",
+                        "on-background": "#e5e2e3",
+                        "error-container": "#93000a",
+                        "surface": "#131314"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "gutter": "16px",
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "max-width": "1440px",
+                        "unit": "4px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Sora"],
+                        "body-md": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Sora"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-lg": ["Sora"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-image: linear-gradient(rgba(14, 14, 15, 0.95), rgba(14, 14, 15, 0.95)), 
+                              repeating-linear-gradient(to right, transparent, transparent 31px, rgba(132, 148, 149, 0.05) 32px),
+                              repeating-linear-gradient(to bottom, transparent, transparent 31px, rgba(132, 148, 149, 0.05) 32px);
+        }
+        .glow-box {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.1);
+        }
+        .glow-box:hover {
+            box-shadow: 0 0 25px rgba(0, 240, 255, 0.2);
+            border-color: rgba(0, 240, 255, 0.5);
+        }
+        .strobe {
+            animation: strobe 2s infinite;
+        }
+        @keyframes strobe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface font-body-md h-screen overflow-hidden flex selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="hidden md:flex flex-col h-full pt-20 pb-8 px-4 bg-surface-container-lowest text-primary-fixed-dim font-code-sm text-code-sm border-r border-outline-variant/20 w-64 z-40 shrink-0">
+<div class="mb-8 px-4">
+<div class="font-headline-lg text-headline-lg text-primary mb-4">NODE_01</div>
+<div class="text-xs text-on-surface-variant">STATUS: OPERATIONAL</div>
+</div>
+<div class="flex-1 space-y-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="query_stats">query_stats</span>
+<span>Research</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="video_settings">video_settings</span>
+<span>Content</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded bg-secondary-container/20 text-primary-fixed-dim border-r-4 border-primary-fixed-dim transition-transform duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="payments">payments</span>
+<span>Revenue</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 rounded text-on-surface-variant hover:bg-surface-variant/50 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="settings_input_component">settings_input_component</span>
+<span>Infrastructure</span>
+</a>
+</div>
+<div class="mt-auto space-y-4">
+<button class="w-full border border-primary-container bg-primary-container/10 text-primary-container hover:bg-primary-container/20 py-2 rounded font-label-caps text-label-caps transition-all glow-box flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="rocket_launch">rocket_launch</span> DEPLOY AGENT
+            </button>
+<div class="pt-4 border-t border-outline-variant/20 flex gap-4 justify-center">
+<a class="text-on-surface-variant hover:text-primary transition-colors flex flex-col items-center gap-1" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="code">code</span>
+<span class="text-[10px]">Logs</span>
+</a>
+<a class="text-on-surface-variant hover:text-primary transition-colors flex flex-col items-center gap-1" href="#">
+<span class="material-symbols-outlined text-lg" data-icon="lock_open">lock_open</span>
+<span class="text-[10px]">Security</span>
+</a>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 flex flex-col h-full overflow-y-auto bg-transparent relative">
+<!-- TopNavBar (Mobile mainly, but anchors context) -->
+<header class="fixed top-0 w-full md:w-[calc(100%-16rem)] z-50 bg-surface-dim/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.1)] flex justify-between items-center px-margin-desktop py-2 max-w-max-width mx-auto">
+<div class="font-headline-lg text-headline-lg tracking-tighter text-primary-fixed-dim">SIMPLYYTR</div>
+<div class="flex items-center gap-4 text-primary-fixed-dim font-label-caps text-label-caps">
+<button class="hover:text-primary-fixed hover:bg-primary/5 p-2 rounded transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="sensors">sensors</span>
+</button>
+<button class="hover:text-primary-fixed hover:bg-primary/5 p-2 rounded transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+</button>
+<button class="hover:text-primary-fixed hover:bg-primary/5 p-2 rounded transition-all active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="terminal">terminal</span>
+</button>
+</div>
+</header>
+<!-- Dashboard Content -->
+<div class="p-margin-mobile md:p-margin-desktop pt-24 md:pt-24 max-w-max-width mx-auto w-full space-y-6 flex-1">
+<div class="flex flex-col md:flex-row justify-between items-end border-b border-outline-variant/30 pb-4">
+<div>
+<h1 class="font-headline-xl text-headline-xl md:text-headline-xl text-on-surface mb-2">REVENUE SIMULATION</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed strobe"></span>
+                        MONTE CARLO PROJECTION [N=10,000 ITERATIONS]
+                    </p>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Probability Gauge (Large) -->
+<div class="md:col-span-4 bg-surface-dim/50 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 glow-box transition-all relative overflow-hidden flex flex-col items-center justify-center min-h-[300px]">
+<div class="absolute inset-0 opacity-10 pointer-events-none">
+<div class="w-full h-full border border-primary-container rounded-full scale-150 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-dashed"></div>
+</div>
+<h3 class="font-label-caps text-label-caps text-on-surface-variant absolute top-6 left-6">PROBABILITY OF SUCCESS</h3>
+<div class="relative w-48 h-48 flex items-center justify-center mt-4">
+<svg class="w-full h-full transform -rotate-90" viewbox="0 0 100 100">
+<circle cx="50" cy="50" fill="none" r="45" stroke="#3b494b" stroke-width="2"></circle>
+<circle class="drop-shadow-[0_0_8px_rgba(125,244,255,0.8)]" cx="50" cy="50" fill="none" r="45" stroke="#7df4ff" stroke-dasharray="282.7" stroke-dashoffset="30" stroke-width="4"></circle>
+</svg>
+<div class="absolute flex flex-col items-center">
+<span class="font-headline-xl text-headline-xl text-primary-fixed">92<span class="text-2xl">%</span></span>
+<span class="font-code-sm text-code-sm text-tertiary-fixed-dim">CONFIDENCE</span>
+</div>
+</div>
+</div>
+<!-- Revenue Estimate -->
+<div class="md:col-span-8 bg-surface-dim/50 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 glow-box transition-all flex flex-col">
+<div class="flex justify-between items-start mb-6 border-b border-outline-variant/30 pb-4">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant">REVENUE_EST_30D</h3>
+<span class="font-code-sm text-code-sm bg-secondary-container/20 text-secondary-fixed px-2 py-1 rounded border border-secondary/30">SCENARIO: AGGRESSIVE</span>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<div class="flex items-end gap-4 mb-2">
+<span class="font-headline-xl text-headline-xl text-tertiary-fixed">$14,250</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant mb-2">.00 USD</span>
+</div>
+<!-- Confidence Intervals Bar -->
+<div class="mt-8 space-y-2">
+<div class="flex justify-between font-code-sm text-code-sm text-on-surface-variant text-xs">
+<span>P10: $8,400</span>
+<span>MEDIAN</span>
+<span>P90: $22,100</span>
+</div>
+<div class="w-full h-2 bg-surface-container-highest rounded-full relative overflow-hidden">
+<div class="absolute left-[20%] right-[20%] h-full bg-outline-variant/50"></div>
+<div class="absolute left-[40%] right-[30%] h-full bg-tertiary-fixed-dim shadow-[0_0_10px_#00e639]"></div>
+<div class="absolute left-[55%] h-4 w-[2px] bg-white -top-1"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Niches Breakdown -->
+<div class="md:col-span-8 bg-surface-dim/50 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 glow-box transition-all">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant/30 pb-4 mb-4">NICHE PERFORMANCE MATRIX</h3>
+<div class="space-y-4">
+<!-- Niche 1 -->
+<div class="flex items-center justify-between p-3 border border-outline-variant/20 rounded bg-surface-container/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed" data-icon="science">science</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-surface">Quantum Computing News</div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mt-1">VOLATILITY: HIGH</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-code-sm text-code-sm text-tertiary-fixed">+$4,500</div>
+<div class="w-24 h-1 bg-surface-container-highest mt-1 rounded-full overflow-hidden">
+<div class="w-[60%] h-full bg-primary-fixed"></div>
+</div>
+</div>
+</div>
+<!-- Niche 2 -->
+<div class="flex items-center justify-between p-3 border border-outline-variant/20 rounded bg-surface-container/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary-fixed" data-icon="smart_toy">smart_toy</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-surface">AI SaaS Reviews</div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mt-1">VOLATILITY: MED</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-code-sm text-code-sm text-tertiary-fixed">+$6,200</div>
+<div class="w-24 h-1 bg-surface-container-highest mt-1 rounded-full overflow-hidden">
+<div class="w-[85%] h-full bg-secondary-fixed"></div>
+</div>
+</div>
+</div>
+<!-- Niche 3 -->
+<div class="flex items-center justify-between p-3 border border-outline-variant/20 rounded bg-surface-container/30">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-tertiary-fixed" data-icon="account_balance">account_balance</span>
+<div>
+<div class="font-code-sm text-code-sm text-on-surface">FinTech Code Analysis</div>
+<div class="font-label-caps text-[10px] text-on-surface-variant mt-1">VOLATILITY: LOW</div>
+</div>
+</div>
+<div class="text-right">
+<div class="font-code-sm text-code-sm text-tertiary-fixed">+$3,550</div>
+<div class="w-24 h-1 bg-surface-container-highest mt-1 rounded-full overflow-hidden">
+<div class="w-[45%] h-full bg-tertiary-fixed"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Pre-flight Checks -->
+<div class="md:col-span-4 bg-surface-dim/50 backdrop-blur-md border border-outline-variant/30 rounded-xl p-6 glow-box transition-all flex flex-col">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant/30 pb-4 mb-4">PRE-FLIGHT CHECKS</h3>
+<div class="flex-1 space-y-3 font-code-sm text-code-sm">
+<div class="flex justify-between items-center text-on-surface">
+<span>API_CONNECTIVITY</span>
+<span class="text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-0.5 rounded text-xs border border-tertiary-fixed/20">OPTIMAL</span>
+</div>
+<div class="flex justify-between items-center text-on-surface">
+<span>DATA_INGEST_RATE</span>
+<span class="text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-0.5 rounded text-xs border border-tertiary-fixed/20">OPTIMAL</span>
+</div>
+<div class="flex justify-between items-center text-on-surface">
+<span>LLM_LATENCY</span>
+<span class="text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-0.5 rounded text-xs border border-tertiary-fixed/20">OPTIMAL</span>
+</div>
+<div class="flex justify-between items-center text-on-surface">
+<span>CONTENT_QUEUE</span>
+<span class="text-tertiary-fixed-dim bg-tertiary-fixed/10 px-2 py-0.5 rounded text-xs border border-tertiary-fixed/20">OPTIMAL</span>
+</div>
+<div class="flex justify-between items-center text-on-surface pt-2 border-t border-outline-variant/20">
+<span class="text-on-surface-variant">SYSTEM_STATUS</span>
+<span class="text-primary-fixed-dim flex items-center gap-1"><span class="w-1.5 h-1.5 bg-primary-fixed rounded-full strobe"></span> READY</span>
+</div>
+</div>
+<button class="mt-6 w-full py-3 bg-primary-container text-on-primary-container font-code-sm text-code-sm rounded hover:bg-primary transition-colors flex justify-center items-center gap-2 shadow-[0_0_15px_rgba(0,240,255,0.3)]">
+<span class="material-symbols-outlined" data-icon="play_arrow">play_arrow</span> EXECUTE DEPLOYMENT
+                     </button>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="w-full py-8 mt-auto bg-surface-dim border-t border-outline-variant/10 text-tertiary-fixed-dim font-code-sm text-code-sm flex flex-col md:flex-row justify-between items-center px-margin-desktop gap-4">
+<div class="font-label-caps text-label-caps text-tertiary-fixed">SIMPLYYTR v4.0 // $0 BUDGET PHILOSOPHY // OPEN-CORE</div>
+<div class="flex gap-4">
+<a class="text-outline hover:text-tertiary-fixed-dim opacity-80 hover:opacity-100 transition-opacity" href="#">Protocol</a>
+<a class="text-outline hover:text-tertiary-fixed-dim opacity-80 hover:opacity-100 transition-opacity" href="#">Kernel</a>
+<a class="text-outline hover:text-tertiary-fixed-dim opacity-80 hover:opacity-100 transition-opacity" href="#">Repository</a>
+</div>
+</footer>
+</main>
+</body></html>

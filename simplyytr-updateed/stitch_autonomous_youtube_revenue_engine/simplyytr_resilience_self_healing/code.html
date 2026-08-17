@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>simplyytr // Resilience &amp; Self-Healing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "tertiary-fixed": "#72ff70",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "on-background": "#e5e2e3",
+                        "on-primary-fixed": "#002022",
+                        "inverse-surface": "#e5e2e3",
+                        "on-tertiary-fixed": "#002203",
+                        "background": "#131314",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#353436",
+                        "tertiary": "#ddffd3",
+                        "on-surface": "#e5e2e3",
+                        "secondary-container": "#7000ff",
+                        "on-tertiary-container": "#006e16",
+                        "tertiary-fixed-dim": "#00e639",
+                        "on-tertiary": "#003907",
+                        "outline-variant": "#3b494b",
+                        "on-error": "#690005",
+                        "error-container": "#93000a",
+                        "surface-container-low": "#1c1b1c",
+                        "on-primary-container": "#006970",
+                        "on-error-container": "#ffdad6",
+                        "secondary": "#d1bcff",
+                        "secondary-fixed": "#e9ddff",
+                        "primary-fixed": "#7df4ff",
+                        "inverse-on-surface": "#313031",
+                        "primary": "#dbfcff",
+                        "surface-variant": "#353436",
+                        "on-secondary-container": "#ddcdff",
+                        "on-secondary": "#3c0090",
+                        "surface": "#131314",
+                        "tertiary-container": "#00fb40",
+                        "surface-container-high": "#2a2a2b",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "surface-dim": "#131314",
+                        "on-tertiary-fixed-variant": "#00530e",
+                        "on-primary-fixed-variant": "#004f54",
+                        "inverse-primary": "#006970",
+                        "on-surface-variant": "#b9cacb",
+                        "surface-bright": "#3a393a",
+                        "on-secondary-fixed": "#23005b",
+                        "on-primary": "#00363a",
+                        "primary-fixed-dim": "#00dbe9",
+                        "outline": "#849495",
+                        "surface-container": "#201f20",
+                        "surface-container-lowest": "#0e0e0f",
+                        "surface-tint": "#00dbe9",
+                        "primary-container": "#00f0ff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "unit": "4px",
+                        "gutter": "16px",
+                        "margin-mobile": "16px",
+                        "max-width": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-lg-mobile": ["Sora"],
+                        "headline-xl": ["Sora"],
+                        "headline-lg": ["Sora"],
+                        "label-caps": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Cyber-Tech Noir specific styles */
+        body {
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+            /* Grid Pattern */
+            background-image: 
+                linear-gradient(to right, rgba(132, 148, 149, 0.05) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(132, 148, 149, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            background-attachment: fixed;
+        }
+
+        .glass-panel {
+            background-color: rgba(18, 18, 20, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+
+        .glow-sm {
+            box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+        }
+
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(0, 219, 233, 0.4);
+        }
+
+        .glow-amber {
+            box-shadow: 0 0 15px rgba(255, 180, 171, 0.4); /* Reusing error container as warning */
+        }
+
+        .terminal-input {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid theme('colors.primary-fixed-dim');
+            outline: none;
+            color: theme('colors.primary-fixed');
+            font-family: theme('fontFamily.code-sm');
+        }
+
+        .terminal-input:focus {
+            border-bottom-color: theme('colors.primary-fixed');
+            box-shadow: 0 1px 0 0 theme('colors.primary-fixed');
+        }
+
+        .blinking-cursor {
+            animation: blink 1s step-end infinite;
+        }
+
+        @keyframes blink {
+            50% { opacity: 0; }
+        }
+
+        .strobe {
+            animation: strobe 2s linear infinite;
+        }
+
+        @keyframes strobe {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        
+        .sys-log {
+            scrollbar-width: thin;
+            scrollbar-color: theme('colors.outline-variant') transparent;
+        }
+        
+        .sys-log::-webkit-scrollbar {
+            width: 4px;
+        }
+        .sys-log::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .sys-log::-webkit-scrollbar-thumb {
+            background-color: theme('colors.outline-variant');
+        }
+    </style>
+</head>
+<body class="min-h-screen flex antialiased selection:bg-primary-fixed-dim selection:text-on-primary-fixed">
+<!-- Desktop Side Navigation -->
+<nav class="hidden md:flex flex-col h-screen w-64 fixed left-0 top-0 bg-surface-container-lowest border-r border-outline-variant/20 py-gutter z-40">
+<!-- Header -->
+<div class="px-gutter mb-margin-desktop flex items-center gap-3">
+<div class="w-10 h-10 rounded-DEFAULT bg-surface-container-high border border-outline-variant flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="memory">memory</span>
+</div>
+<div>
+<h1 class="font-headline-lg text-headline-lg text-primary tracking-tighter" style="font-size: 20px; line-height: 24px;">NODE_01</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant text-[10px]">SYSTEM_ACTIVE</p>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 px-unit space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="memory">memory</span>
+<span class="font-code-sm text-code-sm">Core</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT bg-secondary-container/20 text-tertiary-fixed-dim border-l-4 border-tertiary-fixed-dim cursor-pointer active:opacity-80 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="troubleshoot" style="font-variation-settings: 'FILL' 1;">troubleshoot</span>
+<span class="font-code-sm text-code-sm">Deep Dive</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="insights">insights</span>
+<span class="font-code-sm text-code-sm">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="layers">layers</span>
+<span class="font-code-sm text-code-sm">Stack</span>
+</a>
+</div>
+<!-- Footer Actions -->
+<div class="px-unit mt-auto border-t border-outline-variant/20 pt-gutter space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="code">code</span>
+<span class="font-code-sm text-code-sm">Logs</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-DEFAULT text-on-surface-variant hover:bg-surface-variant/10 hover:glow-sm transition-all duration-200 cursor-pointer active:opacity-80" href="#">
+<span class="material-symbols-outlined" data-icon="shield">shield</span>
+<span class="font-code-sm text-code-sm">Security</span>
+</a>
+<button class="w-full mt-4 px-4 py-2 border border-primary-fixed-dim text-primary-fixed-dim font-label-caps text-label-caps tracking-widest hover:bg-primary-fixed-dim/10 hover:shadow-[0_0_15px_rgba(0,219,233,0.3)] transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="power_settings_new">power_settings_new</span>
+                REBOOT_CORE
+            </button>
+</div>
+</nav>
+<!-- Mobile Top Navigation Bar -->
+<nav class="md:hidden fixed top-0 w-full z-50 bg-background/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.15)] flex justify-between items-center px-margin-mobile py-4 transition-all duration-300 ease-in-out active:scale-95">
+<div class="font-headline-lg-mobile text-headline-lg-mobile tracking-tighter text-primary-fixed-dim">SIMPLYYTR</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary-fixed-dim cursor-pointer hover:bg-primary/10 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] p-1 rounded-DEFAULT transition-colors" data-icon="hub">hub</span>
+<span class="material-symbols-outlined text-primary-fixed-dim cursor-pointer hover:bg-primary/10 hover:shadow-[0_0_10px_rgba(0,240,255,0.3)] p-1 rounded-DEFAULT transition-colors" data-icon="terminal">terminal</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high border border-primary-fixed-dim overflow-hidden flex items-center justify-center cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="person">person</span>
+</div>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 pt-20 md:pt-8 px-margin-mobile md:px-margin-desktop pb-margin-desktop max-w-max-width mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-8 md:mb-12">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+<div>
+<div class="flex items-center gap-2 mb-2">
+<span class="w-2 h-2 rounded-full bg-tertiary-fixed-dim animate-pulse"></span>
+<span class="font-label-caps text-label-caps text-tertiary-fixed-dim">SYSTEM STABILITY OPTIMAL</span>
+</div>
+<h2 class="font-headline-xl text-headline-xl text-primary md:text-[48px] text-[32px] md:leading-[56px] leading-[40px] tracking-tighter">Resilience &amp;<br/>Self-Healing</h2>
+</div>
+<!-- Self-Healing Stats Highlight -->
+<div class="glass-panel p-4 rounded-DEFAULT flex items-center gap-6 self-start md:self-end">
+<div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mb-1">AUTO-RECOVERIES (24H)</div>
+<div class="font-headline-lg text-headline-lg text-tertiary-fixed-dim">14</div>
+</div>
+<div class="w-px h-10 bg-outline-variant/30"></div>
+<div>
+<div class="font-code-sm text-code-sm text-on-surface-variant mb-1">MANUAL INTERVENTIONS</div>
+<div class="font-headline-lg text-headline-lg text-primary-fixed-dim">0</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+<!-- Circuit Breakers Panel -->
+<section class="glass-panel rounded-DEFAULT p-6 md:col-span-8 flex flex-col">
+<div class="flex items-center justify-between border-b border-outline-variant/30 pb-4 mb-6">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="electrical_services">electrical_services</span>
+<h3 class="font-body-md text-body-md text-primary-fixed font-semibold tracking-wide">API CIRCUIT BREAKERS</h3>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant px-2 py-1 bg-surface-container-high rounded-DEFAULT border border-outline-variant/50">LIVE_MONITORING</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 flex-1">
+<!-- GitHub API -->
+<div class="bg-surface-container/50 border border-outline-variant/30 rounded-DEFAULT p-4 flex flex-col justify-between hover:border-tertiary-fixed-dim/50 transition-colors relative overflow-hidden group">
+<div class="absolute inset-0 bg-tertiary-fixed-dim/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-code-sm text-code-sm text-on-surface">api.github.com</h4>
+<div class="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">LATENCY: 42ms</div>
+</div>
+<span class="material-symbols-outlined text-tertiary-fixed-dim" data-icon="check_circle">check_circle</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-end mb-2">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-tertiary-fixed-dim">OK</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant text-[10px]">UPTIME: 99.99%</span>
+</div>
+<!-- Mini Graph -->
+<div class="h-6 flex items-end gap-1 w-full opacity-60">
+<div class="w-full h-full bg-tertiary-fixed-dim/20 relative">
+<div class="absolute bottom-0 left-0 h-1/2 w-1/5 bg-tertiary-fixed-dim"></div>
+<div class="absolute bottom-0 left-1/5 h-2/3 w-1/5 bg-tertiary-fixed-dim"></div>
+<div class="absolute bottom-0 left-2/5 h-1/3 w-1/5 bg-tertiary-fixed-dim"></div>
+<div class="absolute bottom-0 left-3/5 h-3/4 w-1/5 bg-tertiary-fixed-dim"></div>
+<div class="absolute bottom-0 left-4/5 h-1/2 w-1/5 bg-tertiary-fixed-dim"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- OpenAI API -->
+<div class="bg-surface-container/50 border border-outline-variant/30 rounded-DEFAULT p-4 flex flex-col justify-between hover:border-primary-fixed-dim/50 transition-colors relative overflow-hidden group glow-cyan">
+<div class="absolute inset-0 bg-primary-fixed-dim/5 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-code-sm text-code-sm text-on-surface">api.openai.com</h4>
+<div class="font-label-caps text-label-caps text-on-surface-variant mt-1 text-[10px]">LATENCY: 850ms</div>
+</div>
+<span class="material-symbols-outlined text-primary-fixed-dim strobe" data-icon="build_circle">build_circle</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-end mb-2">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-primary-fixed-dim">RESOLVED</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant text-[10px]">RECOVERY: -5m</span>
+</div>
+<div class="h-6 flex items-end gap-1 w-full opacity-60">
+<div class="w-full h-full bg-primary-fixed-dim/20 relative">
+<div class="absolute bottom-0 left-0 h-full w-1/5 bg-error"></div> <!-- Spike -->
+<div class="absolute bottom-0 left-1/5 h-1/4 w-1/5 bg-primary-fixed-dim"></div>
+<div class="absolute bottom-0 left-2/5 h-1/3 w-1/5 bg-primary-fixed-dim"></div>
+<div class="absolute bottom-0 left-3/5 h-1/2 w-1/5 bg-primary-fixed-dim"></div>
+<div class="absolute bottom-0 left-4/5 h-1/2 w-1/5 bg-primary-fixed-dim"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- YouTube API -->
+<div class="bg-surface-container/50 border border-error/50 rounded-DEFAULT p-4 flex flex-col justify-between relative overflow-hidden glow-amber">
+<div class="absolute inset-0 bg-error/5 animate-pulse"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<div>
+<h4 class="font-code-sm text-code-sm text-on-surface">youtube.googleapis</h4>
+<div class="font-label-caps text-label-caps text-error mt-1 text-[10px]">LATENCY: TIMEOUT</div>
+</div>
+<span class="material-symbols-outlined text-error" data-icon="warning">warning</span>
+</div>
+<div class="relative z-10">
+<div class="flex justify-between items-end mb-2">
+<span class="font-headline-lg-mobile text-headline-lg-mobile text-error">WARNING</span>
+<span class="font-code-sm text-code-sm text-error text-[10px]">FAIL_COUNT: 4</span>
+</div>
+<div class="h-6 flex items-end gap-1 w-full opacity-80">
+<div class="w-full h-full bg-error/20 relative">
+<div class="absolute bottom-0 left-0 h-1/2 w-1/5 bg-error"></div>
+<div class="absolute bottom-0 left-1/5 h-2/3 w-1/5 bg-error"></div>
+<div class="absolute bottom-0 left-2/5 h-full w-1/5 bg-error"></div>
+<div class="absolute bottom-0 left-3/5 h-full w-1/5 bg-error"></div>
+<div class="absolute bottom-0 left-4/5 h-full w-1/5 bg-error"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Active Protocol Terminal -->
+<section class="glass-panel rounded-DEFAULT md:col-span-4 flex flex-col border-t-4 border-t-secondary-container">
+<div class="flex items-center justify-between border-b border-outline-variant/30 p-4 bg-surface-container-highest/50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary-fixed-dim text-[18px]" data-icon="terminal">terminal</span>
+<h3 class="font-code-sm text-code-sm text-secondary-fixed-dim font-semibold tracking-wide">AUTO_RECOVERY.LOG</h3>
+</div>
+</div>
+<div class="p-4 flex-1 bg-black/40 overflow-hidden relative">
+<div class="absolute top-0 right-0 p-2 opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-6xl" data-icon="bug_report">bug_report</span>
+</div>
+<div class="sys-log h-full max-h-[250px] overflow-y-auto font-code-sm text-code-sm text-on-surface-variant flex flex-col gap-3 pb-8">
+<div class="flex gap-3">
+<span class="text-outline-variant select-none">[14:02:11]</span>
+<span class="text-tertiary-fixed-dim">SYSTEM_CHECK: All core nodes nominal.</span>
+</div>
+<div class="flex gap-3">
+<span class="text-outline-variant select-none">[14:15:42]</span>
+<span class="text-error">ERR: api.openai.com timeout detected (850ms).</span>
+</div>
+<div class="flex gap-3">
+<span class="text-outline-variant select-none">[14:15:43]</span>
+<span class="text-secondary-fixed-dim">INIT: Auto-Recovery Protocol Alpha-7...</span>
+</div>
+<div class="flex gap-3 ml-6 border-l border-secondary-fixed-dim/30 pl-3">
+<span class="text-primary-fixed-dim">&gt; API Rate Limit Detected.</span>
+</div>
+<div class="flex gap-3 ml-6 border-l border-secondary-fixed-dim/30 pl-3">
+<span class="text-primary-fixed-dim">&gt; Rerouting traffic to Backup Node 04...</span>
+</div>
+<div class="flex gap-3">
+<span class="text-outline-variant select-none">[14:15:45]</span>
+<span class="text-primary-fixed-dim">RESOLVED: Connection re-established via Node 04.</span>
+</div>
+<div class="flex gap-3 mt-2">
+<span class="text-outline-variant select-none">[14:28:01]</span>
+<span class="text-error">WARN: youtube.googleapis packet loss.</span>
+</div>
+<!-- Blinking cursor line -->
+<div class="flex gap-3 mt-2 items-center">
+<span class="text-secondary-fixed-dim">root@node_01:~#</span>
+<span class="w-2 h-4 bg-secondary-fixed-dim blinking-cursor"></span>
+</div>
+</div>
+</div>
+</section>
+</div>
+</main>
+</body></html>

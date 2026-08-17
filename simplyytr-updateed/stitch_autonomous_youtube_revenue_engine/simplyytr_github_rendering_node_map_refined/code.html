@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SIMPLYYTR // GitHub Rendering Node Map</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "surface-container-low": "#1c1b1c",
+                "tertiary-fixed": "#eaddff",
+                "surface-variant": "#353436",
+                "primary": "#dbfcff",
+                "on-tertiary": "#37265e",
+                "on-secondary": "#003907",
+                "on-tertiary-container": "#675590",
+                "inverse-on-surface": "#313031",
+                "on-primary": "#00363a",
+                "on-secondary-fixed": "#002203",
+                "background": "#131314",
+                "inverse-surface": "#e5e2e3",
+                "inverse-primary": "#006970",
+                "error-container": "#93000a",
+                "error": "#ffb4ab",
+                "data-mint": "#72ff70",
+                "border-subtle": "#3b494b",
+                "on-secondary-container": "#006d16",
+                "primary-fixed-dim": "#00dbe9",
+                "on-secondary-fixed-variant": "#00530e",
+                "tertiary": "#faf3ff",
+                "surface-container-high": "#2a2a2b",
+                "data-cyan": "#00dbe9",
+                "primary-container": "#00f0ff",
+                "surface-matte": "#0e0e0f",
+                "surface-container-lowest": "#0e0e0f",
+                "on-primary-container": "#006970",
+                "surface": "#131314",
+                "on-primary-fixed-variant": "#004f54",
+                "on-surface": "#e5e2e3",
+                "primary-fixed": "#7df4ff",
+                "on-primary-fixed": "#002022",
+                "surface-container-highest": "#353436",
+                "surface-container": "#201f20",
+                "surface-bright": "#39393a",
+                "on-error": "#690005",
+                "tertiary-container": "#e1d2ff",
+                "secondary": "#d5ffcb",
+                "outline-variant": "#3b494b",
+                "surface-tint": "#00dbe9",
+                "outline": "#849495",
+                "on-tertiary-fixed-variant": "#4e3d76",
+                "tertiary-fixed-dim": "#d1bcff",
+                "surface-dim": "#131314",
+                "secondary-fixed": "#72ff71",
+                "on-background": "#e5e2e3",
+                "on-surface-variant": "#b9cacb",
+                "secondary-container": "#00f93f",
+                "on-error-container": "#ffdad6",
+                "secondary-fixed-dim": "#00e63a",
+                "on-tertiary-fixed": "#220f48"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "unit": "4px",
+                "margin-safe": "24px",
+                "gutter": "16px",
+                "container-max": "1440px"
+        },
+        "fontFamily": {
+                "data-lg": [
+                        "JetBrains Mono"
+                ],
+                "label-caps": [
+                        "JetBrains Mono"
+                ],
+                "headline-xl": [
+                        "Sora"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Sora"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Sora"
+                ]
+        },
+        "fontSize": {
+                "data-lg": [
+                        "20px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "label-caps": [
+                        "11px",
+                        {
+                                "lineHeight": "1.4",
+                                "letterSpacing": "0.1em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-xl": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "800"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "code-md": [
+                        "14px",
+                        {
+                                "lineHeight": "1.6",
+                                "letterSpacing": "0em",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "700"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .module-border { border: 1px solid var(--tw-colors-outline-variant); background-color: var(--tw-colors-surface); }
+        .glass-overlay { backdrop-filter: blur(16px); background-color: rgba(32, 31, 32, 0.8); }
+        .blinking-cursor { animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .pulse-green { animation: pulseGreen 2s infinite; }
+        @keyframes pulseGreen { 0% { color: var(--tw-colors-data-mint); } 50% { color: var(--tw-colors-on-surface-variant); } 100% { color: var(--tw-colors-data-mint); } }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-screen flex flex-col md:flex-row overflow-x-hidden selection:bg-data-cyan selection:text-background">
+<!-- SideNavBar (Hidden on Mobile) -->
+<aside class="hidden md:flex flex-col h-screen w-64 bg-surface-container border-r border-outline-variant py-gutter fixed left-0 top-0 z-40">
+<div class="px-gutter mb-gutter">
+<h2 class="text-data-cyan font-bold font-headline-lg text-headline-lg tracking-tighter">OPERATOR_01</h2>
+<p class="font-code-md text-code-md text-on-surface-variant">LEVEL_4_ACCESS</p>
+</div>
+<nav class="flex-1 px-gutter space-y-unit">
+<a class="flex items-center gap-unit p-unit text-on-surface-variant hover:text-data-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-DEFAULT font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">memory</span>
+                Core
+            </a>
+<a class="flex items-center gap-unit p-unit text-on-surface-variant hover:text-data-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-DEFAULT font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">search_insights</span>
+                Deep Dive
+            </a>
+<a class="flex items-center gap-unit p-unit text-on-primary bg-primary-container rounded-lg font-bold transition-all cursor-pointer font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+                Analytics
+            </a>
+<a class="flex items-center gap-unit p-unit text-on-surface-variant hover:text-data-cyan hover:bg-surface-container-high transition-all cursor-pointer active:translate-x-1 rounded-DEFAULT font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">layers</span>
+                Stack
+            </a>
+</nav>
+<div class="px-gutter mt-auto space-y-unit">
+<button class="w-full py-unit border border-outline-variant text-data-cyan font-label-caps text-label-caps rounded-DEFAULT hover:bg-data-cyan hover:text-on-primary transition-colors flex items-center justify-center gap-unit">
+<span class="material-symbols-outlined text-[16px]">sync</span> EXECUTE_SYNC
+            </button>
+<div class="border-t border-outline-variant pt-unit mt-gutter">
+<a class="flex items-center gap-unit py-unit text-on-surface-variant hover:text-data-cyan transition-colors font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined text-[16px]">settings</span> Settings
+                </a>
+<a class="flex items-center gap-unit py-unit text-on-surface-variant hover:text-data-cyan transition-colors font-label-caps text-label-caps" href="#">
+<span class="material-symbols-outlined text-[16px]">list_alt</span> Logs
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 flex flex-col min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="flex justify-between items-center w-full px-margin-safe h-16 bg-surface border-b border-outline-variant sticky top-0 z-30">
+<div class="flex items-center gap-gutter">
+<!-- Mobile Menu Icon (simulated) -->
+<span class="material-symbols-outlined text-on-surface-variant md:hidden cursor-pointer">menu</span>
+<h1 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-data-cyan tracking-tighter">SIMPLYYTR Terminal</h1>
+</div>
+<div class="flex items-center gap-gutter">
+<!-- search_bar: "on_right" -->
+<div class="hidden md:flex items-center border-b border-outline-variant focus-within:border-data-cyan transition-colors pb-unit">
+<span class="text-data-cyan blinking-cursor font-code-md text-code-md mr-unit">&gt;</span>
+<input class="bg-transparent border-none focus:ring-0 text-on-surface font-code-md text-code-md placeholder-on-surface-variant w-48 outline-none" placeholder="QUERY_SYSTEM..." type="text"/>
+</div>
+<div class="flex gap-unit text-on-surface-variant">
+<span class="material-symbols-outlined cursor-pointer hover:text-data-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-unit rounded-DEFAULT" title="memory">memory</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-data-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-unit rounded-DEFAULT" title="sensors">sensors</span>
+<span class="material-symbols-outlined cursor-pointer text-data-cyan hover:bg-surface-container-low transition-colors active:scale-95 duration-100 p-unit rounded-DEFAULT" title="terminal">terminal</span>
+</div>
+</div>
+</header>
+<!-- Canvas Content -->
+<div class="p-margin-safe flex-1 space-y-gutter">
+<div class="flex justify-between items-end border-b border-outline-variant pb-unit">
+<div>
+<h2 class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface">NODE_MAP_OVERVIEW</h2>
+<p class="font-code-md text-code-md text-on-surface-variant mt-unit">ZERO_COST_SCALING_ACTIVE // GITHUB_ACTIONS</p>
+</div>
+<div class="font-code-md text-code-md text-data-mint pulse-green flex items-center gap-unit">
+<span class="material-symbols-outlined text-[16px]">check_circle</span> SYSTEM_NOMINAL
+                </div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Zero-Cost Efficiency (Spans 4 cols on desktop) -->
+<section class="module-border rounded-lg md:col-span-4 flex flex-col">
+<header class="border-b border-outline-variant p-unit bg-surface-container-low flex items-center gap-unit">
+<span class="material-symbols-outlined text-[16px] text-data-cyan">savings</span>
+<h3 class="font-label-caps text-label-caps text-on-surface">EFFICIENCY_METRICS</h3>
+</header>
+<div class="p-gutter flex-1 flex flex-col justify-center space-y-gutter">
+<div>
+<p class="font-code-md text-code-md text-on-surface-variant">TOTAL_RENDER_HOURS</p>
+<p class="font-headline-xl text-headline-xl text-data-cyan tracking-tighter mt-unit">1,402<span class="font-headline-lg text-headline-lg text-on-surface-variant">.5</span></p>
+</div>
+<div class="border-t border-outline-variant pt-gutter">
+<p class="font-code-md text-code-md text-on-surface-variant">PROJECTED_SAVINGS (VS. AWS)</p>
+<p class="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-data-mint mt-unit">+$8,415.00</p>
+</div>
+<div class="w-full bg-surface-container-highest h-2 mt-gutter flex">
+<div class="bg-data-mint h-full w-[95%]"></div>
+<div class="bg-error h-full w-[5%]"></div>
+</div>
+<p class="font-code-md text-[10px] text-on-surface-variant text-right">COMPUTE_OFFSET_RATIO</p>
+</div>
+</section>
+<!-- Global Rendering Grid (Spans 8 cols on desktop) -->
+<section class="module-border rounded-lg md:col-span-8 flex flex-col">
+<header class="border-b border-outline-variant p-unit bg-surface-container-low flex justify-between items-center">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-[16px] text-data-cyan">grid_view</span>
+<h3 class="font-label-caps text-label-caps text-on-surface">ACTIVE_NODES</h3>
+</div>
+<span class="font-code-md text-code-md text-on-surface-variant">42_ONLINE</span>
+</header>
+<div class="p-gutter grid grid-cols-2 lg:grid-cols-3 gap-unit overflow-y-auto max-h-[300px]">
+<!-- Node Item 1 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24 hover:border-data-cyan transition-colors">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0xAF</span>
+<span class="font-code-md text-[10px] text-data-cyan bg-data-cyan/10 px-1 py-0.5 border border-data-cyan/30">PROCESSING</span>
+</div>
+<div class="mt-auto">
+<div class="w-full bg-surface-container-highest h-1 mb-1"><div class="bg-data-cyan h-full w-[65%]"></div></div>
+<div class="flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>FFmpeg_v7</span><span>12m_40s</span>
+</div>
+</div>
+</div>
+<!-- Node Item 2 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0x1C</span>
+<span class="font-code-md text-[10px] text-on-surface-variant bg-surface-variant px-1 py-0.5 border border-outline-variant">IDLE</span>
+</div>
+<div class="mt-auto flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>AWAITING_DISPATCH</span><span>--</span>
+</div>
+</div>
+<!-- Node Item 3 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0xB4</span>
+<span class="font-code-md text-[10px] text-data-mint bg-data-mint/10 px-1 py-0.5 border border-data-mint/30 pulse-green">UPLOADING</span>
+</div>
+<div class="mt-auto">
+<div class="w-full bg-surface-container-highest h-1 mb-1"><div class="bg-data-mint h-full w-[98%]"></div></div>
+<div class="flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>MoviePy_Out</span><span>0m_12s</span>
+</div>
+</div>
+</div>
+<!-- Node Item 4 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24 hover:border-data-cyan transition-colors">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0xD2</span>
+<span class="font-code-md text-[10px] text-data-cyan bg-data-cyan/10 px-1 py-0.5 border border-data-cyan/30">PROCESSING</span>
+</div>
+<div class="mt-auto">
+<div class="w-full bg-surface-container-highest h-1 mb-1"><div class="bg-data-cyan h-full w-[22%]"></div></div>
+<div class="flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>FFmpeg_v7</span><span>4m_10s</span>
+</div>
+</div>
+</div>
+<!-- Node Item 5 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0xE9</span>
+<span class="font-code-md text-[10px] text-error bg-error/10 px-1 py-0.5 border border-error/30">PENDING_RETRY</span>
+</div>
+<div class="mt-auto flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>TIMEOUT_ERR</span><span>--</span>
+</div>
+</div>
+<!-- Node Item 6 -->
+<div class="border border-outline-variant p-unit bg-surface-matte flex flex-col justify-between h-24 hover:border-data-cyan transition-colors">
+<div class="flex justify-between items-start">
+<span class="font-code-md text-code-md text-on-surface">node_0xF1</span>
+<span class="font-code-md text-[10px] text-data-cyan bg-data-cyan/10 px-1 py-0.5 border border-data-cyan/30">PROCESSING</span>
+</div>
+<div class="mt-auto">
+<div class="w-full bg-surface-container-highest h-1 mb-1"><div class="bg-data-cyan h-full w-[89%]"></div></div>
+<div class="flex justify-between font-code-md text-[10px] text-on-surface-variant">
+<span>FFmpeg_v7</span><span>18m_05s</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Batch Queue (Spans 6 cols on desktop) -->
+<section class="module-border rounded-lg md:col-span-6 flex flex-col">
+<header class="border-b border-outline-variant p-unit bg-surface-container-low flex justify-between items-center">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-[16px] text-data-cyan">queue</span>
+<h3 class="font-label-caps text-label-caps text-on-surface">BATCH_QUEUE</h3>
+</div>
+</header>
+<div class="p-gutter flex-1">
+<table class="w-full text-left">
+<thead>
+<tr class="font-code-md text-[10px] text-on-surface-variant border-b border-outline-variant">
+<th class="pb-unit font-normal">CONTENT_ID</th>
+<th class="pb-unit font-normal">PROGRESS</th>
+<th class="pb-unit font-normal text-right">EST_UPLOAD</th>
+</tr>
+</thead>
+<tbody class="font-code-md text-code-md">
+<tr class="border-b border-outline-variant/50">
+<td class="py-unit text-data-cyan">VID_9921_A</td>
+<td class="py-unit w-1/2 px-2">
+<div class="flex items-center gap-2">
+<div class="w-full bg-surface-container-highest h-1"><div class="bg-data-cyan h-full w-[65%]"></div></div>
+<span class="text-[10px]">65%</span>
+</div>
+</td>
+<td class="py-unit text-right text-on-surface-variant">~4m</td>
+</tr>
+<tr class="border-b border-outline-variant/50">
+<td class="py-unit text-data-cyan">VID_9921_B</td>
+<td class="py-unit w-1/2 px-2">
+<div class="flex items-center gap-2">
+<div class="w-full bg-surface-container-highest h-1"><div class="bg-data-cyan h-full w-[22%]"></div></div>
+<span class="text-[10px]">22%</span>
+</div>
+</td>
+<td class="py-unit text-right text-on-surface-variant">~12m</td>
+</tr>
+<tr>
+<td class="py-unit text-data-mint pulse-green">VID_9920_X</td>
+<td class="py-unit w-1/2 px-2">
+<div class="flex items-center gap-2">
+<div class="w-full bg-surface-container-highest h-1"><div class="bg-data-mint h-full w-[98%]"></div></div>
+<span class="text-[10px] text-data-mint">98%</span>
+</div>
+</td>
+<td class="py-unit text-right text-on-surface-variant">IMMINENT</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- System Logs (Spans 6 cols on desktop) -->
+<section class="module-border rounded-lg md:col-span-6 flex flex-col bg-surface-matte border-outline-variant">
+<header class="border-b border-outline-variant p-unit bg-surface-container-low flex justify-between items-center">
+<div class="flex items-center gap-unit">
+<span class="material-symbols-outlined text-[16px] text-data-cyan">terminal</span>
+<h3 class="font-label-caps text-label-caps text-on-surface">SYSTEM_LOGS</h3>
+</div>
+<span class="font-code-md text-[10px] text-on-surface-variant">LIVE_FEED</span>
+</header>
+<div class="p-gutter flex-1 font-code-md text-code-md text-on-surface-variant h-[200px] overflow-y-auto font-mono space-y-1" id="log-container">
+<div class="text-on-surface-variant opacity-50">[14:02:11] Init connection pool... OK</div>
+<div class="text-on-surface-variant opacity-50">[14:02:15] Dispatching jobs to GitHub Actions API</div>
+<div class="text-data-cyan font-bold">[14:02:18] Job payload sent for VID_9921_A -&gt; node_0xAF</div>
+<div class="text-data-cyan font-bold">[14:02:19] Job payload sent for VID_9921_B -&gt; node_0xD2</div>
+<div class="text-data-mint font-bold">[14:03:01] SUCCESS: node_0xB4 handshaking with YTR_Channel_Alpha</div>
+<div class="text-data-mint pulse-green font-bold">[14:03:05] UPLOAD START: node_0xB4 initiating stream...</div>
+<div class="flex mt-2">
+<span class="text-data-cyan mr-2">&gt;</span><span class="blinking-cursor w-2 h-4 bg-data-cyan inline-block"></span>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="flex justify-between items-center px-gutter py-unit w-full fixed bottom-0 z-50 bg-surface border-t border-outline-variant md:pl-[calc(16rem+16px)]">
+<div class="font-code-md text-code-md text-data-mint">SYSTEM_STABLE // 0.4ms LATENCY</div>
+<div class="flex gap-gutter font-code-md text-code-md text-on-surface-variant">
+<a class="hover:text-data-mint transition-colors" href="#">REAL_TIME_LOGS</a>
+<a class="hover:text-data-mint transition-colors" href="#">NODE_0x1F</a>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Tech Stack Audit - SIMPLYYTR</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&amp;family=JetBrains+Mono:wght@500;700&amp;family=Sora:wght@700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#006970",
+                        "surface-bright": "#3a393a",
+                        "background": "#131314",
+                        "on-background": "#e5e2e3",
+                        "primary": "#dbfcff",
+                        "error": "#ffb4ab",
+                        "tertiary-fixed": "#72ff70",
+                        "on-secondary-container": "#ddcdff",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#d1bcff",
+                        "on-tertiary": "#003907",
+                        "on-secondary": "#3c0090",
+                        "on-primary-fixed": "#002022",
+                        "surface-container-lowest": "#0e0e0f",
+                        "on-primary": "#00363a",
+                        "tertiary-container": "#00fb40",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "primary-fixed": "#7df4ff",
+                        "surface-tint": "#00dbe9",
+                        "secondary": "#d1bcff",
+                        "primary-fixed-dim": "#00dbe9",
+                        "secondary-fixed": "#e9ddff",
+                        "surface-container-highest": "#353436",
+                        "surface-variant": "#353436",
+                        "on-tertiary-container": "#006e16",
+                        "on-surface": "#e5e2e3",
+                        "surface-container-low": "#1c1b1c",
+                        "surface-dim": "#131314",
+                        "outline": "#849495",
+                        "primary-container": "#00f0ff",
+                        "secondary-container": "#7000ff",
+                        "surface-container-high": "#2a2a2b",
+                        "on-secondary-fixed": "#23005b",
+                        "on-tertiary-fixed": "#002203",
+                        "on-primary-container": "#006970",
+                        "on-tertiary-fixed-variant": "#00530e",
+                        "on-secondary-fixed-variant": "#5700c9",
+                        "inverse-surface": "#e5e2e3",
+                        "tertiary-fixed-dim": "#00e639",
+                        "tertiary": "#ddffd3",
+                        "on-surface-variant": "#b9cacb",
+                        "inverse-on-surface": "#313031",
+                        "on-primary-fixed-variant": "#004f54",
+                        "surface-container": "#201f20",
+                        "surface": "#131314",
+                        "outline-variant": "#3b494b"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "margin-mobile": "16px",
+                        "max-width": "1440px",
+                        "unit": "4px",
+                        "gutter": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-xl": ["Sora"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["Inter"],
+                        "headline-lg": ["Sora"],
+                        "headline-lg-mobile": ["Sora"],
+                        "label-caps": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-xl": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "800" }],
+                        "code-sm": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.1em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-image: linear-gradient(rgba(132, 148, 149, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(132, 148, 149, 0.05) 1px, transparent 1px);
+            background-size: 32px 32px;
+            background-color: theme('colors.background');
+        }
+        .glow-sm { box-shadow: 0 0 15px rgba(0, 240, 255, 0.3); }
+        .glass-panel {
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 240, 255, 0.15);
+        }
+        .blinking-cursor::after {
+            content: '|';
+            animation: blink 1s step-end infinite;
+            color: theme('colors.primary-container');
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+    </style>
+</head>
+<body class="text-on-background min-h-screen flex flex-col font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="bg-background/80 backdrop-blur-xl sticky top-0 w-full border-b border-outline-variant/30 shadow-[0_0_15px_rgba(0,240,255,0.15)] z-50">
+<div class="flex justify-between items-center px-margin-mobile md:px-margin-desktop py-4 max-w-max-width mx-auto">
+<div class="font-headline-lg-mobile text-headline-lg-mobile md:font-headline-lg md:text-headline-lg tracking-tighter text-primary uppercase">simplyytr</div>
+<nav class="hidden md:flex gap-8">
+<a class="text-on-surface-variant font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95" href="#">Core</a>
+<a class="text-on-surface-variant font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95" href="#">Deep Dive</a>
+<a class="text-on-surface-variant font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95" href="#">Analytics</a>
+<a class="text-primary border-b-2 border-primary pb-1 font-code-sm text-code-sm hover:text-primary-container transition-all duration-300 hover:glow-sm active:scale-95" href="#">Stack</a>
+</nav>
+<div class="flex items-center gap-4 text-primary">
+<span class="material-symbols-outlined hover:text-primary-container transition-all duration-300 cursor-pointer">terminal</span>
+<span class="material-symbols-outlined hover:text-primary-container transition-all duration-300 cursor-pointer">sensors</span>
+<span class="material-symbols-outlined hover:text-primary-container transition-all duration-300 cursor-pointer">memory</span>
+</div>
+</div>
+</header>
+<main class="flex-grow flex px-margin-mobile md:px-margin-desktop py-8 max-w-max-width mx-auto w-full gap-8">
+<!-- SideNavBar (Desktop Only) -->
+<aside class="hidden lg:flex flex-col bg-surface-container-lowest/90 backdrop-blur-xl w-64 h-[calc(100vh-100px)] sticky top-[100px] border-r border-outline-variant/20 rounded-lg overflow-hidden py-8">
+<div class="px-6 mb-8">
+<h2 class="font-code-sm text-code-sm text-on-surface-variant mb-1 uppercase">SYSTEM_LOG</h2>
+<div class="text-primary font-code-sm text-xs opacity-70">v4.0.2-stable</div>
+</div>
+<nav class="flex-grow flex flex-col font-code-sm text-code-sm uppercase tracking-widest gap-2">
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined">memory</span> Core
+                </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined">troubleshoot</span> Deep Dive
+                </a>
+<a class="text-on-surface-variant flex items-center gap-4 px-6 py-4 hover:bg-surface-container-high transition-colors hover:text-primary cursor-pointer" href="#">
+<span class="material-symbols-outlined">insights</span> Analytics
+                </a>
+<a class="bg-secondary-container/20 text-tertiary-container border-r-4 border-tertiary-container flex items-center gap-4 px-6 py-4 cursor-pointer" href="#">
+<span class="material-symbols-outlined">layers</span> Stack
+                </a>
+</nav>
+<div class="mt-auto flex flex-col gap-2 px-4">
+<button class="w-full bg-primary-container/10 border border-primary-container text-primary-container font-code-sm py-3 rounded hover:bg-primary-container/20 transition-all glow-sm uppercase tracking-widest">Initialize Sync</button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<div class="flex-grow flex flex-col gap-12 w-full lg:w-[calc(100%-18rem)]">
+<header class="border-b border-outline-variant/30 pb-6">
+<h1 class="font-headline-xl text-headline-xl text-primary mb-4 blinking-cursor">INFRASTRUCTURE_AUDIT</h1>
+<p class="font-code-sm text-code-sm text-on-surface-variant w-full md:w-2/3">Live technical specification of all underlying systems, zero-cost compute nodes, and open-weight models driving the platform operations.</p>
+</header>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+<!-- Category: Compute -->
+<section class="glass-panel rounded-xl bg-surface-container-lowest p-6 flex flex-col gap-6 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary-container group-hover:glow-sm transition-all"></div>
+<div class="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+<span class="material-symbols-outlined text-primary-container">dns</span>
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest">Compute Node Clusters</h3>
+</div>
+<div class="flex flex-col gap-4">
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-primary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Vercel Edge Network</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">Global content delivery &amp; serverless functions mapping. [Hobby Tier Allocation]</p>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-primary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> Repo Source</a>
+</div>
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-primary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Cloudflare Workers</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">Distributed lightweight compute for telemetry ping processing. [Free Quota]</p>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-primary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> Repo Source</a>
+</div>
+</div>
+</section>
+<!-- Category: AI Models -->
+<section class="glass-panel rounded-xl bg-surface-container-lowest p-6 flex flex-col gap-6 relative overflow-hidden group">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary-container group-hover:shadow-[0_0_15px_rgba(112,0,255,0.5)] transition-all"></div>
+<div class="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+<span class="material-symbols-outlined text-secondary-container">psychology</span>
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest">Neural Subsystems</h3>
+</div>
+<div class="flex flex-col gap-4">
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-secondary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Llama 3 8B Instruct</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">Primary reasoning core. Hosted via local inference cluster API.</p>
+<div class="flex gap-2 mb-3">
+<span class="bg-secondary-container/20 text-secondary border border-secondary-container/30 px-2 py-0.5 rounded text-[10px] font-code-sm">GGUF</span>
+<span class="bg-secondary-container/20 text-secondary border border-secondary-container/30 px-2 py-0.5 rounded text-[10px] font-code-sm">Q4_K_M</span>
+</div>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-secondary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> HuggingFace Ref</a>
+</div>
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-secondary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Mistral 7B-v0.2</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">Fallback semantic router and secondary log parser.</p>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-secondary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> HuggingFace Ref</a>
+</div>
+</div>
+</section>
+<!-- Category: Database -->
+<section class="glass-panel rounded-xl bg-surface-container-lowest p-6 flex flex-col gap-6 relative overflow-hidden group xl:col-span-2">
+<div class="absolute top-0 left-0 w-1 h-full bg-tertiary-container group-hover:shadow-[0_0_15px_rgba(0,251,64,0.3)] transition-all"></div>
+<div class="flex items-center gap-3 border-b border-outline-variant/20 pb-4">
+<span class="material-symbols-outlined text-tertiary-container">database</span>
+<h3 class="font-code-sm text-code-sm text-primary uppercase tracking-widest">Memory Modules</h3>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-tertiary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Supabase Postgres</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">Relational data store &amp; auth layer. [Free Project Tier]</p>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-tertiary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> Schema Source</a>
+</div>
+<div class="bg-surface border border-outline-variant/30 rounded p-4 hover:border-tertiary-container/50 transition-colors">
+<div class="flex justify-between items-start mb-2">
+<h4 class="font-body-md text-body-md text-on-surface font-bold">Upstash Redis</h4>
+<span class="bg-tertiary-container/10 text-tertiary-container px-2 py-1 rounded text-xs font-code-sm border border-tertiary-container/30">OP_STATUS: GREEN</span>
+</div>
+<p class="font-code-sm text-xs text-on-surface-variant mb-3">In-memory cache for high-frequency model outputs. [Serverless Tier]</p>
+<a class="inline-flex items-center gap-1 font-code-sm text-xs text-tertiary-container hover:underline" href="#"><span class="material-symbols-outlined" style="font-size: 14px;">link</span> Config Source</a>
+</div>
+</div>
+</section>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="bg-background w-full py-8 mt-auto border-t border-outline-variant/10">
+<div class="flex flex-col md:flex-row justify-between items-center px-margin-mobile md:px-margin-desktop gap-gutter max-w-max-width mx-auto">
+<div class="font-label-caps text-label-caps text-on-surface-variant uppercase">
+                SIMPLYYTR // OPEN_SOURCE_DNA // NULL_BUDGET_INITIATIVE
+            </div>
+<nav class="flex gap-6">
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Source</a>
+<a class="font-label-caps text-label-caps text-tertiary hover:text-primary transition-opacity hover:opacity-80" href="#">Audit</a>
+<a class="font-label-caps text-label-caps text-on-surface-variant hover:text-primary transition-opacity hover:opacity-80" href="#">Protocol</a>
+</nav>
+</div>
+</footer>
+</body></html>
