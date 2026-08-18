@@ -49,7 +49,7 @@ PREMIUM_SATISFYING_QUERIES = [
 
 # Attempt importing faster_whisper conditionally
 try:
-    from faster_whisper import WhisperModel
+    from faster_whisper import WhisperModel  # type: ignore
     HAS_WHISPER = True
 except ImportError:
     HAS_WHISPER = False
