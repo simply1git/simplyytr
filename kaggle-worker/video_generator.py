@@ -47,11 +47,15 @@ PREMIUM_SATISFYING_QUERIES = [
     "relaxing mountain view"
 ]
 
-# Attempt importing faster_whisper conditionally
+# Attempt importing faster_whisper conditionally via dynamic import
+WhisperModel = None
+HAS_WHISPER = False
 try:
-    from faster_whisper import WhisperModel  # type: ignore
-    HAS_WHISPER = True
-except ImportError:
+    import importlib
+    _fw = importlib.import_module("faster_whisper")
+    WhisperModel = getattr(_fw, "WhisperModel", None)
+    HAS_WHISPER = WhisperModel is not None
+except Exception:
     HAS_WHISPER = False
     logging.warning("faster_whisper not found, kinetic ASS subtitles will fall back to VTT/SRT subtitles.")
 
