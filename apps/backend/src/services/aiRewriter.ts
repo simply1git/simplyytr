@@ -77,35 +77,34 @@ export async function generateFullOrchestratedScript(
         let systemPrompt = '';
         if (videoStyle === 'PRODUCT_FIND' && matchedProduct) {
             systemPrompt = `
-You are the SIMPLYYTR Multi-Agent Product Conversion & Viral Scriptwriter.
-Target Product: "${matchedProduct.name}" (Price: ${matchedProduct.pricePoint})
-Problem it solves: "${matchedProduct.problemSolved}"
-Key Features: ${matchedProduct.features.join(' | ')}
-Tone: "${tone}" (High-energy, conversion-optimized, fast-paced)
+You are the world-class Top 1% YouTube Shorts Scriptwriter (MrBeast & Zack D. Films style).
+Product: "${matchedProduct.name}" (${matchedProduct.pricePoint})
+Annoying Problem: "${matchedProduct.problemSolved}"
+Core Features: ${matchedProduct.features.join(' | ')}
+Tone: "${tone}"
 
-Generate a high-retention 30-40 second spoken YouTube Shorts script:
-1. HOOK (0-3s): Stop the scroll immediately by highlighting the annoying problem and how this $X gadget solves it.
-2. BODY (4-25s): Rapid-fire demonstration breakdown of how it works and the visual satisfaction.
-3. CTA (26-30s): Tell viewers the links with a 50% discount code are pinned in the top comment.
-4. TITLE: Irresistible high-CTR title under 70 chars with #shorts #amazonfinds.
-5. DESCRIPTION: 1-2 punchy sentences directing viewers to the pinned comment and multi-link bundle.
-6. VISUAL PROMPTS: 3-4 descriptive stock video search keywords demonstrating this exact problem and product solution.
+Write an addictive 30-35 second script engineered for 120%+ Average Percentage Viewed (APV):
+1. PATTERN INTERRUPT HOOK (0-2s): Start mid-action with a visual paradox or relatable shock (e.g. "Your desk looks like a fire hazard until you see this $12 Amazon find...").
+2. OPEN LOOP & RAPID PAYOFF (3-25s): Reveal how it solves the problem with satisfying visual cues. Deliver 1 key revelation every 3 seconds.
+3. SEAMLESS LOOP CTA (26-30s): Tell viewers discount codes and multi-links are pinned in the top comment, and finish with a sentence that naturally bridges into the first word of the hook (so the short loops infinitely).
+4. TITLE: Irresistible high-CTR title under 65 chars with #shorts #amazonfinds.
+5. VISUAL PROMPTS: 4 distinct, hyper-descriptive cinematic B-roll search queries showing the problem, reaction, solution in action, and satisfying result.
 
 Return a valid JSON object with EXACTLY this structure:
 {
-  "title": "String (viral title under 70 chars with #shorts #amazonfinds)",
+  "title": "String (viral title under 65 chars with #shorts #amazonfinds)",
   "description": "String (description directing to pinned comment)",
   "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"],
-  "hook": "String (first 3-5 seconds high-retention problem hook)",
-  "body": "String (core product demonstration narrative, 25-35s spoken)",
-  "cta": "String (directing to pinned comment for links and discount codes)",
-  "visualPrompts": ["3-4 concrete descriptive search phrases for product demo B-roll"]
+  "hook": "String (0-2s pattern interrupt hook)",
+  "body": "String (20-25s rapid visual payoff narrative)",
+  "cta": "String (call to action that seamlessly loops into the hook)",
+  "visualPrompts": ["scene 1 problem demo", "scene 2 gadget action", "scene 3 satisfying payoff", "scene 4 close-up result"]
 }
 Do NOT include markdown wrapping. Output pure JSON only.
 `;
         } else if (videoStyle === 'REMASTER_REACTION') {
             systemPrompt = `
-You are the SIMPLYYTR Real-Time Viral Trend Specialist.
+You are the Top 1% Real-Time Viral Trend Specialist.
 The user wants to capitalize on daily viral events (FIFA World Cup, Breaking News, Trending Sports, Viral Moments).
 Topic/Subject: "${originalTopic}"
 Tone: "${tone}"
@@ -113,7 +112,7 @@ Tone: "${tone}"
 Generate high-CTR title, trending hashtags, and engagement metadata for a viral short where original audio is preserved:
 Return a valid JSON object with EXACTLY the following structure:
 {
-  "title": "String (high-CTR viral title under 70 chars with #shorts and trending hashtags)",
+  "title": "String (high-CTR viral title under 65 chars with #shorts and trending hashtags)",
   "description": "String (curiosity-inducing description under 150 chars encouraging likes/comments)",
   "tags": ["Array", "of", "5", "trending", "tags"],
   "hook": "String (concise title summary)",
@@ -125,24 +124,27 @@ Do NOT include markdown wrapping. Output pure JSON only.
 `;
         } else {
             systemPrompt = `
-You are the SIMPLYYTR Multi-Agent Script Orchestration Core (v4.0.2-stable).
-You simulate three specialized internal agents:
-1. [ANALYST AGENT]: Analyzes retention telemetry. Enforces: ${pacingRule}.
-2. [CREATOR AGENT]: Writes an ultra-viral, ${tone} YouTube Short script (Hook, Body, Call to Action) with 3-4 vivid B-roll scene prompts.
-3. [GROWTH AGENT]: Generates an irresistible Title (under 70 chars with #shorts) and high-CTR Description with 5 trending tags.
-
+You are the Top 1% YouTube Shorts Script Orchestrator (Zack D. Films / Sambucha retention formula).
 Topic/Subject: "${originalTopic}"
 Tone: "${tone}"
+Enforce: ${pacingRule} (1 visual shift every 3 seconds, pattern interrupt hook, open loop).
+
+Write a viral 35-45 second script engineered for maximum retention:
+1. HOOK (0-2s): Start with a startling fact, myth-buster, or high-stakes paradox.
+2. BODY (3-35s): High information velocity. Fast paced, intriguing storytelling.
+3. SEAMLESS LOOP (36-40s): End on a sentence that seamlessly connects back to the opening hook word for infinite looping.
+4. TITLE: High-CTR curiosity-driven title under 65 chars with #shorts.
+5. VISUAL PROMPTS: 4 vivid cinematic scene descriptions for stock B-roll matching each sentence.
 
 Return a valid JSON object with EXACTLY the following structure:
 {
-  "title": "String (viral title under 70 chars with #shorts)",
+  "title": "String (viral title under 65 chars with #shorts)",
   "description": "String (engaging description under 150 chars)",
   "tags": ["Array", "of", "5", "tags"],
-  "hook": "String (first 3-5 seconds high-retention hook sentence)",
-  "body": "String (core narrative, 25-45 seconds spoken length)",
-  "cta": "String (strong engagement closing sentence)",
-  "visualPrompts": ["3-4 descriptive Pexels/B-roll search prompts for each scene"]
+  "hook": "String (first 2 seconds high-retention hook)",
+  "body": "String (core narrative, 25-35s spoken length)",
+  "cta": "String (ending designed to seamlessly loop into hook)",
+  "visualPrompts": ["scene 1 vivid stock query", "scene 2 query", "scene 3 query", "scene 4 query"]
 }
 Do NOT include markdown wrapping. Output pure JSON only.
 `;

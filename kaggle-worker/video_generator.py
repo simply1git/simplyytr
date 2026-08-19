@@ -667,18 +667,87 @@ def run_ffmpeg_command(cmd):
 
 def generate_kinetic_ass(input_subtitle_or_audio_path, ass_output_path):
     """
-    Generates high-impact kinetic ASS subtitles with neon yellow/cyan typography,
-    glowing borders, and 2-3 word chunking for fast-paced viral reading.
+    SOTA 2026 Top 1% YouTube Shorts Kinetic Subtitle Engine.
+    Generates word-by-word active glowing yellow/cyan pop highlights
+    (Hormozi / Zack D. Films style) with 2-3 word chunking and optimal screen positioning.
     """
-    logging.info(f"Generating kinetic glowing ASS subtitles: {ass_output_path}")
+    logging.info(f"Generating Top 1% kinetic glowing ASS subtitles: {ass_output_path}")
     sub_source = input_subtitle_or_audio_path
-    if sub_source.endswith('.mp3') or sub_source.endswith('.wav'):
-        vtt_candidate = sub_source.replace('.mp3', '.vtt').replace('.wav', '.vtt')
-        srt_candidate = sub_source.replace('.mp3', '.srt').replace('.wav', '.srt')
-        if os.path.exists(vtt_candidate):
-            sub_source = vtt_candidate
-        elif os.path.exists(srt_candidate):
-            sub_source = srt_candidate
+    
+    # Check if we have audio to transcribe directly with Whisper
+    words_data = []
+    if HAS_WHISPER and (sub_source.endswith('.mp3') or sub_source.endswith('.wav')):
+        try:
+            logging.info("Transcribing audio with faster-whisper for word-level timestamps...")
+            model = WhisperModel("base", device="cuda" if os.environ.get("KAGGLE_KERNEL_RUN_TYPE") else "cpu", compute_type="int8")
+            segments, _ = model.transcribe(sub_source, word_timestamps=True)
+            for seg in segments:
+                for w in seg.words:
+                    clean_w = w.word.strip().upper()
+                    if clean_w:
+                        words_data.append({
+                            "word": clean_w,
+                            "start": w.start,
+                            "end": w.end
+                        })
+            logging.info(f"Extracted {len(words_data)} word-level timestamps from Whisper.")
+        except Exception as e:
+            logging.warning(f"Whisper transcription failed, falling back to VTT/SRT: {e}")
+            words_data = []
+
+    # Fallback to VTT / SRT parsing if Whisper was not used or failed
+    if not words_data:
+        if sub_source.endswith('.mp3') or sub_source.endswith('.wav'):
+            vtt_candidate = sub_source.replace('.mp3', '.vtt').replace('.wav', '.vtt')
+            srt_candidate = sub_source.replace('.mp3', '.srt').replace('.wav', '.srt')
+            if os.path.exists(vtt_candidate):
+                sub_source = vtt_candidate
+            elif os.path.exists(srt_candidate):
+                sub_source = srt_candidate
+
+        if os.path.exists(sub_source):
+            with open(sub_source, 'r', encoding='utf-8', errors='ignore') as f:
+                content = f.read()
+
+            import re
+            time_pattern = re.compile(r'(\d{2}:\d{2}[:.]\d{2,3}|\d{2}:\d{2}:\d{2}[,.]\d{2,3})\s*-->\s*(\d{2}:\d{2}[:.]\d{2,3}|\d{2}:\d{2}:\d{2}[,.]\d{2,3})')
+            lines = content.split('\n')
+            i = 0
+            while i < len(lines):
+                line = lines[i].strip()
+                match = time_pattern.search(line)
+                if match:
+                    def parse_ts(ts_str):
+                        ts_str = ts_str.replace(',', '.')
+                        parts = ts_str.split(':')
+                        if len(parts) == 2:
+                            return int(parts[0]) * 60 + float(parts[1])
+                        elif len(parts) == 3:
+                            return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+                        return 0.0
+
+                    s_sec = parse_ts(match.group(1))
+                    e_sec = parse_ts(match.group(2))
+
+                    i += 1
+                    text_lines = []
+                    while i < len(lines) and lines[i].strip() and not time_pattern.search(lines[i]):
+                        clean_line = re.sub(r'<[^>]+>', '', lines[i].strip())
+                        if clean_line and not clean_line.isdigit():
+                            text_lines.append(clean_line)
+                        i += 1
+
+                    full_text = " ".join(text_lines).strip().upper()
+                    if full_text:
+                        raw_words = full_text.split()
+                        w_dur = (e_sec - s_sec) / max(1, len(raw_words))
+                        for idx_w, rw in enumerate(raw_words):
+                            words_data.append({
+                                "word": rw,
+                                "start": s_sec + (idx_w * w_dur),
+                                "end": s_sec + ((idx_w + 1) * w_dur)
+                            })
+                i += 1
 
     header = """[Script Info]
 ScriptType: v4.00+
@@ -688,66 +757,39 @@ ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial Black,28,&H0000FFFF,&H00FFFFFF,&H00000000,&H90000000,-1,0,0,0,100,100,1,0,1,5,3,5,60,60,260,1
-Style: GlowHighlight,Arial Black,30,&H0000F0FF,&H00D7FF00,&H00000000,&HA0000000,-1,0,0,0,105,105,2,0,1,6,4,5,60,60,260,1
+Style: TopViral,Arial Black,32,&H00FFFFFF,&H00D7FF00,&H00000000,&H90000000,-1,0,0,0,100,100,2,0,1,7,4,2,60,60,440,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
     events = []
-    if os.path.exists(sub_source):
-        with open(sub_source, 'r', encoding='utf-8', errors='ignore') as f:
-            content = f.read()
-
-        import re
-        time_pattern = re.compile(r'(\d{2}:\d{2}[:.]\d{2,3}|\d{2}:\d{2}:\d{2}[,.]\d{2,3})\s*-->\s*(\d{2}:\d{2}[:.]\d{2,3}|\d{2}:\d{2}:\d{2}[,.]\d{2,3})')
-        lines = content.split('\n')
-        i = 0
-        while i < len(lines):
-            line = lines[i].strip()
-            match = time_pattern.search(line)
-            if match:
-                start_raw, end_raw = match.group(1), match.group(2)
-                def to_ass_ts(ts_str):
-                    ts_str = ts_str.replace(',', '.')
-                    parts = ts_str.split(':')
-                    if len(parts) == 2:
-                        m, s = parts
-                        return f"0:{int(m):02d}:{float(s):05.2f}"
-                    elif len(parts) == 3:
-                        h, m, s = parts
-                        return f"{int(h)}:{int(m):02d}:{float(s):05.2f}"
-                    return "0:00:00.00"
-
-                start_ts = to_ass_ts(start_raw)
-                end_ts = to_ass_ts(end_raw)
-
-                i += 1
-                text_lines = []
-                while i < len(lines) and lines[i].strip() and not time_pattern.search(lines[i]):
-                    clean_line = re.sub(r'<[^>]+>', '', lines[i].strip())
-                    if clean_line and not clean_line.isdigit():
-                        text_lines.append(clean_line)
-                    i += 1
-
-                full_text = " ".join(text_lines).strip()
-                if full_text:
-                    words = full_text.split()
-                    if len(words) > 4:
-                        chunk_size = 3
-                        sub_chunks = [" ".join(words[j:j+chunk_size]) for j in range(0, len(words), chunk_size)]
-                        for chunk in sub_chunks:
-                            styled_chunk = " ".join([f"{{\\c&H00FFFF&}}{w}{{\\r}}" if (any(c.isdigit() for c in w) or len(w) > 6) else w for w in chunk.split()])
-                            events.append(f"Dialogue: 0,{start_ts},{end_ts},Default,,0,0,0,,{styled_chunk.upper()}")
+    if words_data:
+        # Group into natural 2-3 word chunks
+        chunk_size = 3
+        chunks = [words_data[i:i + chunk_size] for i in range(0, len(words_data), chunk_size)]
+        
+        for chunk in chunks:
+            for active_idx, active_word_item in enumerate(chunk):
+                start_ts = format_time_ass(active_word_item['start'])
+                end_ts = format_time_ass(active_word_item['end'])
+                
+                # Build formatted line: active word has glowing electric yellow pop, non-active words are white
+                formatted_words = []
+                for idx_in_chunk, w_item in enumerate(chunk):
+                    w_text = w_item['word']
+                    if idx_in_chunk == active_idx:
+                        # Top 1% Active Glowing Word: Pop animation with Electric Neon Gold
+                        formatted_words.append(f"{{\\c&H00D7FF&\\t(0,100,\\fscx118\\fscy118)\\bord8\\shad5}}{w_text}{{\\rTopViral}}")
                     else:
-                        styled_text = " ".join([f"{{\\c&H00FFFF&}}{w}{{\\r}}" if (any(c.isdigit() for c in w) or len(w) > 6) else w for w in words])
-                        events.append(f"Dialogue: 0,{start_ts},{end_ts},GlowHighlight,,0,0,0,,{styled_text.upper()}")
-            i += 1
+                        formatted_words.append(f"{{\\c&H00FFFFFF&}}{w_text}")
+                
+                line_text = " ".join(formatted_words)
+                events.append(f"Dialogue: 0,{start_ts},{end_ts},TopViral,,0,0,0,,{line_text}")
 
     with open(ass_output_path, 'w', encoding='utf-8') as f:
         f.write(header + "\n".join(events) + "\n")
 
-    logging.info(f"Kinetic ASS subtitle file created with {len(events)} events.")
+    logging.info(f"Top 1% Kinetic ASS subtitle file created with {len(events)} dynamic highlight events.")
     return ass_output_path
 
 def create_split_screen_video(top_video_path, bottom_video_path, output_path, audio_path=None, srt_or_ass_path=None, cta_text="🔥 LINK IN PINNED COMMENT"):
@@ -836,23 +878,24 @@ def compose_video(audio_path, srt_path, clip_paths, output_path):
         filter_parts.append(f"{last_out}[v{i}]xfade=transition=fade:duration={fade_duration}:offset={current_offset:.2f}{out_name}")
         last_out = out_name
 
-    # Add bottom CTA banner
-    filter_parts.append(f"{last_out}drawbox=y=1780:color=black@0.75:width=1080:height=90:t=fill,drawtext=text='🔥 LINK IN PINNED COMMENT':font='Arial Black':fontsize=36:fontcolor=white:x=(w-text_w)/2:y=1805[with_banner]")
-    last_v = "[with_banner]"
+    last_v = last_out
 
     if srt_path and os.path.exists(srt_path):
         abs_srt_path = os.path.abspath(srt_path).replace('\\', '/').replace(':', '\\:')
         if srt_path.endswith('.ass'):
             filter_parts.append(f"{last_v}ass='{abs_srt_path}'[final_v]")
         else:
-            filter_parts.append(f"{last_v}subtitles='{abs_srt_path}':force_style='FontName=Arial Black,FontSize=26,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=4,Shadow=2,Alignment=2,MarginV=180'[final_v]")
+            filter_parts.append(f"{last_v}subtitles='{abs_srt_path}':force_style='FontName=Arial Black,FontSize=28,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=4,Shadow=3,Alignment=2,MarginV=420'[final_v]")
         last_v = "[final_v]"
+
+    # Master voice audio for punchy clarity
+    filter_parts.append("[0:a]highpass=f=80,lowpass=f=14000,volume=1.25[mastered_a]")
 
     filter_complex = ";".join(filter_parts)
     cmd.extend([
         "-filter_complex", filter_complex,
         "-map", last_v,
-        "-map", "0:a?",
+        "-map", "[mastered_a]",
         "-c:v", "h264_nvenc",
         "-preset", "p2",
         "-c:a", "aac",
