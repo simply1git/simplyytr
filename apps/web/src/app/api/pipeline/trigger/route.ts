@@ -77,16 +77,24 @@ Generate content that follows patterns from top performers and avoids patterns f
       }
     }
 
+    // Fetch recent topics to strictly avoid repeats
+    const recentJobs = await prisma.renderJob.findMany({
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+      select: { topic: true, generatedTitle: true, productName: true }
+    });
+    
+    const usedTopicNames = Array.from(new Set([
+      ...recentJobs.map(j => j.topic?.trim()).filter(Boolean),
+      ...recentJobs.map(j => j.generatedTitle?.trim()).filter(Boolean),
+      ...recentJobs.map(j => (j as any).productName?.trim()).filter(Boolean)
+    ])) as string[];
+
+    const usedTopicsLower = usedTopicNames.map(t => t.toLowerCase());
+
     // Fetch live trends from Google Trends RSS
     const trendingTopics = await fetchTrendingTopics();
-    const trendsContext = trendingTopics.length > 0
-      ? `
-CURRENT REAL-TIME DAILY TRENDS:
-${trendingTopics.map((t, idx) => `- "${t}"`).join('\n')}
-
-INSTRUCTION: You MUST select one of the daily trending topics/queries/celebrities above (e.g. FIFA World Cup, or a trending celebrity/event) to base the script on, making it highly versatile, relevant, and adaptive to what the world is searching for right now.
-`
-      : "";
+    const availableTrends = trendingTopics.filter(t => !usedTopicsLower.some(u => u.includes(t.toLowerCase()) || t.toLowerCase().includes(u)));
 
     const S_TIER_NICHES = [
       'AI & Future Technology Breakthroughs',
@@ -96,12 +104,26 @@ INSTRUCTION: You MUST select one of the daily trending topics/queries/celebritie
       'Live Viral Trending Sports & Pop Culture Moments'
     ];
 
+    const exclusionPrompt = usedTopicNames.length > 0
+      ? `
+STRICT EXCLUSION LIST (DO NOT REPEAT ANY OF THESE RECENT TOPICS/ENTITIES/PEOPLE):
+${usedTopicNames.slice(0, 15).map(t => `- "${t}"`).join('\n')}
+CRITICAL RULE: You MUST choose a COMPLETELY DIFFERENT, FRESH subject that is NOT in the exclusion list above!
+`
+      : "";
+
     const jobs = [];
     for (let i = 0; i < count; i++) {
-      // Dynamic autonomous niche selection if targetNiche is flexible
-      const dynamicNiche = (!settings.targetNiche || settings.targetNiche.toLowerCase().includes('auto') || settings.targetNiche.toLowerCase().includes('all') || settings.targetNiche === 'General / Multi-Niche')
-        ? S_TIER_NICHES[Math.floor(Math.random() * S_TIER_NICHES.length)]
+      // Dynamic autonomous niche selection rotated per job
+      const nicheIndex = (i + Math.floor(Math.random() * S_TIER_NICHES.length)) % S_TIER_NICHES.length;
+      const dynamicNiche = (!settings.targetNiche || settings.targetNiche.toLowerCase().includes('auto') || settings.targetNiche.toLowerCase().includes('all') || settings.targetNiche === 'General / Multi-Niche' || settings.targetNiche === 'Motivation')
+        ? S_TIER_NICHES[nicheIndex]
         : settings.targetNiche;
+
+      // Assign a unique trend per job in the batch
+      const assignedTrend = availableTrends.length > 0
+        ? availableTrends[i % availableTrends.length]
+        : (trendingTopics[i % Math.max(1, trendingTopics.length)] || dynamicNiche);
 
       const videoStyle = (settings as any).defaultVideoStyle || 'PRODUCT_FIND';
       const amazonTag = (settings as any).amazonAssociateTag || 'simplyytr-20';
@@ -112,11 +134,12 @@ INSTRUCTION: You MUST select one of the daily trending topics/queries/celebritie
         scriptPrompt = `
 You are the Top 1% YouTube Shorts Product Affiliate Scriptwriter.
 RESEARCHED DYNAMIC NICHE: "${dynamicNiche}"
+CURRENT OPPORTUNITY TREND: "${assignedTrend}"
 TONE: "${settings.geminiTone}"
-${trendsContext}
+${exclusionPrompt}
 ${performanceContext}
 
-Autonomously research and select a viral, high-converting problem-solving gadget / Amazon find fitting this niche.
+Autonomously research and select a FRESH viral, high-converting problem-solving gadget / Amazon find fitting this niche (DO NOT repeat any recently used products).
 Generate a high-retention 30-35 second script with:
 1. HOOK: 0-2s pattern interrupt opening.
 2. BODY: Fast-paced visual payoff, revealing 1 insight every 3s.
@@ -135,15 +158,37 @@ Return a JSON object with EXACTLY these keys:
   "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"]
 }
 `;
+      } else if (videoStyle === 'REMASTER_REACTION') {
+        scriptPrompt = `
+You are the Top 1% Real-Time Viral Trend Specialist.
+TARGET TREND / SUBJECT: "${assignedTrend}" (Niche: "${dynamicNiche}")
+TONE: "${settings.geminiTone}"
+${exclusionPrompt}
+
+Generate high-CTR title, trending hashtags, and engagement metadata for a viral short about "${assignedTrend}":
+Return a JSON object with EXACTLY the following structure:
+{
+  "product_name": null,
+  "topic": "${assignedTrend}",
+  "hook": "Concise hook summary of ${assignedTrend}",
+  "body": "Context summary",
+  "cta": "Like and subscribe prompt",
+  "visual_prompts": ["${assignedTrend} viral moment"],
+  "title": "Viral high-CTR title about ${assignedTrend} under 65 chars with #shorts",
+  "description": "Engaging description under 150 chars encouraging comments",
+  "tags": ["shorts", "viral", "trending", "highlights"]
+}
+`;
       } else {
         scriptPrompt = `
 You are the Top 1% YouTube Shorts Growth Strategist and Scriptwriter.
 AUTONOMOUSLY RESEARCHED NICHE: "${dynamicNiche}"
+TOPIC INSPIRATION: "${assignedTrend}"
 TONE: "${settings.geminiTone}"
-${trendsContext}
+${exclusionPrompt}
 ${performanceContext}
 
-Research and generate a unique, high-retention viral YouTube Shorts script (35-45 seconds) with an open loop and seamless loop ending.
+Research and generate a unique, high-retention viral YouTube Shorts script (35-45 seconds) on a fresh, fascinating topic with an open loop and seamless loop ending.
 Return a JSON object with EXACTLY these keys:
 {
   "product_name": null,
@@ -152,6 +197,8 @@ Return a JSON object with EXACTLY these keys:
   "body": "Main content body (30-40 seconds of high-velocity narrative)",
   "cta": "Call to action ending engineered to loop back to hook",
   "visual_prompts": ["scene 1 cinematic visual", "scene 2 visual", "scene 3 visual", "scene 4 visual"],
+  "title": "Viral YouTube Shorts title under 65 chars with 1-2 hashtags",
+  "description": "Engaging description under 150 chars",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
 `;
