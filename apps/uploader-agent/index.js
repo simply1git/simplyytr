@@ -532,11 +532,42 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
     log('Waiting for confirmation and share dialog...');
     await new Promise(r => setTimeout(r, 20000));
 
-    if (!publishedId) {
-      publishedId = await extractPublishedVideoId(page);
+    log(`✅ Upload complete! Published ID: ${publishedId || 'unknown'}`);
+
+    // ── Step 12: Automated Affiliate Pinned Comment ──
+    if (publishedId && job.pinnedCommentText) {
+      log('Posting automated affiliate pinned comment...');
+      try {
+        await page.goto(`https://www.youtube.com/watch?v=${publishedId}`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await new Promise(r => setTimeout(r, 6000));
+
+        // Scroll down to trigger comments section loading
+        await page.evaluate(() => window.scrollBy(0, 500));
+        await new Promise(r => setTimeout(r, 4000));
+
+        const commentBox = await page.$('#simplebox-placeholder, #placeholder-area, ytd-comment-simplebox-renderer');
+        if (commentBox) {
+          await commentBox.click();
+          await new Promise(r => setTimeout(r, 2000));
+
+          const contentEditable = await page.$('#contenteditable-root, div#contenteditable-textarea');
+          if (contentEditable) {
+            await contentEditable.type(job.pinnedCommentText, { delay: 20 });
+            await new Promise(r => setTimeout(r, 2000));
+
+            const submitBtn = await page.$('#submit-button ytd-button-renderer, #submit-button button');
+            if (submitBtn) {
+              await submitBtn.click();
+              log('Affiliate comment posted successfully.');
+              await new Promise(r => setTimeout(r, 5000));
+            }
+          }
+        }
+      } catch (commentErr) {
+        log(`Affiliate comment posting skipped (non-fatal): ${commentErr.message}`);
+      }
     }
 
-    log(`✅ Upload complete! Published ID: ${publishedId || 'unknown'}`);
     return publishedId;
 
   } finally {

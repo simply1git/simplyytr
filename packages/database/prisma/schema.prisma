@@ -48,6 +48,13 @@ model RenderJob {
   adSafeReplacements   Json?     @default("[]")
   renderEngine         String    @default("KAGGLE") // KAGGLE, GITHUB_ACTIONS, HYBRID
 
+  // SOTA 2026 Viral Product & Transformative Monetization
+  videoStyle           String    @default("PRODUCT_FIND") // PRODUCT_FIND, REMASTER_REACTION, CURIOSITY_SPLITSCREEN, STANDARD
+  productName          String?
+  productUrl           String?
+  affiliateLink        String?
+  pinnedCommentText    String?
+
   // Generated Assets (Cloudflare R2 URLs)
   voiceoverUrl      String?
   videoUrl          String?
@@ -148,6 +155,14 @@ model SystemSettings {
   trendJackingEnabled   Boolean  @default(true)
   rlyaLearningRate      Float    @default(1.0)
   renderEngine          String   @default("HYBRID") // KAGGLE, GITHUB_ACTIONS, HYBRID
+
+  // Viral Product & Affiliate Monetization Hub
+  defaultVideoStyle     String   @default("PRODUCT_FIND")
+  amazonAssociateTag    String   @default("simplyytr-20")
+  customAffiliatePrefix String   @default("https://amzn.to/finds")
+  enableGlowCaptions    Boolean  @default(true)
+  enableSplitScreen     Boolean  @default(true)
+  enableCinematicLut    Boolean  @default(true)
 
   // Voice Configuration
   voiceName             String   @default("en-US-GuyNeural")

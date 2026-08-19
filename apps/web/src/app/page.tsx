@@ -474,8 +474,8 @@ export default function SimplyYtrCommandCenter() {
                     <thead>
                       <tr className="border-b border-[#3b494b]/40 text-[#849495]">
                         <th className="pb-3 px-2">STATUS</th>
-                        <th className="pb-3 px-2">TOPIC / TITLE</th>
-                        <th className="pb-3 px-2">VOICE</th>
+                        <th className="pb-3 px-2">FORMAT / TOPIC</th>
+                        <th className="pb-3 px-2">AFFILIATE / MONETIZATION</th>
                         <th className="pb-3 px-2">ENGINE</th>
                         <th className="pb-3 px-2">RISK</th>
                         <th className="pb-3 px-2">VIEWS</th>
@@ -487,6 +487,23 @@ export default function SimplyYtrCommandCenter() {
                         <tr key={job.id} className="hover:bg-[#1c1b1c]/50 transition-colors">
                           <td className="py-3.5 px-2 align-middle">{getStatusBadge(job.status)}</td>
                           <td className="py-3.5 px-2 align-middle max-w-xs">
+                            <div className="flex items-center gap-1.5 mb-1">
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                job.videoStyle === "PRODUCT_FIND" ? "bg-amber-500/10 border-amber-500/30 text-amber-300" :
+                                job.videoStyle === "REMASTER_REACTION" ? "bg-rose-500/10 border-rose-500/30 text-rose-300" :
+                                job.videoStyle === "CURIOSITY_SPLITSCREEN" ? "bg-cyan-500/10 border-cyan-500/30 text-cyan-300" :
+                                "bg-zinc-500/10 border-zinc-500/30 text-zinc-300"
+                              }`}>
+                                {job.videoStyle === "PRODUCT_FIND" ? "🛍️ PRODUCT FIND" :
+                                 job.videoStyle === "REMASTER_REACTION" ? "🔥 REMASTER" :
+                                 job.videoStyle === "CURIOSITY_SPLITSCREEN" ? "⚡ CURIOSITY" : "📹 STANDARD"}
+                              </span>
+                              {job.productName && (
+                                <span className="text-[10px] text-[#00f0ff] font-bold truncate max-w-[160px]">
+                                  {job.productName}
+                                </span>
+                              )}
+                            </div>
                             <p className="font-bold text-white truncate">{job.generatedTitle || job.topic}</p>
                             <p className="text-[10px] text-[#849495] truncate">ID: {job.id.slice(-8)} • {new Date(job.createdAt).toLocaleTimeString()}</p>
                             {job.error && (
@@ -495,7 +512,21 @@ export default function SimplyYtrCommandCenter() {
                               </p>
                             )}
                           </td>
-                          <td className="py-3.5 px-2 align-middle text-[#b9cacb]">{job.voiceName || "Default"}</td>
+                          <td className="py-3.5 px-2 align-middle">
+                            {job.affiliateLink ? (
+                              <a
+                                href={job.affiliateLink}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="px-2 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded text-[10px] font-bold flex items-center gap-1 w-fit"
+                              >
+                                <span className="material-symbols-outlined text-[12px]">shopping_cart</span>
+                                Affiliate Link ↗
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-[#849495]">AdSense Only</span>
+                            )}
+                          </td>
                           <td className="py-3.5 px-2 align-middle">
                             <span className="px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/30 text-blue-300 text-[10px]">
                               {job.renderEngine || "HYBRID"}
@@ -876,6 +907,48 @@ export default function SimplyYtrCommandCenter() {
                   </select>
                 </div>
 
+                {/* Default Video Style */}
+                <div className="space-y-2">
+                  <label className="text-[#00f0ff] uppercase font-bold flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[15px]">movie_filter</span>
+                    Viral Video Strategy & Style
+                  </label>
+                  <select
+                    value={settings.defaultVideoStyle || "PRODUCT_FIND"}
+                    onChange={e => setSettings({ ...settings, defaultVideoStyle: e.target.value })}
+                    className="w-full p-3 bg-[#1c1b1c] border border-[#00f0ff]/40 rounded text-[#00f0ff] font-bold focus:border-[#00f0ff] outline-none"
+                  >
+                    <option value="PRODUCT_FIND">🛍️ Viral Product Finds (Amazon/TikTok Gadgets + Auto Affiliate)</option>
+                    <option value="REMASTER_REACTION">🔥 Transformative Remaster & Fair-Use Re-Narration</option>
+                    <option value="CURIOSITY_SPLITSCREEN">⚡ Curiosity Explainer + 60fps Hypnotic Split-Screen</option>
+                    <option value="STANDARD">📹 Dynamic B-Roll Compilation</option>
+                  </select>
+                </div>
+
+                {/* Amazon Associate Tag */}
+                <div className="space-y-2">
+                  <label className="text-[#849495] uppercase">Amazon Associate Tag</label>
+                  <input
+                    type="text"
+                    value={settings.amazonAssociateTag || "simplyytr-20"}
+                    onChange={e => setSettings({ ...settings, amazonAssociateTag: e.target.value })}
+                    className="w-full p-3 bg-[#1c1b1c] border border-[#3b494b]/40 rounded text-white focus:border-[#00f0ff] outline-none"
+                    placeholder="e.g. yourstore-20"
+                  />
+                </div>
+
+                {/* Custom Affiliate Prefix */}
+                <div className="space-y-2">
+                  <label className="text-[#849495] uppercase">Custom Affiliate Link Prefix (Optional)</label>
+                  <input
+                    type="text"
+                    value={settings.customAffiliatePrefix || ""}
+                    onChange={e => setSettings({ ...settings, customAffiliatePrefix: e.target.value })}
+                    className="w-full p-3 bg-[#1c1b1c] border border-[#3b494b]/40 rounded text-white focus:border-[#00f0ff] outline-none"
+                    placeholder="e.g. https://amzn.to/deals or https://yourdomain.com/go"
+                  />
+                </div>
+
                 {/* Primary Render Engine */}
                 <div className="space-y-2">
                   <label className="text-[#849495] uppercase">Primary Render Engine</label>
@@ -1025,6 +1098,48 @@ export default function SimplyYtrCommandCenter() {
                     className={`px-3 py-1 rounded text-xs font-bold ${settings.replaceOriginalAudio ? "bg-emerald-500 text-black" : "bg-zinc-700 text-white"}`}
                   >
                     {settings.replaceOriginalAudio ? "REPLACE" : "PRESERVE"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#1c1b1c] rounded border border-[#3b494b]/40">
+                  <div>
+                    <p className="font-bold text-white">Neon Kinetic ASS Captions</p>
+                    <p className="text-[11px] text-[#849495]">Render centered, bouncing neon yellow & cyan glowing subtitles</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, enableGlowCaptions: settings.enableGlowCaptions !== false ? false : true })}
+                    className={`px-3 py-1 rounded text-xs font-bold ${settings.enableGlowCaptions !== false ? "bg-[#00f0ff] text-black" : "bg-zinc-700 text-white"}`}
+                  >
+                    {settings.enableGlowCaptions !== false ? "ACTIVE GLOW" : "STATIC SUBS"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#1c1b1c] rounded border border-[#3b494b]/40">
+                  <div>
+                    <p className="font-bold text-white">Cinematic Shaders & Color Grade</p>
+                    <p className="text-[11px] text-[#849495]">Vibrant contrast boost + subtle edge vignette to maximize CTR & evade Content ID</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, enableCinematicLut: settings.enableCinematicLut !== false ? false : true })}
+                    className={`px-3 py-1 rounded text-xs font-bold ${settings.enableCinematicLut !== false ? "bg-emerald-500 text-black" : "bg-zinc-700 text-white"}`}
+                  >
+                    {settings.enableCinematicLut !== false ? "CINEMATIC ON" : "STANDARD"}
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-[#1c1b1c] rounded border border-[#3b494b]/40">
+                  <div>
+                    <p className="font-bold text-white">60FPS Hypnotic Split-Screen Engine</p>
+                    <p className="text-[11px] text-[#849495]">Auto-compose satisfying bottom loop (Minecraft / kinetic sand / soap cutting)</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSettings({ ...settings, enableSplitScreen: settings.enableSplitScreen !== false ? false : true })}
+                    className={`px-3 py-1 rounded text-xs font-bold ${settings.enableSplitScreen !== false ? "bg-purple-500 text-white" : "bg-zinc-700 text-white"}`}
+                  >
+                    {settings.enableSplitScreen !== false ? "SPLIT-SCREEN" : "FULLSCREEN"}
                   </button>
                 </div>
               </div>
