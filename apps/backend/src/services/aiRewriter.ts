@@ -1,5 +1,5 @@
 import { scanAndSanitizeScript, ComplianceScanResult } from './complianceProxy';
-import { getRandomViralProduct, buildAffiliateLink, buildPinnedComment, ViralProduct } from './productRadar';
+import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, ViralProduct } from './productRadar';
 
 export interface ScriptGenerationResult {
     title: string;
@@ -18,7 +18,7 @@ export interface ScriptGenerationResult {
 
 /**
  * Multi-Agent Script Generation & Optimization Engine (SIMPLYYTR SOTA 2026)
- * Orchestrates Analyst, Creator, Growth, and Monetization/Affiliate agents.
+ * Orchestrates Analyst, Creator, Growth, and Multi-Link Monetization agents.
  */
 export async function generateViralMetadata(originalTopic: string, settings?: any): Promise<{ title: string; description: string }> {
     const fullResult = await generateFullOrchestratedScript(originalTopic, settings);
@@ -40,22 +40,26 @@ export async function generateFullOrchestratedScript(
     const customPrefix = settings?.customAffiliatePrefix || '';
     const pacingRule = rlyaRetentionInsights?.recommendedPacing || 'Ultra-high hook density, 3-second rapid scene changes';
 
-    // If style is PRODUCT_FIND, select a viral problem-solving gadget
+    // If style is PRODUCT_FIND, select a viral problem-solving gadget and build multi-link bundle
     let matchedProduct: ViralProduct | null = null;
+    let affiliateBundle: any = null;
     if (videoStyle === 'PRODUCT_FIND') {
         matchedProduct = getRandomViralProduct();
+        affiliateBundle = buildMultiAffiliateBundle(matchedProduct, amazonTag, customPrefix);
     }
 
-    const affiliateUrl = matchedProduct ? buildAffiliateLink(matchedProduct, amazonTag, customPrefix) : '';
-    const pinnedComment = matchedProduct ? buildPinnedComment(matchedProduct, affiliateUrl) : '';
+    const affiliateUrl = affiliateBundle ? affiliateBundle.amazonLink : '';
+    const pinnedComment = matchedProduct && affiliateBundle ? buildPinnedComment(matchedProduct, affiliateBundle) : '';
 
     const fallbackResult: ScriptGenerationResult = {
         title: matchedProduct ? `This ${matchedProduct.pricePoint} Amazon Gadget Solves Everything! 🤯 #shorts` : `Viral: ${originalTopic.substring(0, 50)} #shorts`,
-        description: matchedProduct ? `Get it before it sells out! Link in pinned comment & description. ${affiliateUrl}` : `Check out this clip about ${originalTopic}! Subscribe for more.`,
+        description: matchedProduct && affiliateBundle
+            ? buildMultiLinkDescription(matchedProduct, `Get it before it sells out! Link in pinned comment & description.`, affiliateBundle)
+            : `Check out this clip about ${originalTopic}! Subscribe for more.`,
         tags: ['shorts', 'viral', 'amazonfinds', 'tiktokmademebuyit', 'gadgets'],
         hook: matchedProduct ? matchedProduct.hookAngle : `Wait until you see what happens with ${originalTopic.substring(0, 30)}...`,
         body: matchedProduct ? `Here is why this ${matchedProduct.name} is going viral everywhere. It solves ${matchedProduct.problemSolved} instantly. Features include ${matchedProduct.features.join(', ')}.` : `Here is the full breakdown of ${originalTopic}.`,
-        cta: `Direct discount link is pinned in the comments below!`,
+        cta: `Direct discount links are pinned in the comments below!`,
         visualPrompts: matchedProduct ? matchedProduct.visualSearchKeywords : ['satisfying gadget demonstration', 'close up product action', 'fast motion lifestyle transition'],
         compliance: scanAndSanitizeScript(matchedProduct ? matchedProduct.hookAngle : originalTopic),
         videoStyle,
@@ -82,9 +86,9 @@ Tone: "${tone}" (High-energy, conversion-optimized, fast-paced)
 Generate a high-retention 30-40 second spoken YouTube Shorts script:
 1. HOOK (0-3s): Stop the scroll immediately by highlighting the annoying problem and how this $X gadget solves it.
 2. BODY (4-25s): Rapid-fire demonstration breakdown of how it works and the visual satisfaction.
-3. CTA (26-30s): Tell viewers the link with a 50% discount is pinned in the top comment.
+3. CTA (26-30s): Tell viewers the links with a 50% discount code are pinned in the top comment.
 4. TITLE: Irresistible high-CTR title under 70 chars with #shorts #amazonfinds.
-5. DESCRIPTION: 1-2 punchy sentences including the call to action for the pinned comment.
+5. DESCRIPTION: 1-2 punchy sentences directing viewers to the pinned comment and multi-link bundle.
 6. VISUAL PROMPTS: 3-4 descriptive stock video search keywords demonstrating this exact problem and product solution.
 
 Return a valid JSON object with EXACTLY this structure:
@@ -94,8 +98,28 @@ Return a valid JSON object with EXACTLY this structure:
   "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"],
   "hook": "String (first 3-5 seconds high-retention problem hook)",
   "body": "String (core product demonstration narrative, 25-35s spoken)",
-  "cta": "String (directing to pinned comment for link)",
+  "cta": "String (directing to pinned comment for links and discount codes)",
   "visualPrompts": ["3-4 concrete descriptive search phrases for product demo B-roll"]
+}
+Do NOT include markdown wrapping. Output pure JSON only.
+`;
+        } else if (videoStyle === 'REMASTER_REACTION') {
+            systemPrompt = `
+You are the SIMPLYYTR Real-Time Viral Trend Specialist.
+The user wants to capitalize on daily viral events (FIFA World Cup, Breaking News, Trending Sports, Viral Moments).
+Topic/Subject: "${originalTopic}"
+Tone: "${tone}"
+
+Generate high-CTR title, trending hashtags, and engagement metadata for a viral short where original audio is preserved:
+Return a valid JSON object with EXACTLY the following structure:
+{
+  "title": "String (high-CTR viral title under 70 chars with #shorts and trending hashtags)",
+  "description": "String (curiosity-inducing description under 150 chars encouraging likes/comments)",
+  "tags": ["Array", "of", "5", "trending", "tags"],
+  "hook": "String (concise title summary)",
+  "body": "String (context summary)",
+  "cta": "String (like and subscribe prompt)",
+  "visualPrompts": ["search query for the viral event short"]
 }
 Do NOT include markdown wrapping. Output pure JSON only.
 `;
@@ -162,9 +186,13 @@ Do NOT include markdown wrapping. Output pure JSON only.
 
         const complianceResult = scanAndSanitizeScript(`${rawHook} ${rawBody} ${rawCta}`);
 
+        const finalDesc = matchedProduct && affiliateBundle
+            ? buildMultiLinkDescription(matchedProduct, parsed.description || fallbackResult.description, affiliateBundle)
+            : (parsed.description || fallbackResult.description);
+
         return {
             title: parsed.title || fallbackResult.title,
-            description: parsed.description || fallbackResult.description,
+            description: finalDesc,
             tags: Array.isArray(parsed.tags) ? parsed.tags : fallbackResult.tags,
             hook: rawHook,
             body: rawBody,

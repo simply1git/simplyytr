@@ -1031,100 +1031,53 @@ def main():
                 generate_thumbnail(viral_data['title'] if viral_data else title, thumbnail_path)
                 
             elif job_type == 'clone':
-                logging.info("Starting Clone Pipeline...")
+                logging.info("Starting Live Daily Trend-Jacking Pipeline (Original Audio, No Mirroring, No Avatar)...")
                 keyword = job.get('topic')
                 if not keyword or len(keyword.strip()) == 0:
-                    target_channels = config.get('target_channels', 'Alex Hormozi, Andrew Huberman, Motivation')
+                    target_channels = config.get('target_channels', 'Trending, Viral Moments, Sports Highlights')
                     channels_list = [c.strip() for c in target_channels.split(',') if c.strip()]
                     keyword = random.choice(channels_list) if channels_list else (prompts[0] if prompts else 'trending')
                 
-                send_status_update(job_id, f"Searching YouTube for viral short ({keyword})...", VERCEL_URL, PIPELINE_SECRET)
+                send_status_update(job_id, f"Searching high-velocity viral short for '{keyword}'...", VERCEL_URL, PIPELINE_SECRET)
                 try:
                     viral_data = download_viral_short(keyword, temp_dir, VERCEL_URL, PIPELINE_SECRET)
                 except Exception as e:
-                    logging.warning(f"YouTube block detected: {e}. Falling back to Pexels...")
+                    logging.warning(f"YouTube search error: {e}. Falling back to high-res B-roll...")
                     viral_data = None
                 
                 if not viral_data:
-                    send_status_update(job_id, "YouTube blocked. Falling back to Pexels background...", VERCEL_URL, PIPELINE_SECRET)
+                    send_status_update(job_id, "Sourcing dynamic 1080x1920 background...", VERCEL_URL, PIPELINE_SECRET)
                     random_queries = [random.choice(PREMIUM_SATISFYING_QUERIES)]
                     pexels_clips = download_pexels_videos(random_queries, pexels_key, temp_dir)
                     if not pexels_clips:
-                        raise Exception("Failed to download viral short AND failed to download Pexels fallback.")
-                    viral_data = {'filepath': pexels_clips[0], 'title': f"{keyword} Motivation", 'is_pexels': True}
+                        raise Exception("Failed to download viral short AND failed to download fallback video.")
+                    viral_data = {'filepath': pexels_clips[0], 'title': f"{keyword} Viral", 'is_pexels': True}
                 else:
                     viral_data['is_pexels'] = False
                     
                 viral_video_path = viral_data['filepath']
                 
-                reference_audio = os.path.join(temp_dir, "ref_audio.wav")
-                if not viral_data.get('is_pexels'):
-                    send_status_update(job_id, "Extracting audio track from viral video...", VERCEL_URL, PIPELINE_SECRET)
-                    subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-acodec", "pcm_s16le", "-ar", "44100", "-ac", "2", reference_audio], check=True, capture_output=True)
-                else:
-                    # Create dummy file so clone_voice edge-tts fallback doesn't complain
-                    with open(reference_audio, 'wb') as f:
-                        f.write(b'RIFF$\x00\x00\x00WAVEfmt \x10\x00\x00\x00\x01\x00\x01\x00D\xac\x00\x00\x88X\x01\x00\x02\x00\x10\x00data\x00\x00\x00\x00')
+                # Check video duration
+                v_duration = get_media_duration(viral_video_path)
+                if v_duration <= 0 or v_duration > 65:
+                    v_duration = 59.0
                 
-                cloned_audio_path = os.path.join(temp_dir, "cloned_audio.wav")
-                if config.get('replace_original_audio', False) or viral_data.get('is_pexels'):
-                    send_status_update(job_id, "Synthesizing AI voice clone/narration...", VERCEL_URL, PIPELINE_SECRET)
-                    clone_voice(full_script, reference_audio, cloned_audio_path, voice)
-                else:
-                    send_status_update(job_id, "Keeping original audio for avatar & subtitles...", VERCEL_URL, PIPELINE_SECRET)
-                    shutil.copyfile(reference_audio, cloned_audio_path)
+                send_status_update(job_id, "Processing video with cinematic curves (NO MIRRORING, ORIGINAL AUDIO)...", VERCEL_URL, PIPELINE_SECRET)
                 
-                send_status_update(job_id, "Generating avatar video...", VERCEL_URL, PIPELINE_SECRET)
-                avatar_base_img = os.path.join(temp_dir, "avatar_base.jpg")
-                if not os.path.exists(avatar_base_img):
-                    img = Image.new('RGB', (512, 512), color=(73, 109, 137))
-                    d = ImageDraw.Draw(img)
-                    try:
-                        font = ImageFont.truetype("arial.ttf", 60)
-                    except IOError:
-                        font = ImageFont.load_default()
-                    d.text((150, 220), "Avatar", fill=(255, 255, 0), font=font)
-                    img.save(avatar_base_img)
-                
-                avatar_video_path = os.path.join(temp_dir, "avatar_video.mp4")
-                generate_avatar(avatar_base_img, cloned_audio_path, avatar_video_path)
-                
-                send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
-                ass_path = os.path.join(temp_dir, "subtitles.ass")
-                generate_kinetic_ass(cloned_audio_path, ass_path)
-                
-                rel_ass_path = ass_path.replace('\\', '/').replace(':', '\\:') if os.path.exists(ass_path) else None
-                
+                # NO HFLIP (never mirror video), NO corner rectangle avatar overlay
                 filter_complex_parts = [
-                    "[0:v]hflip,scale=iw*1.05:ih*1.05,crop=iw/1.05:ih/1.05,eq=contrast=1.05:saturation=1.05[bg]",
-                    "[1:v]scale=320:-1[avatar_scaled]",
-                    "[bg][avatar_scaled]overlay=W-w-10:H-h-10[with_avatar]"
+                    f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,eq=contrast=1.08:saturation=1.18,unsharp=5:5:0.8:5:5:0.0[enhanced_v]"
                 ]
-                last_v = "[with_avatar]"
-                if rel_ass_path:
-                    filter_complex_parts.append(f"{last_v}ass='{rel_ass_path}'[subbed]")
-                    last_v = "[subbed]"
-                
-                filter_complex_parts.append(f"{last_v}setpts=PTS/1.05[final_v]")
-                filter_complex_parts.append("[2:a]atempo=1.05[final_a]")
+                last_v = "[enhanced_v]"
                 
                 filter_complex = ";".join(filter_complex_parts)
                 
-                audio_duration = 60.0
-                try:
-                    res = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", cloned_audio_path], stdout=subprocess.PIPE, text=True)
-                    audio_duration = float(res.stdout.strip()) + 2.0
-                except:
-                    pass
-
                 cmd = [
                     "ffmpeg", "-y",
-                    "-t", str(audio_duration), "-i", viral_video_path,
-                    "-t", str(audio_duration), "-i", avatar_video_path,
-                    "-t", str(audio_duration), "-i", cloned_audio_path,
+                    "-t", str(v_duration), "-i", viral_video_path,
                     "-filter_complex", filter_complex,
-                    "-map", "[final_v]",
-                    "-map", "[final_a]",
+                    "-map", last_v,
+                    "-map", "0:a?",
                     "-c:v", "h264_nvenc",
                     "-preset", "p2",
                     "-c:a", "aac",
@@ -1133,15 +1086,19 @@ def main():
                     final_video_path
                 ]
                 
-                send_status_update(job_id, "Composing final clone video with FFmpeg...", VERCEL_URL, PIPELINE_SECRET)
                 run_ffmpeg_command(cmd)
-                
                 generate_thumbnail(viral_data['title'], thumbnail_path)
-                audio_path = cloned_audio_path
+                
+                # Extract audio path for R2 asset storage if present
+                audio_path = os.path.join(temp_dir, "original_audio.mp3")
+                subprocess.run(["ffmpeg", "-y", "-i", final_video_path, "-vn", "-acodec", "mp3", audio_path], check=False)
+                if not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
+                    with open(audio_path, 'wb') as f:
+                        f.write(b'\xFF\xFB\x90\x00' + b'\x00' * 100)
 
             else:
-                logging.info("Starting Generative Pipeline...")
-                send_status_update(job_id, "Generating voiceover...", VERCEL_URL, PIPELINE_SECRET)
+                logging.info("Starting Dynamic Generative Pipeline (AI Commentary + Optional Avatar)...")
+                send_status_update(job_id, "Generating AI voiceover commentary...", VERCEL_URL, PIPELINE_SECRET)
                 audio_path, srt_path = generate_voiceover(full_script, voice, audio_path)
                 
                 send_status_update(job_id, "Transcribing with Whisper & generating kinetic typography...", VERCEL_URL, PIPELINE_SECRET)
@@ -1151,8 +1108,11 @@ def main():
                 
                 send_status_update(job_id, "Downloading Pexels video clips...", VERCEL_URL, PIPELINE_SECRET)
                 clip_paths = download_pexels_videos(prompts, pexels_key, temp_dir)
+                if not clip_paths:
+                    random_queries = random.sample(PREMIUM_SATISFYING_QUERIES, min(2, len(PREMIUM_SATISFYING_QUERIES)))
+                    clip_paths = download_pexels_videos(random_queries, pexels_key, temp_dir)
                 
-                send_status_update(job_id, "Composing video clips and subtitles...", VERCEL_URL, PIPELINE_SECRET)
+                send_status_update(job_id, "Composing video clips, AI commentary, and glowing kinetic captions...", VERCEL_URL, PIPELINE_SECRET)
                 compose_video(audio_path, srt_path, clip_paths, final_video_path)
                 generate_thumbnail(title, thumbnail_path)
             

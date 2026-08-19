@@ -149,15 +149,33 @@ Return a JSON object with EXACTLY these keys:
       const script = await callGroq(scriptPrompt);
 
       const prodName = script.product_name || script.topic || 'Viral Find';
-      const affiliateUrl = customPrefix && customPrefix.startsWith('http')
+      const amazonLink = `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName)}&tag=${amazonTag}`;
+      const globalLink = customPrefix && customPrefix.startsWith('http')
         ? `${customPrefix.replace(/\/$/, '')}/${encodeURIComponent(prodName.toLowerCase().replace(/\s+/g, '-'))}`
-        : `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName)}&tag=${amazonTag}`;
+        : `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName + ' official')}&tag=${amazonTag}`;
+      const bundleLink = `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName + ' accessories bundle')}&tag=${amazonTag}`;
 
-      const pinnedComment = `🔥 GET THE ${prodName.toUpperCase()} HERE:
-👉 ${affiliateUrl}
+      let pinnedComment = '';
+      let generatedDesc = script.description || '';
+
+      if (videoStyle === 'PRODUCT_FIND') {
+        pinnedComment = `🔥 GET THE ${prodName.toUpperCase()} & ACCESSORIES:
+1️⃣ Amazon Official Deal: ${amazonLink}
+2️⃣ Global / Direct Store: ${globalLink}
+3️⃣ Recommended Accessories: ${bundleLink}
 
 ⚡ 50% Off Flash Sale Active Today!
 (Disclosure: As an affiliate, I earn a small commission on qualifying purchases at zero extra cost to you!)`;
+
+        generatedDesc = `${script.description || ''}
+
+🔥 DIRECT PRODUCT LINKS:
+• Amazon Deal: ${amazonLink}
+• Global Store: ${globalLink}
+• Accessories Bundle: ${bundleLink}
+
+(FTC Disclosure: As an affiliate partner, I earn from qualifying purchases.)`;
+      }
 
       // Create the render job in the database
       const job = await prisma.renderJob.create({
@@ -170,11 +188,11 @@ Return a JSON object with EXACTLY these keys:
           visualPrompts: script.visual_prompts || [],
           voiceName: settings.voiceName,
           generatedTitle: script.title || '',
-          generatedDescription: `${script.description || ''}\n\n👉 Link: ${affiliateUrl}`,
+          generatedDescription: generatedDesc,
           generatedTags: script.tags || [],
           videoStyle: videoStyle,
           productName: prodName,
-          affiliateLink: affiliateUrl,
+          affiliateLink: amazonLink,
           pinnedCommentText: pinnedComment,
           scriptedAt: new Date(),
         },
