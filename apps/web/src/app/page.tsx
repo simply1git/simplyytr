@@ -252,6 +252,30 @@ export default function SimplyYtrCommandCenter() {
     return (Date.now() - lastActive) < 120000; // 2 min heartbeat window
   };
 
+  const handleSelectMode = async (styleKey: string, copyMode: string) => {
+    const updated = { ...settings, defaultVideoStyle: styleKey, copyPasteMode: copyMode };
+    setSettings(updated);
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updated)
+      });
+      if (res.ok) {
+        toast.success(`Active Pipeline Mode switched to: ${styleKey}`);
+      }
+    } catch (e) {
+      console.error("Failed to switch mode:", e);
+    }
+  };
+
+  const getActiveModeKey = () => {
+    if (settings.defaultVideoStyle) return settings.defaultVideoStyle;
+    if (settings.copyPasteMode === "clone_avatar") return "REMASTER_REACTION";
+    if (settings.copyPasteMode === "split_screen") return "CURIOSITY_SPLITSCREEN";
+    return "PRODUCT_FIND";
+  };
+
   const getStatusBadge = (status: string) => {
     const config: Record<string, { bg: string; text: string; border: string; icon: string }> = {
       PENDING: { bg: "bg-zinc-500/10", text: "text-zinc-400", border: "border-zinc-500/30", icon: "schedule" },
@@ -438,6 +462,90 @@ export default function SimplyYtrCommandCenter() {
         {/* ========================================================================= */}
         {activeTab === "CORE" && (
           <div className="space-y-6">
+            {/* Strategy & Style Mode Switcher */}
+            <div className="p-6 bg-[#141415] border border-[#3b494b]/40 rounded space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-white font-sora flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[#00f0ff]">dashboard_customize</span>
+                    Active Video Generation & Revenue Strategy
+                  </h2>
+                  <p className="text-xs text-[#849495] font-mono-terminal">Select what type of viral content SIMPLYYTR generates when triggered</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 font-mono-terminal">
+                {[
+                  {
+                    key: 'PRODUCT_FIND',
+                    copyMode: 'search_trends',
+                    title: '🛍️ VIRAL PRODUCT FINDS',
+                    desc: 'Amazon/TikTok viral gadgets with automated affiliate links & pinned comments.',
+                    tag: 'HIGH REVENUE ($15-$50 RPM)',
+                    tagColor: 'text-amber-400 border-amber-500/40 bg-amber-500/10'
+                  },
+                  {
+                    key: 'REMASTER_REACTION',
+                    copyMode: 'clone_avatar',
+                    title: '🔥 VIRAL VIDEO CLONE',
+                    desc: 'Repurposes top-performing viral shorts with AI commentary & talking avatar.',
+                    tag: 'MAX VIRALITY (>100k views)',
+                    tagColor: 'text-rose-400 border-rose-500/40 bg-rose-500/10'
+                  },
+                  {
+                    key: 'CURIOSITY_SPLITSCREEN',
+                    copyMode: 'split_screen',
+                    title: '⚡ CURIOSITY SPLIT-SCREEN',
+                    desc: 'Curiosity storytelling hook on top + 60fps satisfying physics loop on bottom.',
+                    tag: 'MAX RETENTION (120% APV)',
+                    tagColor: 'text-cyan-400 border-cyan-500/40 bg-cyan-500/10'
+                  },
+                  {
+                    key: 'STANDARD',
+                    copyMode: 'generative',
+                    title: '📹 DYNAMIC GENERATIVE',
+                    desc: 'Groq multi-agent script + curated high-definition Pexels B-roll compilation.',
+                    tag: 'ORIGINAL CONTENT',
+                    tagColor: 'text-purple-400 border-purple-500/40 bg-purple-500/10'
+                  }
+                ].map(mode => {
+                  const isActive = getActiveModeKey() === mode.key;
+                  return (
+                    <button
+                      key={mode.key}
+                      onClick={() => handleSelectMode(mode.key, mode.copyMode)}
+                      className={`p-4 rounded-xl border text-left transition-all relative flex flex-col justify-between ${
+                        isActive
+                          ? 'bg-[#00f0ff]/10 border-[#00f0ff] shadow-[0_0_20px_rgba(0,240,255,0.25)] ring-1 ring-[#00f0ff]'
+                          : 'bg-[#1c1b1c] border-[#3b494b]/40 hover:border-[#00f0ff]/50 hover:bg-[#222122]'
+                      }`}
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className={`text-[9px] px-2 py-0.5 rounded border font-bold ${mode.tagColor}`}>
+                            {mode.tag}
+                          </span>
+                          {isActive && (
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#00f0ff] animate-ping"></span>
+                          )}
+                        </div>
+                        <p className="font-bold text-white text-sm font-sora">{mode.title}</p>
+                        <p className="text-[11px] text-[#849495] leading-relaxed">{mode.desc}</p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-[#3b494b]/30 flex items-center justify-between text-[11px]">
+                        <span className={isActive ? 'text-[#00f0ff] font-bold' : 'text-[#849495]'}>
+                          {isActive ? '● ACTIVE MODE' : 'Click to Activate'}
+                        </span>
+                        <span className="material-symbols-outlined text-[16px] text-[#849495]">
+                          {isActive ? 'check_circle' : 'arrow_forward'}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="p-6 bg-[#141415] border border-[#3b494b]/40 rounded space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#3b494b]/40 pb-4">
                 <div>
