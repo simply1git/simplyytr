@@ -816,16 +816,16 @@ def create_split_screen_video(top_video_path, bottom_video_path, output_path, au
         "[0:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,eq=contrast=1.12:saturation=1.28,unsharp=5:5:0.8:5:5:0.0[top]",
         "[1:v]scale=1080:960:force_original_aspect_ratio=increase,crop=1080:960,setsar=1,fps=30,eq=contrast=1.10:saturation=1.20[bottom]",
         "[top][bottom]vstack=inputs=2[stacked]",
-        "[stacked]drawbox=y=956:color=cyan@0.8:width=1080:height=8:t=fill,drawbox=y=1780:color=black@0.75:width=1080:height=90:t=fill,drawtext=text='" + cta_text + "':font='Arial Black':fontsize=36:fontcolor=white:x=(w-text_w)/2:y=1805[with_banner]"
+        "[stacked]drawbox=y=956:color=cyan@0.8:width=1080:height=8:t=fill[stacked_divider]"
     ]
-    last_v = "[with_banner]"
+    last_v = "[stacked_divider]"
 
     if srt_or_ass_path and os.path.exists(srt_or_ass_path):
         abs_sub = os.path.abspath(srt_or_ass_path).replace('\\', '/').replace(':', '\\:')
         if srt_or_ass_path.endswith('.ass'):
             filter_parts.append(f"{last_v}ass='{abs_sub}'[final_v]")
         else:
-            filter_parts.append(f"{last_v}subtitles='{abs_sub}':force_style='FontName=Arial Black,FontSize=26,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=4,Shadow=2,Alignment=2,MarginV=180'[final_v]")
+            filter_parts.append(f"{last_v}subtitles='{abs_sub}':force_style='FontName=Arial Black,FontSize=28,PrimaryColour=&H0000FFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=4,Shadow=3,Alignment=2,MarginV=420'[final_v]")
         last_v = "[final_v]"
 
     cmd.extend(["-filter_complex", ";".join(filter_parts)])
