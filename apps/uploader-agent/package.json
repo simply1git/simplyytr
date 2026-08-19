@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node -e \"process.exit(0)\"",
     "start": "node index.js",
-    "login": "node index.js --manual-login"
+    "login": "node index.js --manual-login",
+    "login:native": "node -e \"const cp = require('child_process'); const p = require('path').resolve(__dirname, '../../login_youtube.bat'); cp.spawn('cmd.exe', ['/c', p], { detached: true, stdio: 'ignore' });\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",
