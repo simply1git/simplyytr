@@ -90,37 +90,74 @@ INSTRUCTION: You MUST select one of the daily trending topics/queries/celebritie
 
     const jobs = [];
     for (let i = 0; i < count; i++) {
-      // Generate script via Groq
-      const scriptPrompt = `
-You are an expert YouTube Shorts scriptwriter and growth strategist.
+      const videoStyle = (settings as any).defaultVideoStyle || 'PRODUCT_FIND';
+      const amazonTag = (settings as any).amazonAssociateTag || 'simplyytr-20';
+      const customPrefix = (settings as any).customAffiliatePrefix || '';
 
+      let scriptPrompt = '';
+      if (videoStyle === 'PRODUCT_FIND') {
+        scriptPrompt = `
+You are an expert YouTube Shorts viral product affiliate marketer and high-CTR copywriter.
+TARGET NICHE: "${settings.targetNiche}"
+TONE: "${settings.geminiTone}"
+${trendsContext}
+${performanceContext}
+
+Select a viral, problem-solving trending gadget / Amazon find suitable for this niche.
+Generate a high-conversion 30-40 second video script:
+1. HOOK: 3s opening showing the annoying everyday problem and how this gadget solves it.
+2. BODY: Fast-paced demonstration of features and visual satisfaction.
+3. CTA: Directing viewers to the discount link in the pinned comment!
+
+Return a JSON object with EXACTLY these keys:
+{
+  "product_name": "Precise name of product (e.g. 2-in-1 Screen Cleaner Spray)",
+  "topic": "Concise topic summary",
+  "hook": "Opening problem hook line (3-4 seconds)",
+  "body": "Main demonstration body (25-35 seconds spoken aloud)",
+  "cta": "Call to action pointing to pinned comment link",
+  "visual_prompts": ["scene 1 product problem demo", "scene 2 product solution in action", "scene 3 satisfying result", "scene 4 close-up product feature"],
+  "title": "Viral YouTube Shorts title under 70 chars with #shorts #amazonfinds",
+  "description": "Engaging description under 150 chars with affiliate disclosure",
+  "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"]
+}
+`;
+      } else {
+        scriptPrompt = `
+You are an expert YouTube Shorts scriptwriter and growth strategist.
 TARGET NICHE: "${settings.targetNiche}"
 TONE: "${settings.geminiTone}"
 ${trendsContext}
 ${performanceContext}
 
 Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
-
 Return a JSON object with EXACTLY these keys:
 {
+  "product_name": null,
   "topic": "A concise topic summary (3-6 words)",
   "hook": "Opening hook line (first 3 seconds, must grab attention immediately)",
   "body": "Main content body (40-50 seconds of spoken content, informative and engaging)",
   "cta": "Call to action (last 5 seconds, encourage like/subscribe/comment)",
-  "visual_prompts": ["scene 1 description for stock video search", "scene 2 description", "scene 3 description", "scene 4 description", "scene 5 description"],
+  "visual_prompts": ["scene 1 description for stock video search", "scene 2 description", "scene 3 description", "scene 4 description"],
   "title": "Viral YouTube Shorts title under 70 chars with 1-2 hashtags",
   "description": "Engaging description under 200 chars",
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
-
-Rules:
-- The script must be ORIGINAL content, not copied from any existing video.
-- visual_prompts should be concrete, searchable terms (e.g., "person typing on laptop", "sunset over mountains").
-- Make the hook irresistible — use curiosity gaps, surprising facts, or bold statements.
-- Each visual_prompt should describe a different scene for variety.
 `;
+      }
 
       const script = await callGroq(scriptPrompt);
+
+      const prodName = script.product_name || script.topic || 'Viral Find';
+      const affiliateUrl = customPrefix && customPrefix.startsWith('http')
+        ? `${customPrefix.replace(/\/$/, '')}/${encodeURIComponent(prodName.toLowerCase().replace(/\s+/g, '-'))}`
+        : `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName)}&tag=${amazonTag}`;
+
+      const pinnedComment = `🔥 GET THE ${prodName.toUpperCase()} HERE:
+👉 ${affiliateUrl}
+
+⚡ 50% Off Flash Sale Active Today!
+(Disclosure: As an affiliate, I earn a small commission on qualifying purchases at zero extra cost to you!)`;
 
       // Create the render job in the database
       const job = await prisma.renderJob.create({
@@ -133,8 +170,12 @@ Rules:
           visualPrompts: script.visual_prompts || [],
           voiceName: settings.voiceName,
           generatedTitle: script.title || '',
-          generatedDescription: script.description || '',
+          generatedDescription: `${script.description || ''}\n\n👉 Link: ${affiliateUrl}`,
           generatedTags: script.tags || [],
+          videoStyle: videoStyle,
+          productName: prodName,
+          affiliateLink: affiliateUrl,
+          pinnedCommentText: pinnedComment,
           scriptedAt: new Date(),
         },
       });
