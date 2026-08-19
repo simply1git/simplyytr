@@ -88,8 +88,21 @@ INSTRUCTION: You MUST select one of the daily trending topics/queries/celebritie
 `
       : "";
 
+    const S_TIER_NICHES = [
+      'AI & Future Technology Breakthroughs',
+      'Viral Problem-Solving Gadgets & Inventions',
+      'Dark Psychology & Subconscious Human Behavior',
+      'Mind-Blowing Mysteries & Cosmic Paradoxes',
+      'Live Viral Trending Sports & Pop Culture Moments'
+    ];
+
     const jobs = [];
     for (let i = 0; i < count; i++) {
+      // Dynamic autonomous niche selection if targetNiche is flexible
+      const dynamicNiche = (!settings.targetNiche || settings.targetNiche.toLowerCase().includes('auto') || settings.targetNiche.toLowerCase().includes('all') || settings.targetNiche === 'General / Multi-Niche')
+        ? S_TIER_NICHES[Math.floor(Math.random() * S_TIER_NICHES.length)]
+        : settings.targetNiche;
+
       const videoStyle = (settings as any).defaultVideoStyle || 'PRODUCT_FIND';
       const amazonTag = (settings as any).amazonAssociateTag || 'simplyytr-20';
       const customPrefix = (settings as any).customAffiliatePrefix || '';
@@ -97,50 +110,48 @@ INSTRUCTION: You MUST select one of the daily trending topics/queries/celebritie
       let scriptPrompt = '';
       if (videoStyle === 'PRODUCT_FIND') {
         scriptPrompt = `
-You are an expert YouTube Shorts viral product affiliate marketer and high-CTR copywriter.
-TARGET NICHE: "${settings.targetNiche}"
+You are the Top 1% YouTube Shorts Product Affiliate Scriptwriter.
+RESEARCHED DYNAMIC NICHE: "${dynamicNiche}"
 TONE: "${settings.geminiTone}"
 ${trendsContext}
 ${performanceContext}
 
-Select a viral, problem-solving trending gadget / Amazon find suitable for this niche.
-Generate a high-conversion 30-40 second video script:
-1. HOOK: 3s opening showing the annoying everyday problem and how this gadget solves it.
-2. BODY: Fast-paced demonstration of features and visual satisfaction.
-3. CTA: Directing viewers to the discount link in the pinned comment!
+Autonomously research and select a viral, high-converting problem-solving gadget / Amazon find fitting this niche.
+Generate a high-retention 30-35 second script with:
+1. HOOK: 0-2s pattern interrupt opening.
+2. BODY: Fast-paced visual payoff, revealing 1 insight every 3s.
+3. CTA: Directing viewers to pinned discount links with a seamless infinite loop ending.
 
 Return a JSON object with EXACTLY these keys:
 {
   "product_name": "Precise name of product (e.g. 2-in-1 Screen Cleaner Spray)",
   "topic": "Concise topic summary",
-  "hook": "Opening problem hook line (3-4 seconds)",
-  "body": "Main demonstration body (25-35 seconds spoken aloud)",
+  "hook": "Opening problem hook line (0-2s)",
+  "body": "Main demonstration body (20-25s spoken aloud)",
   "cta": "Call to action pointing to pinned comment link",
   "visual_prompts": ["scene 1 product problem demo", "scene 2 product solution in action", "scene 3 satisfying result", "scene 4 close-up product feature"],
-  "title": "Viral YouTube Shorts title under 70 chars with #shorts #amazonfinds",
+  "title": "Viral YouTube Shorts title under 65 chars with #shorts #amazonfinds",
   "description": "Engaging description under 150 chars with affiliate disclosure",
   "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"]
 }
 `;
       } else {
         scriptPrompt = `
-You are an expert YouTube Shorts scriptwriter and growth strategist.
-TARGET NICHE: "${settings.targetNiche}"
+You are the Top 1% YouTube Shorts Growth Strategist and Scriptwriter.
+AUTONOMOUSLY RESEARCHED NICHE: "${dynamicNiche}"
 TONE: "${settings.geminiTone}"
 ${trendsContext}
 ${performanceContext}
 
-Generate a unique, highly engaging YouTube Shorts video script (under 60 seconds when spoken aloud).
+Research and generate a unique, high-retention viral YouTube Shorts script (35-45 seconds) with an open loop and seamless loop ending.
 Return a JSON object with EXACTLY these keys:
 {
   "product_name": null,
   "topic": "A concise topic summary (3-6 words)",
-  "hook": "Opening hook line (first 3 seconds, must grab attention immediately)",
-  "body": "Main content body (40-50 seconds of spoken content, informative and engaging)",
-  "cta": "Call to action (last 5 seconds, encourage like/subscribe/comment)",
-  "visual_prompts": ["scene 1 description for stock video search", "scene 2 description", "scene 3 description", "scene 4 description"],
-  "title": "Viral YouTube Shorts title under 70 chars with 1-2 hashtags",
-  "description": "Engaging description under 200 chars",
+  "hook": "Opening hook line (first 2 seconds, must grab attention immediately)",
+  "body": "Main content body (30-40 seconds of high-velocity narrative)",
+  "cta": "Call to action ending engineered to loop back to hook",
+  "visual_prompts": ["scene 1 cinematic visual", "scene 2 visual", "scene 3 visual", "scene 4 visual"],
   "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
 }
 `;

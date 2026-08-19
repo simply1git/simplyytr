@@ -237,11 +237,25 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
                 time.sleep(5 * (attempt + 1))
                 
     if success:
-        logging.info("Download complete.")
+        logging.info(f"Download complete for video ID {video_id}.")
+        # Immediately record in history so it is never downloaded or cloned again
+        if vercel_url and pipeline_secret and video_id:
+            try:
+                requests.post(
+                    f"{vercel_url}/api/pipeline/history",
+                    json={"youtubeId": str(video_id).strip(), "topic": keyword},
+                    headers={"Authorization": f"Bearer {pipeline_secret}"},
+                    timeout=8
+                )
+                logging.info(f"Recorded video ID {video_id} into database memory.")
+            except Exception as e:
+                logging.warning(f"Failed to record history for {video_id}: {e}")
+
         return {
             'filepath': output_path,
             'title': video_title,
             'url': video_url,
+            'id': video_id,
             'view_count': view_count,
             'description': f"Sourced via {'Bilibili' if is_bilibili else 'YouTube'}."
         }
@@ -1165,13 +1179,20 @@ def main():
             thumb_url = upload_to_r2(thumbnail_path, f"{job_id}_thumb.jpg", r2_config)
             voice_url = upload_to_r2(audio_path, f"{job_id}_voice{voice_ext}", r2_config)
             
-            if viral_data and 'youtube.com' in viral_data.get('url', ''):
-                youtube_id = viral_data['url'].split('v=')[-1].split('&')[0]
-                try:
-                    requests.post(f"{VERCEL_URL}/api/pipeline/history", json={"youtubeId": youtube_id}, headers={"Authorization": f"Bearer {PIPELINE_SECRET}"})
-                    logging.info(f"Registered {youtube_id} in history.")
-                except Exception as e:
-                    logging.warning(f"Failed to register history: {e}")
+            if viral_data:
+                v_id = viral_data.get('id')
+                if not v_id and viral_data.get('url'):
+                    import re
+                    m = re.search(r'(?:v=|\/shorts\/|\/embed\/|youtu\.be\/|\/v\/)([0-9A-Za-z_-]{11})', viral_data['url'])
+                    if m:
+                        v_id = m.group(1)
+                
+                if v_id:
+                    try:
+                        requests.post(f"{VERCEL_URL}/api/pipeline/history", json={"youtubeId": str(v_id).strip(), "topic": viral_data.get('title', '')}, headers={"Authorization": f"Bearer {PIPELINE_SECRET}"}, timeout=8)
+                        logging.info(f"Registered video ID {v_id} in permanent history memory.")
+                    except Exception as e:
+                        logging.warning(f"Failed to register history: {e}")
 
             payload = {
                 "jobId": job_id,
