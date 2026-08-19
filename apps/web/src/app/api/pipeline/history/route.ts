@@ -11,7 +11,17 @@ export async function GET(request: Request) {
       select: { youtubeId: true },
     });
 
-    const usedVideoIds = trends.map(t => t.youtubeId);
+    const jobs = await prisma.renderJob.findMany({
+      select: { topic: true, generatedTitle: true },
+      take: 500,
+    });
+
+    const usedVideoIds = Array.from(new Set([
+      ...trends.map(t => t.youtubeId).filter(Boolean),
+      ...jobs.map(j => j.topic).filter(Boolean),
+      ...jobs.map(j => j.generatedTitle).filter(Boolean),
+    ]));
+
     return Response.json({ usedVideoIds });
   } catch (error: any) {
     console.error('History GET error:', error);
