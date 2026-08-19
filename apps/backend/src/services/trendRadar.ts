@@ -64,6 +64,19 @@ export const S_TIER_HIGH_RPM_NICHES = [
     ]
   },
   {
+    niche: 'Elite Mindset & Business Podcasts',
+    rpmTier: 'HIGH' as const,
+    style: 'REMASTER_REACTION' as const,
+    topics: [
+      'Raj Shamani Brutal Truth About Money & Startups',
+      'Raj Shamani Business Secrets 99% of People Ignore',
+      'Raj Shamani Career Advice That Changed Everything',
+      'Alex Hormozi 1 Million Dollar Skillset Formula',
+      'Andrew Huberman Subconscious Dopamine & Focus Protocol',
+      'Ranveer Allahbadia Dark Reality of Success & Wealth'
+    ]
+  },
+  {
     niche: 'Live Daily Trend-Jacking & Sports Highlights',
     rpmTier: 'MAX_VIRALITY' as const,
     style: 'REMASTER_REACTION' as const,
