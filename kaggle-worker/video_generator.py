@@ -1119,13 +1119,30 @@ def main():
                 if v_duration <= 0 or v_duration > 65:
                     v_duration = 59.0
                 
-                send_status_update(job_id, "Processing video with cinematic curves (NO MIRRORING, ORIGINAL AUDIO)...", VERCEL_URL, PIPELINE_SECRET)
+                # Smart Audio Extraction & AI Whisper Speech Analysis
+                send_status_update(job_id, "Listening to video & transcribing speech with Whisper AI...", VERCEL_URL, PIPELINE_SECRET)
+                extracted_speech_path = os.path.join(temp_dir, "extracted_speech.wav")
+                subprocess.run(["ffmpeg", "-y", "-i", viral_video_path, "-vn", "-ar", "16000", "-ac", "1", extracted_speech_path], check=False)
                 
-                # NO HFLIP (never mirror video), NO corner rectangle avatar overlay
+                ass_path = os.path.join(temp_dir, "subtitles.ass")
+                if os.path.exists(extracted_speech_path) and os.path.getsize(extracted_speech_path) > 1000:
+                    try:
+                        send_status_update(job_id, "Analyzing viral retention & generating Top 1% glowing kinetic captions...", VERCEL_URL, PIPELINE_SECRET)
+                        generate_kinetic_ass(extracted_speech_path, ass_path)
+                    except Exception as e:
+                        logging.warning(f"Kinetic subtitle generation skipped: {e}")
+
+                send_status_update(job_id, "Remastering video with cinematic grading, kinetic pop captions & studio audio...", VERCEL_URL, PIPELINE_SECRET)
+                
                 filter_complex_parts = [
                     f"[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,eq=contrast=1.08:saturation=1.18,unsharp=5:5:0.8:5:5:0.0[enhanced_v]"
                 ]
                 last_v = "[enhanced_v]"
+                
+                if os.path.exists(ass_path) and os.path.getsize(ass_path) > 100:
+                    abs_ass = os.path.abspath(ass_path).replace('\\', '/').replace(':', '\\:')
+                    filter_complex_parts.append(f"{last_v}ass='{abs_ass}'[with_subs]")
+                    last_v = "[with_subs]"
                 
                 filter_complex = ";".join(filter_complex_parts)
                 
@@ -1135,6 +1152,7 @@ def main():
                     "-filter_complex", filter_complex,
                     "-map", last_v,
                     "-map", "0:a?",
+                    "-af", "highpass=f=80,lowpass=f=14000,volume=1.20",
                     "-c:v", "h264_nvenc",
                     "-preset", "p2",
                     "-c:a", "aac",
