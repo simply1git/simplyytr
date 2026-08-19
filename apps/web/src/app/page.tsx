@@ -480,15 +480,15 @@ export default function SimplyYtrCommandCenter() {
                     key: 'PRODUCT_FIND',
                     copyMode: 'search_trends',
                     title: '🛍️ VIRAL PRODUCT FINDS',
-                    desc: 'Amazon/TikTok viral gadgets with automated affiliate links & pinned comments.',
+                    desc: 'Multi-link affiliate bundles (Amazon + Global Store + Accessories + Coupon) with auto-pinned comments.',
                     tag: 'HIGH REVENUE ($15-$50 RPM)',
                     tagColor: 'text-amber-400 border-amber-500/40 bg-amber-500/10'
                   },
                   {
                     key: 'REMASTER_REACTION',
                     copyMode: 'clone_avatar',
-                    title: '🔥 VIRAL VIDEO CLONE',
-                    desc: 'Repurposes top-performing viral shorts with AI commentary & talking avatar.',
+                    title: '🔥 LIVE DAILY TREND-JACK',
+                    desc: 'Auto-detects daily trends (FIFA, Breaking News) • 100% Original Audio • No AI Voice • No Avatars • No Mirroring.',
                     tag: 'MAX VIRALITY (>100k views)',
                     tagColor: 'text-rose-400 border-rose-500/40 bg-rose-500/10'
                   },
@@ -503,9 +503,9 @@ export default function SimplyYtrCommandCenter() {
                   {
                     key: 'STANDARD',
                     copyMode: 'generative',
-                    title: '📹 DYNAMIC GENERATIVE',
-                    desc: 'Groq multi-agent script + curated high-definition Pexels B-roll compilation.',
-                    tag: 'ORIGINAL CONTENT',
+                    title: '📹 DYNAMIC AI COMMENTARY',
+                    desc: 'Groq AI multi-agent script + Edge-TTS voiceover commentary & optional talking avatar on Pexels B-roll.',
+                    tag: 'ORIGINAL AI CONTENT',
                     tagColor: 'text-purple-400 border-purple-500/40 bg-purple-500/10'
                   }
                 ].map(mode => {
