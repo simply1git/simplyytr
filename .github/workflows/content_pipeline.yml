@@ -18,9 +18,13 @@ jobs:
     steps:
       - name: Trigger Content Pipeline
         run: |
+          TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}"
+          SECRET_KEY="${{ secrets.PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026' }}"
+          
+          echo "Triggering pipeline at: $TARGET_URL"
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
-            "${{ secrets.VERCEL_API_URL }}/api/pipeline/trigger" \
-            -H "Authorization: Bearer ${{ secrets.PIPELINE_SECRET }}" \
+            "${TARGET_URL%/}/api/pipeline/trigger" \
+            -H "Authorization: Bearer $SECRET_KEY" \
             -H "Content-Type: application/json" \
             -d '{"count": ${{ github.event.inputs.force_count || 1 }}}')
           
@@ -47,9 +51,11 @@ jobs:
         run: |
           HOUR=$(date -u +"%H")
           if [ "$HOUR" = "00" ]; then
+            TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}"
+            SECRET_KEY="${{ secrets.PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026' }}"
             curl -s -X POST \
-              "${{ secrets.VERCEL_API_URL }}/api/cron/analytics" \
-              -H "Authorization: Bearer ${{ secrets.PIPELINE_SECRET }}"
+              "${TARGET_URL%/}/api/cron/analytics" \
+              -H "Authorization: Bearer $SECRET_KEY"
             echo "✅ Analytics sync triggered"
           else
             echo "⏭️ Skipping analytics sync (not midnight UTC)"

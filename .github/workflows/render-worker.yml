@@ -36,8 +36,9 @@ jobs:
 
       - name: Execute Autonomous Video Generation
         env:
-          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL || 'https://simplyytr.vercel.app' }}
-          PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET }}
+          VERCEL_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}
+          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}
+          PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026' }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
