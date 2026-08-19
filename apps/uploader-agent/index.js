@@ -364,12 +364,15 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
       headless: false,
       executablePath: executablePath || undefined,
       userDataDir: CHROME_PROFILE,
+      ignoreDefaultArgs: ['--enable-automation'],
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
         '--window-size=1280,900'
-      ]
+      ],
+      defaultViewport: null
     });
   } catch (launchErr) {
     log(`Browser launch failed, attempting profile lock cleanup...`);
@@ -379,17 +382,23 @@ async function uploadToYoutube(job, videoPath, thumbnailPath = null) {
       headless: false,
       executablePath: executablePath || undefined,
       userDataDir: CHROME_PROFILE,
+      ignoreDefaultArgs: ['--enable-automation'],
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
         '--window-size=1280,900'
-      ]
+      ],
+      defaultViewport: null
     });
   }
 
   try {
     const page = await browser.newPage();
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
     await page.setViewport({ width: 1280, height: 900 });
 
     log('Navigating to YouTube Studio...');
@@ -669,14 +678,29 @@ async function processReadyJobs() {
 if (process.argv.includes('--manual-login')) {
   (async () => {
     log('Starting manual login mode. Please log into YouTube Studio.');
+    clearChromeProfileLock();
     const executablePath = findChrome();
     const browser = await puppeteer.launch({
       headless: false,
       executablePath: executablePath || undefined,
       userDataDir: CHROME_PROFILE,
+      ignoreDefaultArgs: ['--enable-automation'],
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-blink-features=AutomationControlled',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--window-size=1280,900'
+      ],
+      defaultViewport: null
     });
     const page = await browser.newPage();
-    await page.goto('https://studio.youtube.com');
+    await page.evaluateOnNewDocument(() => {
+      Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+    });
+    await page.goto('https://studio.youtube.com', { waitUntil: 'domcontentloaded' });
     log('Close the browser window when you are done logging in.');
   })();
 } else {

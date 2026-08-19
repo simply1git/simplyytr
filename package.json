@@ -11,6 +11,7 @@
     "build": "npm run build --workspace=web",
     "postinstall": "prisma generate --schema=packages/database/prisma/schema.prisma",
     "start": "npm run start --workspaces",
+    "login:youtube": "login_youtube.bat",
     "uploader": "npm run start --workspace=@youtubbot/uploader-agent"
   },
   "devDependencies": {
