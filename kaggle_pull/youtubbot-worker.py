@@ -430,10 +430,13 @@ def setup_openvoice():
 def clone_voice(text, reference_audio_path, output_path, voice_name="en-US-GuyNeural"):
     logging.info(f"Cloning voice/generating voiceover for text: {text[:30]}...")
     try:
-        from voice_cloner import clone_voice as run_clone
-        return run_clone(text, reference_audio_path, output_path, voice_name)
+        import importlib
+        _vc = importlib.import_module("voice_cloner")
+        run_clone = getattr(_vc, "clone_voice", None)
+        if run_clone:
+            return run_clone(text, reference_audio_path, output_path, voice_name)
     except Exception as e:
-        logging.error(f"Failed to run voice_cloner: {e}. Falling back to Edge-TTS...")
+        logging.info(f"Voice cloner not available ({e}). Falling back to Edge-TTS...")
         subtitle_path = output_path.replace('.wav', '.vtt').replace('.mp3', '.vtt')
         cmd = [
             "edge-tts",
