@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, callGroq, prisma } from '../../lib/utils';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 async function fetchTrendingTopics(): Promise<string[]> {
   try {
     const res = await fetch('https://trends.google.com/trending/rss?geo=US', {

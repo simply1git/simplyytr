@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // POST /api/pipeline/webhook
 // Called by the Kaggle worker when video rendering is complete.
 // Updates the render job status to READY with the R2 asset URLs.

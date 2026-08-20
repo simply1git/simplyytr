@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // GET /api/pipeline/worker-job
 // Called by the Kaggle GPU worker to get the next SCRIPTED job
 export async function GET(request: NextRequest) {

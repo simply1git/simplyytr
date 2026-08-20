@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // POST /api/pipeline/worker-status
 // Called by Kaggle to update live rendering logs
 export async function POST(request: NextRequest) {

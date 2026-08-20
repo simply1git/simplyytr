@@ -1004,12 +1004,24 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+            config_res = requests.get(
+                f"{VERCEL_URL}/api/pipeline/worker-job", 
+                headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                timeout=45
+            )
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
-                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+                res = requests.post(
+                    f"{VERCEL_URL}/api/pipeline/auto-trigger", 
+                    headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                    timeout=60
+                )
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+                config_res = requests.get(
+                    f"{VERCEL_URL}/api/pipeline/worker-job", 
+                    headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                    timeout=45
+                )
             
             config_res.raise_for_status()
             config_data = config_res.json()
@@ -1017,8 +1029,8 @@ def main():
             config = config_data.get('config', {})
         except Exception as e:
             logging.error(f"Failed to fetch job from Vercel: {e}")
-            logging.info("Sleeping for 60 seconds before retrying...")
-            time.sleep(60)
+            logging.info("Sleeping for 30 seconds before retrying...")
+            time.sleep(30)
             continue
 
         if not job:
