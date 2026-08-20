@@ -85,199 +85,60 @@ INSTRUCTION: Adapt your hook structure and title style to match the pacing and v
       }
     }
 
-    // Fetch recent topics to strictly avoid repeats
-    const recentJobs = await prisma.renderJob.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 25,
-      select: { topic: true, generatedTitle: true, productName: true }
+    const { executePeakAgenticRun } = await import('../../lib/agenticOrchestrator');
+    const result = await executePeakAgenticRun({
+      forceNiche: settings.targetNiche !== 'Motivation' && settings.targetNiche !== 'General / Multi-Niche' ? settings.targetNiche : undefined,
+      targetChannels: settings.targetChannels,
+      defaultStyle: (settings as any).defaultVideoStyle || 'PRODUCT_FIND',
+      settings
     });
-    
-    const usedTopicNames = Array.from(new Set([
-      ...recentJobs.map(j => j.topic?.trim()).filter(Boolean),
-      ...recentJobs.map(j => j.generatedTitle?.trim()).filter(Boolean),
-      ...recentJobs.map(j => (j as any).productName?.trim()).filter(Boolean)
-    ])) as string[];
 
-    const usedTopicsLower = usedTopicNames.map(t => t.toLowerCase());
-
-    const availableTrends = trendingTopics.filter(t => !usedTopicsLower.some(u => u.includes(t.toLowerCase()) || t.toLowerCase().includes(u)));
-
-    const exclusionPrompt = usedTopicNames.length > 0
-      ? `
-STRICT EXCLUSION LIST (DO NOT REPEAT ANY OF THESE RECENT TOPICS/ENTITIES/PEOPLE):
-${usedTopicNames.slice(0, 15).map(t => `- "${t}"`).join('\n')}
-CRITICAL RULE: You MUST choose a COMPLETELY DIFFERENT, FRESH subject that is NOT in the exclusion list above!
-`
-      : "";
-
-    const videoStyle = (settings as any).defaultVideoStyle || 'PRODUCT_FIND';
-    const amazonTag = (settings as any).amazonAssociateTag || 'simplyytr-20';
-    const customPrefix = (settings as any).customAffiliatePrefix || '';
-
-    const S_TIER_NICHES = [
-      'AI & Future Technology Breakthroughs',
-      'Viral Problem-Solving Gadgets & Inventions',
-      'Dark Psychology & Subconscious Human Behavior',
-      'Mind-Blowing Mysteries & Cosmic Paradoxes',
-      'Live Viral Trending Sports & Pop Culture Moments'
-    ];
-
-    const dynamicNiche = (!settings.targetNiche || settings.targetNiche.toLowerCase().includes('auto') || settings.targetNiche.toLowerCase().includes('all') || settings.targetNiche === 'General / Multi-Niche' || settings.targetNiche === 'Motivation')
-      ? S_TIER_NICHES[Math.floor(Math.random() * S_TIER_NICHES.length)]
-      : settings.targetNiche;
-
-    const assignedTrend = availableTrends.length > 0
-      ? availableTrends[Math.floor(Math.random() * availableTrends.length)]
-      : (trendingTopics[0] || dynamicNiche);
-
-    let scriptPrompt = '';
-    if (videoStyle === 'PRODUCT_FIND') {
-      scriptPrompt = `
-You are the Top 1% YouTube Shorts Product Affiliate Scriptwriter.
-RESEARCHED DYNAMIC NICHE: "${dynamicNiche}"
-CURRENT OPPORTUNITY: "${assignedTrend}"
-TONE: "${settings.geminiTone}"
-${exclusionPrompt}
-${selfLearningContext}
-
-Autonomously research and select a FRESH viral, high-converting problem-solving gadget / Amazon find fitting this niche (DO NOT repeat any recently used products).
-Generate a high-retention 30-35 second script with:
-1. HOOK: 0-2s pattern interrupt opening.
-2. BODY: Fast-paced visual payoff, revealing 1 insight every 3s.
-3. CTA: Directing viewers to pinned discount links with a seamless infinite loop ending.
-
-Return a JSON object with EXACTLY these keys:
-{
-  "product_name": "Precise name of product (e.g. 2-in-1 Screen Cleaner Spray)",
-  "topic": "Concise topic summary",
-  "hook": "Opening problem hook line (0-2s)",
-  "body": "Main demonstration body (20-25s spoken aloud)",
-  "cta": "Call to action pointing to pinned comment link",
-  "visual_prompts": ["scene 1 product problem demo", "scene 2 product solution in action", "scene 3 satisfying result", "scene 4 close-up product feature"],
-  "title": "Viral YouTube Shorts title under 65 chars with #shorts #amazonfinds",
-  "description": "Engaging description under 150 chars with affiliate disclosure",
-  "tags": ["shorts", "amazonfinds", "tiktokmademebuyit", "gadget", "viral"]
-}
-`;
-    } else if (videoStyle === 'REMASTER_REACTION') {
-      scriptPrompt = `
-You are the Top 1% Real-Time Viral Trend Specialist.
-TARGET TREND / SUBJECT: "${assignedTrend}" (Niche: "${dynamicNiche}")
-TONE: "${settings.geminiTone}"
-${exclusionPrompt}
-
-Generate high-CTR title, trending hashtags, and engagement metadata for a viral short about "${assignedTrend}":
-Return a JSON object with EXACTLY the following structure:
-{
-  "product_name": null,
-  "topic": "${assignedTrend}",
-  "hook": "Concise hook summary of ${assignedTrend}",
-  "body": "Context summary",
-  "cta": "Like and subscribe prompt",
-  "visual_prompts": ["${assignedTrend} viral moment"],
-  "title": "Viral high-CTR title about ${assignedTrend} under 65 chars with #shorts",
-  "description": "Engaging description under 150 chars encouraging comments",
-  "tags": ["shorts", "viral", "trending", "highlights"]
-}
-`;
-    } else {
-      scriptPrompt = `
-You are the Top 1% YouTube Shorts Growth Strategist and Scriptwriter.
-AUTONOMOUSLY RESEARCHED NICHE: "${dynamicNiche}"
-TARGET CHANNELS / INSPIRATION: "${settings.targetChannels || 'Trending, Viral Moments, Top Channels'}"
-TOPIC INSPIRATION: "${assignedTrend}"
-TONE: "${settings.geminiTone}"
-${exclusionPrompt}
-${selfLearningContext}
-
-Research and generate a unique, high-retention viral YouTube Shorts script (35-45 seconds) with an open loop and seamless loop ending.
-Return a JSON object with EXACTLY these keys:
-{
-  "product_name": null,
-  "topic": "A concise topic summary (3-6 words)",
-  "hook": "Opening hook line (first 2 seconds, must grab attention immediately)",
-  "body": "Main content body (30-40 seconds of high-velocity narrative)",
-  "cta": "Call to action ending engineered to loop back to hook",
-  "visual_prompts": ["scene 1 cinematic visual", "scene 2 visual", "scene 3 visual", "scene 4 visual"],
-  "title": "Viral YouTube Shorts title under 65 chars with 1-2 hashtags",
-  "description": "Engaging description under 150 chars",
-  "tags": ["tag1", "tag2", "tag3", "tag4", "tag5"]
-}
-`;
+    if (!result.success || !result.trace.jobCreatedId) {
+      return Response.json({ error: result.error || 'Agentic generation failed' }, { status: 500 });
     }
 
-    const script = await callGroq(scriptPrompt);
+    const job = await prisma.renderJob.findUnique({ where: { id: result.trace.jobCreatedId } });
 
-    const prodName = script.product_name || script.topic || 'Viral Find';
-    const amazonLink = `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName)}&tag=${amazonTag}`;
-    const globalLink = customPrefix && customPrefix.startsWith('http')
-      ? `${customPrefix.replace(/\/$/, '')}/${encodeURIComponent(prodName.toLowerCase().replace(/\s+/g, '-'))}`
-      : `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName + ' official')}&tag=${amazonTag}`;
-    const bundleLink = `https://www.amazon.com/dp/search?k=${encodeURIComponent(prodName + ' accessories bundle')}&tag=${amazonTag}`;
-
-    let pinnedComment = '';
-    let generatedDesc = script.description || '';
-
-    if (videoStyle === 'PRODUCT_FIND') {
-      pinnedComment = `🔥 GET THE ${prodName.toUpperCase()} & ACCESSORIES:
-1️⃣ Amazon Official Deal: ${amazonLink}
-2️⃣ Global / Direct Store: ${globalLink}
-3️⃣ Recommended Accessories: ${bundleLink}
-
-⚡ 50% Off Flash Sale Active Today!
-(Disclosure: As an affiliate, I earn a small commission on qualifying purchases at zero extra cost to you!)`;
-
-      generatedDesc = `${script.description || ''}
-
-🔥 DIRECT PRODUCT LINKS:
-• Amazon Deal: ${amazonLink}
-• Global Store: ${globalLink}
-• Accessories Bundle: ${bundleLink}
-
-(FTC Disclosure: As an affiliate partner, I earn from qualifying purchases.)`;
+    // Wake up worker if needed
+    try {
+      const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
+      if (ghToken) {
+        await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'Authorization': `Bearer ${ghToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ ref: 'main' })
+        });
+      }
+    } catch (e) {
+      console.warn('GitHub Action trigger non-fatal error:', e);
     }
-
-    // Create the render job in the database
-    const job = await prisma.renderJob.create({
-      data: {
-        status: 'SCRIPTED', // Worker will immediately pick this up
-        topic: script.topic || `${settings.targetNiche} Short`,
-        scriptHook: script.hook || '',
-        scriptBody: script.body || '',
-        scriptCta: script.cta || '',
-        visualPrompts: script.visual_prompts || [],
-        voiceName: settings.voiceName,
-        generatedTitle: script.title || '',
-        generatedDescription: generatedDesc,
-        generatedTags: script.tags || [],
-        videoStyle: videoStyle,
-        productName: prodName,
-        affiliateLink: amazonLink,
-        pinnedCommentText: pinnedComment,
-        scriptedAt: new Date(),
-      },
-    });
 
     return Response.json({
       status: 'success',
+      message: `Peak agentic job generated and scripted: "${job?.topic}"`,
       job: {
-        id: job.id,
-        topic: job.topic,
-        scriptHook: job.scriptHook,
-        scriptBody: job.scriptBody,
-        scriptCta: job.scriptCta,
-        visualPrompts: job.visualPrompts,
-        voiceName: job.voiceName,
-        generatedTitle: job.generatedTitle,
-        videoStyle: job.videoStyle,
-        productName: job.productName,
-        affiliateLink: job.affiliateLink,
-        pinnedCommentText: job.pinnedCommentText,
+        id: job?.id,
+        topic: job?.topic,
+        scriptHook: job?.scriptHook,
+        scriptBody: job?.scriptBody,
+        scriptCta: job?.scriptCta,
+        visualPrompts: job?.visualPrompts,
+        voiceName: job?.voiceName,
+        generatedTitle: job?.generatedTitle,
+        videoStyle: job?.videoStyle,
+        productName: job?.productName,
+        affiliateLink: job?.affiliateLink,
+        pinnedCommentText: job?.pinnedCommentText,
         jobType: settings.copyPasteMode === 'split_screen' ? 'aggregator' : (settings.copyPasteMode === 'renarration' ? 'generative' : 'clone')
-      }
+      },
+      trace: result.trace
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error('[Pipeline Auto-Trigger] Error:', err);
-    return Response.json({ error: String(err) }, { status: 500 });
+    return Response.json({ error: String(err.message || err) }, { status: 500 });
   }
 }
