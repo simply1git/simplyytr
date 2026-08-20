@@ -67,18 +67,20 @@ def clean_search_keyword(kw):
     if not kw:
         return "motivation podcast"
     import re
-    cleaned = re.sub(r'[^\w\s]', ' ', kw)
+    cleaned = re.sub(r'\[.*?\]', ' ', kw)
+    cleaned = re.sub(r'[#@]\w+', ' ', cleaned)
+    cleaned = re.sub(r'[^\w\s]', ' ', cleaned)
     stop_words = {
         'secret', 'secrets', 'shocking', 'unstoppable', 'motivation', 
         'surprising', 'believe', 'won', 't', 'hacks', 'routine',
         'discover', 'discovers', 'uncover', 'uncovers', 'amazing', 'insane', 
         'unbelievable', 'how', 'to', 'why', 'what', 'is', 'the',
-        'you', 'your', 'daily', 'method', 'way'
+        'you', 'your', 'daily', 'method', 'way', 'everyone', 'shocked'
     }
     words = [w.strip() for w in cleaned.split() if w.strip().lower() not in stop_words]
-    # Preserve creator names (e.g. Raj Shamani, Alex Hormozi, etc.)
-    if len(words) > 5:
-        words = words[:5]
+    # Preserve creator names and main subject
+    if len(words) > 4:
+        words = words[:4]
     return " ".join(words) if words else kw.strip()
 
 def parse_bilibili_duration(duration_str):
@@ -121,15 +123,15 @@ def search_bilibili(keyword):
 def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=None):
     """
     Searches YouTube for viral clips matching the creator/podcast/topic keyword,
-    sorts by view count, and downloads the best matching clip.
+    sorts by view count, and downloads the best matching clip using iOS/Android player bypass.
     """
     cleaned_kw = clean_search_keyword(keyword)
-    logging.info(f"Searching for viral Shorts/Podcast clips using keyword: '{keyword}' (Search query: '{cleaned_kw}')")
+    logging.info(f"Searching for viral Shorts/Podcast clips using keyword: '{keyword}' (Clean query: '{cleaned_kw}')")
     
     used_ids = set()
     if vercel_url and pipeline_secret:
         try:
-            res = requests.get(f"{vercel_url}/api/pipeline/history", headers={"Authorization": f"Bearer {pipeline_secret}"})
+            res = requests.get(f"{vercel_url}/api/pipeline/history", headers={"Authorization": f"Bearer {pipeline_secret}"}, timeout=6)
             if res.status_code == 200:
                 used_ids = set(res.json().get("usedVideoIds", []))
                 logging.info(f"Fetched {len(used_ids)} used video IDs from history.")
@@ -142,17 +144,27 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
         'no_warnings': True,
         'nocheckcertificate': True,
         'socket_timeout': 15,
-        'extractor_args': {'youtube': {'client': ['android', 'ios', 'web']}}
+        'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb', 'web']}}
     }
     
     best_video = None
     is_bilibili = False
     
     search_candidates = [
+        f"ytsearch25:{cleaned_kw} #shorts",
         f"ytsearch25:{cleaned_kw} shorts",
+        f"ytsearch25:{cleaned_kw} clips",
         f"ytsearch25:{cleaned_kw} podcast",
         f"ytsearch25:{cleaned_kw}"
     ]
+
+    # If topic contains a known creator name, search creator directly first
+    known_creators = ['raj shamani', 'alex hormozi', 'andrew huberman', 'joe rogan', 'mrbeast', 'garyvee', 'jordan peterson', 'beerbiceps', 'ali abdaal', 'tim ferriss']
+    for creator in known_creators:
+        if creator in keyword.lower():
+            search_candidates.insert(0, f"ytsearch25:{creator} #shorts")
+            search_candidates.insert(1, f"ytsearch25:{creator} clips")
+            break
 
     for search_query in search_candidates:
         try:
@@ -160,22 +172,26 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
             with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
                 info = ydl.extract_info(search_query, download=False)
                 if 'entries' in info and info['entries']:
-                    valid_entries = []
-                    for entry in info['entries']:
-                        if not entry:
-                            continue
-                        video_id = entry.get('id')
-                        if video_id in used_ids:
-                            continue
+                    raw_entries = [e for e in info['entries'] if e and e.get('id') and e.get('id') not in used_ids]
+                    
+                    if raw_entries:
+                        # Tier 1: True Shorts under 75s
+                        tier1 = [e for e in raw_entries if e.get('duration') and 0 < e['duration'] <= 75]
+                        if tier1:
+                            best_video = sorted(tier1, key=lambda x: x.get('view_count', 0) or 0, reverse=True)[0]
+                            logging.info(f"Matched Tier 1 True Short candidate: '{best_video.get('title')}' (Duration: {best_video.get('duration')}s)")
+                            break
+                        
+                        # Tier 2: Short Podcast Clips under 600s (10 min)
+                        tier2 = [e for e in raw_entries if e.get('duration') and 75 < e['duration'] <= 600]
+                        if tier2:
+                            best_video = sorted(tier2, key=lambda x: x.get('view_count', 0) or 0, reverse=True)[0]
+                            logging.info(f"Matched Tier 2 Podcast Clip candidate: '{best_video.get('title')}' (Duration: {best_video.get('duration')}s)")
+                            break
                             
-                        duration = entry.get('duration')
-                        # Allow clips up to 95 seconds
-                        if duration is None or (0 < duration <= 95):
-                            valid_entries.append(entry)
-                            
-                    if valid_entries:
-                        best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0) or 0, reverse=True)[0]
-                        logging.info(f"Matched YouTube candidate: '{best_video.get('title')}' (Duration: {best_video.get('duration')}s)")
+                        # Tier 3: Any valid entry
+                        best_video = raw_entries[0]
+                        logging.info(f"Matched Tier 3 candidate: '{best_video.get('title')}'")
                         break
         except Exception as e:
             logging.warning(f"YouTube search query '{search_query}' failed: {e}")
@@ -207,11 +223,11 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
             logging.error("Failed to find any matching videos on YouTube or Bilibili.")
             return None
     else:
-        video_url = best_video['url']
-        video_title = best_video.get('title', 'viral_short')
         video_id = best_video['id']
+        video_url = f"https://www.youtube.com/watch?v={video_id}"
+        video_title = best_video.get('title', 'viral_short')
         view_count = best_video.get('view_count', 0)
-        logging.info(f"Found YouTube short: '{video_title}' with {view_count} views.")
+        logging.info(f"Found YouTube short: '{video_title}' (ID: {video_id}) with {view_count} views.")
 
     output_path = os.path.join(temp_dir, "viral_short.mp4")
     
@@ -222,7 +238,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
         'quiet': False,
         'nocheckcertificate': True,
         'socket_timeout': 15,
-        'extractor_args': {'youtube': {'client': ['android', 'ios']}}
+        'extractor_args': {'youtube': {'player_client': ['ios', 'android', 'mweb', 'web']}}
     }
     
     # Bilibili downloads are more stable with direct 'best' format
@@ -244,7 +260,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
             logging.error(f"Download attempt {attempt + 1}/{retries} failed: {e}")
             if attempt < retries - 1:
                 ydl_opts_download['format'] = 'best'
-                time.sleep(5 * (attempt + 1))
+                time.sleep(3 * (attempt + 1))
                 
     if success:
         logging.info(f"Download complete for video ID {video_id}.")
@@ -267,6 +283,7 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
             'url': video_url,
             'id': video_id,
             'view_count': view_count,
+            'is_pexels': False,
             'description': f"Sourced via {'Bilibili' if is_bilibili else 'YouTube'}."
         }
     else:

@@ -42,11 +42,23 @@ export async function GET(request: NextRequest) {
     const copyPasteMode = settings?.copyPasteMode || 'clone_avatar';
     const targetChannels = settings?.targetChannels || 'Alex Hormozi, Andrew Huberman, Motivation';
 
+    // Accurately map jobType from job.videoStyle or settings.copyPasteMode
+    let jobType = 'clone';
+    if (updatedJob.videoStyle === 'REMASTER_REACTION') {
+      jobType = 'clone';
+    } else if (updatedJob.videoStyle === 'CURIOSITY_SPLITSCREEN') {
+      jobType = 'aggregator';
+    } else if (updatedJob.videoStyle === 'STANDARD' || updatedJob.videoStyle === 'PRODUCT_FIND') {
+      jobType = 'generative';
+    } else {
+      jobType = copyPasteMode === 'split_screen' ? 'aggregator' : (copyPasteMode === 'renarration' || copyPasteMode === 'generative' ? 'generative' : 'clone');
+    }
+
     return Response.json({ 
       status: 'success', 
       job: {
         ...updatedJob,
-        jobType: copyPasteMode === 'split_screen' ? 'aggregator' : (copyPasteMode === 'renarration' ? 'generative' : 'clone')
+        jobType
       },
       config: {
         r2_account_id: process.env.R2_ACCOUNT_ID,
