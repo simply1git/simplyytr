@@ -15,6 +15,7 @@ import { executeMultiStageGeneration } from './aiPipelineEngine';
 import { selectBanditStrategy } from './banditLearningLoop';
 import { getCircuitStatus, recordCircuitSuccess, recordCircuitFailure } from './circuitBreaker';
 import { ScriptPackage } from './schemas';
+import { logSystemEvent } from './logStore';
 
 export interface AgenticExecutionTrace {
   runId: string;
@@ -76,9 +77,19 @@ export async function executePeakAgenticRun(options: {
   try {
     // 2. Retrieve Channel Memory & History for strict deduplication
     const memory = await retrieveChannelMemory(30);
+    logSystemEvent({
+      level: 'INFO',
+      stage: 'DISCOVERY',
+      message: `Channel Memory checked: ${memory.pastTopics.length} historical topics excluded to prevent repetition.`
+    });
 
     // 3. Multi-Armed Bandit Strategy Selection (80% Exploit / 20% Explore)
     const bandit = await selectBanditStrategy(0.20);
+    logSystemEvent({
+      level: 'AGENT',
+      stage: 'BANDIT',
+      message: `Bandit Selector picked strategy: ${bandit.selectedStrategy} (${bandit.isExploration ? 'Exploration Mode' : 'Exploit Historical Winner'})`
+    });
 
     // 4. Dynamic Multi-Source Opportunity Discovery
     const opportunity = await discoverDynamicOpportunity(options.forceNiche, memory.pastTopics);
@@ -88,8 +99,19 @@ export async function executePeakAgenticRun(options: {
     const sourceUrl = opportunity.sourceSignal?.url;
     const sourceTitle = opportunity.sourceSignal?.title;
 
+    logSystemEvent({
+      level: 'AGENT',
+      stage: 'DISCOVERY',
+      message: `Trend Harvested: "${selectedTopic}" [Niche: ${selectedNiche}] (Est. APV: ${opportunity.estimatedAPV}, Tier: ${opportunity.rpmTier})`
+    });
+
     // 5. Evidence Graph Grounding: Deconstruct topic into verified claims
     const claimSet = await buildEvidenceGraph(selectedTopic, selectedNiche, opportunity.sourceSignal?.summary, sourceUrl, sourceTitle);
+    logSystemEvent({
+      level: claimSet.degraded ? 'WARN' : 'INFO',
+      stage: 'EVIDENCE',
+      message: `Evidence Graph built: ${claimSet.claims.length} claims extracted (${claimSet.claims.filter(c => c.verified).length} grounded with URLs).`
+    });
 
     // 6. Multi-Stage AI Generation with Head-to-Head Angle Battle
     const rawPackage = await executeMultiStageGeneration(
@@ -100,15 +122,37 @@ export async function executePeakAgenticRun(options: {
       bandit.selectedStrategy,
       claimSet
     );
+    logSystemEvent({
+      level: 'AGENT',
+      stage: 'GENERATION',
+      message: `Head-to-Head Angle Battle: Winner chosen "${rawPackage.selectedTitle}" (Style: ${rawPackage.videoStyle}, Critic Rubric: ${rawPackage.rubric.overallScore}/100)`
+    });
 
     // 7. Claim-Linter Pass: Verify every assertive sentence is backed by evidence
     const linterResult = await lintScriptAgainstClaims(rawPackage.fullNarrationText, claimSet);
+    logSystemEvent({
+      level: linterResult.passed ? 'SUCCESS' : 'WARN',
+      stage: 'LINTER',
+      message: linterResult.passed 
+        ? `Claim-Linter PASSED: 100% assertions grounded in evidence graph.` 
+        : `Claim-Linter FLAGGED: ${linterResult.blockReason}`
+    });
 
     // 8. Second-by-Second Retention Curve Simulation
     const retentionSim = await simulateSecondBySecondRetention(rawPackage.hook, rawPackage.body, rawPackage.cta, opportunity.targetDurationSec);
+    logSystemEvent({
+      level: retentionSim.passedGate ? 'SUCCESS' : 'WARN',
+      stage: 'RETENTION',
+      message: `Retention Simulator: Predicted APV ${retentionSim.averagePercentageViewed} (Gate ${retentionSim.passedGate ? 'PASSED >115%' : 'FAILED'})`
+    });
 
     // 9. Red-Team Adversary Attack
     const adversary = await runRedTeamAdversary(rawPackage.selectedTitle, rawPackage.hook, rawPackage.body, rawPackage.cta);
+    logSystemEvent({
+      level: adversary.passedAdversaryGate ? 'SUCCESS' : 'WARN',
+      stage: 'ADVERSARY',
+      message: `Red-Team Adversary Audit: Hook Velocity Grade ${adversary.hookVelocityGrade} (Audit ${adversary.passedAdversaryGate ? 'APPROVED' : 'REJECTED: ' + adversary.blockReason})`
+    });
 
     // 10. STRICT ADVERSARIAL QUALITY GATE VERDICT
     const blockReasons: string[] = [];
@@ -155,6 +199,15 @@ export async function executePeakAgenticRun(options: {
         renderEngine: options.settings?.renderEngine || 'KAGGLE',
         scriptedAt: new Date()
       }
+    });
+
+    logSystemEvent({
+      level: passedAllGates ? 'SUCCESS' : 'WARN',
+      stage: 'GATE',
+      jobId: job.id,
+      message: passedAllGates
+        ? `Strict Quality Gate: APPROVED (Job ${job.id.slice(-8)} status: SCRIPTED -> Ready for GPU Render)`
+        : `Strict Quality Gate: HELD FOR REVIEW (Job ${job.id.slice(-8)} status: NEEDS_REVIEW -> ${blockReasons.join('; ')})`
     });
 
     recordCircuitSuccess();

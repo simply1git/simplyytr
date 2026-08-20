@@ -22,6 +22,15 @@ export async function POST(request: NextRequest) {
       data: { statusMessage: message },
     });
 
+    // Log to real-time telemetry console
+    const { logSystemEvent } = await import('../../lib/logStore');
+    logSystemEvent({
+      level: 'WORKER',
+      stage: 'RENDERING',
+      jobId,
+      message: `[Kaggle GPU Worker] (Job ${jobId.slice(-8)}) -> ${message}`
+    });
+
     // Update worker active status
     await prisma.systemSettings.update({
       where: { id: 1 },
