@@ -123,30 +123,40 @@ async function generateSingleScriptDraft(
   const isProduct = videoStyle === 'PRODUCT_FIND' && matchedProduct;
 
   const prompt = `
-You are the world-class Top 1% YouTube Shorts Scriptwriter.
+You are the elite Master Scriptwriter behind the Top 1% viral YouTube Shorts channels (MrBeast, Zack D. Films, Magnates Media, Ryan Trahan).
+
 TOPIC: "${topic}"
 NICHE: "${niche}"
-ANGLE: ${angle.type}
-HOOK DRAFT: "${angle.hookDraft}"
+ANGLE ARCHETYPE: ${angle.type}
+SEED HOOK: "${angle.hookDraft}"
 PRODUCT: ${isProduct ? `"${matchedProduct?.name}" (${matchedProduct?.pricePoint}) - Solves: ${matchedProduct?.problemSolved}` : 'None'}
-TONE: "${tone}"
+TONE: "${tone} & Ultra-Engaging Cinematic Pop-Culture"
 
-Write a viral 30-35 second script engineered for >120% retention:
-1. HOOK (0-2s): Start mid-action. Immediate pattern interrupt.
-2. BODY (3-25s): Fast pacing, delivering 1 visual revelation every 3 seconds.
-3. SEAMLESS LOOP CTA (26-30s): Point to pinned links, and make the very last word lead naturally back into the first word of the hook (infinite loop).
-4. TITLE VARIANTS: 3 irresistible titles (<60 chars with emojis & #shorts).
-5. VISUAL PROMPTS: 4 distinct vivid stock B-roll search queries for each 5-second interval.
+MANDATORY TOP 1% SCRIPT RULES:
+1. 🛑 PATTERN INTERRUPT HOOK (0-1.5s): Start mid-sentence with ZERO fluff ("Hey guys", "In this video", "Welcome back" are strictly BANNED). Make it shocking, paradoxical, or reveal a hidden secret.
+2. ⚡ HIGH-VELOCITY BEATS (2-24s): Deliver 3 rapid-fire concrete revelations. Use specific named characters, secret movie Easter eggs, real numbers, or mind-bending twists. Never linger more than 3 seconds on one thought.
+3. 🔁 INFINITE LOOP OUTRO (25-30s): The final 4 words MUST end in an incomplete thought that seamlessly connects into the very first word of the hook (so the viewer loops 1.4x before realizing).
+4. 🎥 CINEMATIC 4K VISUAL PROMPTS: 4 highly specific cinematic visual descriptions with dynamic lighting and camera movements (e.g., "dramatic slow motion movie scene with neon lighting", "close up intense facial expression in 4k HDR").
+5. 🚫 BANNED ROBOTIC FILLER: Never use words like "dive in", "game-changer", "look beneath the surface", "here is the reality", "in conclusion", "eliminate friction".
 
-Return JSON:
+Return JSON format:
 {
-  "titles": ["Title 1", "Title 2", "Title 3"],
-  "description": "Engaging description under 150 chars",
-  "tags": ["shorts", "viral", "niche", "trending", "hack"],
-  "hook": "0-2s spoken hook",
-  "body": "Spoken body text (20-25s)",
-  "cta": "Closing CTA with infinite loop bridge",
-  "visualPrompts": ["scene 1 description", "scene 2 description", "scene 3 description", "scene 4 description"]
+  "titles": [
+    "Shocking Title with Emoji #shorts",
+    "Curiosity Gap Title #shorts",
+    "Contrarian Truth Title #shorts"
+  ],
+  "description": "Viral YouTube Shorts description under 150 chars with hashtags",
+  "tags": ["shorts", "viral", "trending", "marvel", "movie", "popculture"],
+  "hook": "Aggressive 0-2s pattern interrupt hook",
+  "body": "Fast-paced, high-retention 20-second spoken breakdown with 3 visual beats",
+  "cta": "Engaging punchline with seamless infinite loop connector",
+  "visualPrompts": [
+    "cinematic 4k dramatic scene 1 with dynamic camera movement",
+    "high contrast vivid visual scene 2 with movie studio lighting",
+    "extreme close-up intense scene 3 in 60fps HDR",
+    "futuristic glowing neon aesthetic scene 4"
+  ]
 }
 `;
 
@@ -155,22 +165,27 @@ Return JSON:
   } catch (e: any) {
     console.warn('[AI Pipeline] LLM call fallback triggered:', e.message);
     const cleanTopic = topic.replace(/[#@]/g, '').trim();
+    
+    const isMovie = niche.toLowerCase().includes('movie') || cleanTopic.toLowerCase().includes('spider') || cleanTopic.toLowerCase().includes('marvel');
+    
     return {
       titles: [
-        `Why Everyone Is Shocked by ${cleanTopic.slice(0, 35)} 🤯 #shorts`,
-        `The Secret Truth About ${cleanTopic.slice(0, 38)} #shorts`,
-        `Never Do This Before Knowing This About ${cleanTopic.slice(0, 25)} #shorts`
+        isMovie ? `The Banned ${cleanTopic.slice(0, 32)} Scene You Missed 😱 #shorts` : `Why Everyone Is Shocked By ${cleanTopic.slice(0, 32)} 🤯 #shorts`,
+        `The Secret Truth About ${cleanTopic.slice(0, 35)} #shorts`,
+        `Nobody Was Supposed To See This In ${cleanTopic.slice(0, 30)} #shorts`
       ],
-      description: `The viral breakdown of ${cleanTopic}. Watch until the end for the unexpected twist! #shorts #viral`,
-      tags: ['shorts', 'viral', 'trending', 'technology', 'lifehack'],
-      hook: angle.hookDraft || `Most people have completely misunderstood how ${cleanTopic} works.`,
-      body: `Here is the reality that 99% of people miss. When you look beneath the surface, everything changes in seconds. Instead of following the traditional route, top performers use this exact counter-intuitive principle. It completely eliminates friction and delivers immediate results without wasting hours.`,
-      cta: isProduct ? `The exact verified bundle is linked in the pinned comment. Which brings us back to why...` : `Drop your thoughts below and subscribe for more daily breakthroughs. Which brings us back to why...`,
+      description: `The viral secret behind ${cleanTopic}. Watch until the last second for the mind-bending reveal! #shorts #viral #trending`,
+      tags: ['shorts', 'viral', 'trending', 'marvel', 'entertainment', 'secrets'],
+      hook: angle.hookDraft || (isMovie ? `Directors secretly hid this 1-second detail in ${cleanTopic} and almost nobody noticed.` : `99% of people have no idea this crazy fact about ${cleanTopic} is actually true.`),
+      body: isMovie 
+        ? `If you pause at the 43-second mark, the background reflection reveals a secret that completely changes the entire storyline. The creators actually scrapped the original ending after test audiences couldn't handle the twist. And once you see what was hidden in plain sight, you will never look at this the same way again.`
+        : `When you break down the actual evidence, the numbers are completely mind-blowing. Instead of what everyone assumed, the real breakthrough happened in secret behind closed doors. And when researchers finally revealed the results, it shattered the entire record.`,
+      cta: isProduct ? `The exact verified item is linked in the pinned comment below. Which brings us back to why...` : `Subscribe right now if your mind was blown. Which brings us right back to how...`,
       visualPrompts: [
-        `${cleanTopic} cinematic close up 4k high contrast`,
-        `technology future laboratory high tech studio lighting`,
-        `person working intensely with futuristic interfaces`,
-        `modern cinematic glowing neon visuals 4k`
+        `${cleanTopic} cinematic 4k dramatic blockbuster movie scene`,
+        `intense close-up reaction in glowing neon atmospheric lighting`,
+        `dynamic motion 60fps high contrast action visual`,
+        `epic cinematic reveal with volumetric 4k lighting`
       ]
     };
   }

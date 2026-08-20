@@ -29,6 +29,30 @@ export interface OpportunityPlan {
 
 export const S_TIER_HIGH_RPM_NICHES = [
   {
+    niche: 'Blockbuster Movies & Marvel Secrets',
+    rpmTier: 'MAX_VIRALITY' as const,
+    style: 'CURIOSITY_SPLITSCREEN' as const,
+    topics: [
+      'The Deleted Spider-Man Scene Marvel Had To Ban From Theaters',
+      'Spider-Man 4 & Secret Wars Hidden Leaks Nobody Noticed',
+      'Mind-Bending Movie Easter Eggs That Completely Change The Ending',
+      'Why Directors Secretly Hide This Symbol In Almost Every Movie',
+      'The Real Reason This Actor Was Secretly Replaced in the Franchise',
+      'Crazy Blockbuster Movie Mistakes That Made It Into The Final Cut'
+    ]
+  },
+  {
+    niche: 'Viral Gaming & Pop-Culture Lore',
+    rpmTier: 'MAX_VIRALITY' as const,
+    style: 'CURIOSITY_SPLITSCREEN' as const,
+    topics: [
+      'GTA 6 Leaked Gameplay Mechanics That Will Break The Internet',
+      'The Impossible Gaming World Record That Nobody Has Ever Broken',
+      'Hidden Video Game Details That Only 0.1% Of Players Discovered',
+      'The Creepy Gaming Easter Egg That Took 10 Years To Find'
+    ]
+  },
+  {
     niche: 'AI & Future Technology',
     rpmTier: 'ULTRA_HIGH' as const,
     style: 'STANDARD' as const,
@@ -94,7 +118,7 @@ export const S_TIER_HIGH_RPM_NICHES = [
     rpmTier: 'MAX_VIRALITY' as const,
     style: 'REMASTER_REACTION' as const,
     topics: [
-      'FIFA World Cup Final Shocking Moments',
+      'FIFA World Cup Shocking Moments Nobody Saw Coming',
       'Crazy Sports Comebacks That Broke The Internet',
       'Viral Celebrity Moments Everyone Is Talking About Today',
       'The Wildest Live TV Moments Caught On Camera'
@@ -105,22 +129,22 @@ export const S_TIER_HIGH_RPM_NICHES = [
 export async function fetchLiveGoogleTrends(): Promise<TrendSignalCandidate[]> {
   try {
     const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
-      headers: { 'User-Agent': 'Mozilla/5.0' },
-      signal: AbortSignal.timeout(5000)
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
+      signal: AbortSignal.timeout(4000)
     });
     if (!res.ok) return [];
     const text = await res.text();
-    const matches = text.match(/<title><!\[CDATA\[(.*?)\]\]><\/title>/g) || [];
+    const matches = text.match(/<title>(.*?)<\/title>/g) || [];
     const trends = matches
-      .map(m => m.replace(/<title><!\[CDATA\[/, '').replace(/\]\]><\/title>/, '').trim())
-      .filter(t => t && !t.toLowerCase().includes('google trends') && t.length > 2);
+      .map(m => m.replace(/<\/?title>/g, '').replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').trim())
+      .filter(t => t && !t.toLowerCase().includes('daily search trends') && !t.toLowerCase().includes('google trends') && t.length > 2);
     
     return trends.slice(0, 8).map((t, idx) => ({
       id: `gt-${Date.now()}-${idx}`,
       source: 'GOOGLE_TRENDS',
       title: t,
-      velocityScore: 90 - (idx * 3),
-      freshnessScore: 95,
+      velocityScore: 95 - (idx * 3),
+      freshnessScore: 98,
       niche: 'Live Daily Trending Events',
       recommendedStyle: 'REMASTER_REACTION',
       rpmTier: 'MAX_VIRALITY',
@@ -132,39 +156,40 @@ export async function fetchLiveGoogleTrends(): Promise<TrendSignalCandidate[]> {
   }
 }
 
-export async function fetchRedditTrends(): Promise<TrendSignalCandidate[]> {
-  const subreddits = ['technology', 'Damnthatsinteresting', 'gadgets', 'todayilearned'];
+export async function fetchLiveEntertainmentAndMovieTrends(): Promise<TrendSignalCandidate[]> {
+  const queries = [
+    'https://news.google.com/rss/headlines/section/topic/ENTERTAINMENT?hl=en-US&gl=US&ceid=US:en',
+    'https://news.google.com/rss/search?q=Spider-Man+OR+Marvel+OR+Movie+trailer+when:3d&hl=en-US&gl=US&ceid=US:en'
+  ];
+
   const candidates: TrendSignalCandidate[] = [];
 
-  for (const sub of subreddits) {
+  for (const url of queries) {
     try {
-      const res = await fetch(`https://www.reddit.com/r/${sub}/top.json?t=day&limit=4`, {
-        headers: { 'User-Agent': 'SimplyYTR-TrendBot/2.0' },
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
         signal: AbortSignal.timeout(4000)
       });
       if (!res.ok) continue;
-      const data = await res.json();
-      const posts = data?.data?.children || [];
+      const text = await res.text();
+      const matches = text.match(/<title>(.*?)<\/title>/g) || [];
+      const cleanTitles = matches
+        .map(m => m.replace(/<\/?title>/g, '').replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/ - [^-]+$/, '').trim())
+        .filter(t => t && !t.toLowerCase().includes('google news') && t.length > 10);
 
-      for (const p of posts) {
-        const post = p.data;
-        if (!post || post.over_18 || post.stickied || !post.title) continue;
-        
-        const style: 'PRODUCT_FIND' | 'STANDARD' | 'CURIOSITY_SPLITSCREEN' = 
-          sub === 'gadgets' ? 'PRODUCT_FIND' : (sub === 'Damnthatsinteresting' || sub === 'todayilearned') ? 'CURIOSITY_SPLITSCREEN' : 'STANDARD';
-
+      for (let i = 0; i < Math.min(cleanTitles.length, 5); i++) {
+        const raw = cleanTitles[i];
         candidates.push({
-          id: `reddit-${post.id}`,
-          source: 'REDDIT',
-          title: post.title.substring(0, 100),
-          url: `https://reddit.com${post.permalink}`,
-          velocityScore: Math.min(100, Math.floor((post.score || 100) / 100) + 60),
-          freshnessScore: 88,
-          niche: sub === 'gadgets' ? 'Problem-Solving Viral Finds' : sub === 'technology' ? 'AI & Future Technology' : 'Mind-Blowing Mysteries & Psychology',
-          recommendedStyle: style,
-          rpmTier: sub === 'gadgets' ? 'HIGH' : 'ULTRA_HIGH',
-          estimatedAPV: '125%',
-          summary: `Top Reddit post in r/${sub} with ${post.score} upvotes: "${post.title}"`
+          id: `ent-${Date.now()}-${candidates.length}`,
+          source: 'GOOGLE_TRENDS',
+          title: raw,
+          velocityScore: 96 - (candidates.length * 2),
+          freshnessScore: 99,
+          niche: 'Blockbuster Movies & Marvel Secrets',
+          recommendedStyle: 'CURIOSITY_SPLITSCREEN',
+          rpmTier: 'MAX_VIRALITY',
+          estimatedAPV: '140%',
+          summary: `Live Pop-Culture & Movie Entertainment Trend: ${raw}`
         });
       }
     } catch (e) {}
@@ -172,20 +197,50 @@ export async function fetchRedditTrends(): Promise<TrendSignalCandidate[]> {
   return candidates;
 }
 
-export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
+export async function fetchLiveTechAndGamingTrends(): Promise<TrendSignalCandidate[]> {
   try {
-    const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', {
+    const res = await fetch('https://news.google.com/rss/search?q=AI+breakthrough+OR+GTA6+OR+gaming+when:3d&hl=en-US&gl=US&ceid=US:en', {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
       signal: AbortSignal.timeout(4000)
     });
     if (!res.ok) return [];
+    const text = await res.text();
+    const matches = text.match(/<title>(.*?)<\/title>/g) || [];
+    const cleanTitles = matches
+      .map(m => m.replace(/<\/?title>/g, '').replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').replace(/ - [^-]+$/, '').trim())
+      .filter(t => t && !t.toLowerCase().includes('google news') && t.length > 10);
+
+    return cleanTitles.slice(0, 4).map((t, idx) => ({
+      id: `tech-${Date.now()}-${idx}`,
+      source: 'GOOGLE_TRENDS',
+      title: t,
+      velocityScore: 92 - (idx * 2),
+      freshnessScore: 95,
+      niche: 'AI & Future Technology',
+      recommendedStyle: 'STANDARD',
+      rpmTier: 'ULTRA_HIGH',
+      estimatedAPV: '130%',
+      summary: `Live Tech & Gaming Trend: ${t}`
+    }));
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
+  try {
+    const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', {
+      signal: AbortSignal.timeout(3500)
+    });
+    if (!res.ok) return [];
     const ids: number[] = await res.json();
-    const topIds = ids.slice(0, 4);
+    const topIds = ids.slice(0, 3);
 
     const candidates: TrendSignalCandidate[] = [];
     for (const id of topIds) {
       try {
         const itemRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {
-          signal: AbortSignal.timeout(2500)
+          signal: AbortSignal.timeout(2000)
         });
         if (!itemRes.ok) continue;
         const item = await itemRes.json();
@@ -195,7 +250,7 @@ export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
             source: 'HACKER_NEWS',
             title: item.title,
             url: item.url,
-            velocityScore: Math.min(100, 70 + Math.floor((item.score || 50) / 20)),
+            velocityScore: Math.min(100, 75 + Math.floor((item.score || 50) / 20)),
             freshnessScore: 92,
             niche: 'AI & Future Technology',
             recommendedStyle: 'STANDARD',
@@ -213,13 +268,14 @@ export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
 }
 
 export async function harvestMultiSourceSignals(): Promise<TrendSignalCandidate[]> {
-  const [google, reddit, hn] = await Promise.all([
+  const [google, ent, tech, hn] = await Promise.all([
     fetchLiveGoogleTrends(),
-    fetchRedditTrends(),
+    fetchLiveEntertainmentAndMovieTrends(),
+    fetchLiveTechAndGamingTrends(),
     fetchHackerNewsTrends()
   ]);
 
-  const all = [...google, ...reddit, ...hn];
+  const all = [...ent, ...google, ...tech, ...hn];
   return all.sort((a, b) => (b.velocityScore + b.freshnessScore) - (a.velocityScore + a.freshnessScore));
 }
 
