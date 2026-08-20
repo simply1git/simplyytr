@@ -6,7 +6,7 @@
 export type ModelTier = 'FAST_EXTRACTION' | 'REASONING_AND_CRITIQUE';
 
 const MODEL_ROUTING: Record<ModelTier, string> = {
-  FAST_EXTRACTION: 'llama-3.3-70b-versatile',
+  FAST_EXTRACTION: 'llama-3.1-8b-instant',
   REASONING_AND_CRITIQUE: 'llama-3.3-70b-versatile'
 };
 

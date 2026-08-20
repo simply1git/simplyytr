@@ -2,6 +2,9 @@ import { NextRequest } from 'next/server';
 import { prisma } from '../../lib/utils';
 import { publishToYouTubeDataApi } from '../../lib/youtubePublisher';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // POST /api/pipeline/publish
 // Manually triggers 1-click YouTube Data API v3 publication for a READY job
 export async function POST(request: NextRequest) {

@@ -1,6 +1,9 @@
 import { NextRequest } from 'next/server';
 import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
+
 // POST /api/pipeline/control
 // Handles global pipeline action controls: START, STOP, and CLEAR
 export async function POST(request: NextRequest) {
