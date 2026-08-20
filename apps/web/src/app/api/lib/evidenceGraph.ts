@@ -6,57 +6,41 @@
 
 import { ClaimItem, ClaimSet, ClaimSetSchema } from './schemas';
 import { prisma } from './utils';
-
-async function callGroqDirect(prompt: string): Promise<any> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new Error('No GROQ_API_KEY available for Evidence Graph');
-
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an evidence graph extraction and verification engine. Output valid JSON only.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.2,
-      response_format: { type: 'json_object' }
-    }),
-    signal: AbortSignal.timeout(15000)
-  });
-
-  if (!res.ok) throw new Error(`Evidence extraction failed: ${res.status}`);
-  const data = await res.json();
-  const raw = data?.choices?.[0]?.message?.content || '{}';
-  return JSON.parse(raw.trim().replace(/^```json/, '').replace(/```$/, ''));
-}
+import { executeLLM } from './llmClient';
 
 /**
- * 1. Build Evidence Graph: Decomposes topic & context into discrete claims
+ * 1. Build Evidence Graph: Decomposes topic & context into discrete claims with source metadata
  */
-export async function buildEvidenceGraph(topic: string, niche: string, rawContext: string = ''): Promise<ClaimSet> {
+export async function buildEvidenceGraph(
+  topic: string,
+  niche: string,
+  rawContext: string = '',
+  sourceUrl?: string,
+  sourceTitle?: string
+): Promise<ClaimSet> {
   const prompt = `
 Extract 3 to 5 discrete, verifiable, factual claims from this topic and context.
 TOPIC: "${topic}"
 NICHE: "${niche}"
+SOURCE URL: "${sourceUrl || 'N/A'}"
+SOURCE TITLE: "${sourceTitle || topic}"
 RAW CONTEXT: "${rawContext || topic}"
 
+Every claim must represent a specific, verifiable fact, mechanism, or real-world problem statement.
 Return JSON matching this exact structure:
 {
   "topic": "${topic}",
   "niche": "${niche}",
+  "primarySourceUrl": "${sourceUrl || ''}",
   "summary": "1-sentence factual core summary",
   "claims": [
     {
       "id": "claim-1",
       "claimText": "Specific factual claim or problem statement",
+      "sourceUrl": "${sourceUrl || ''}",
+      "sourceTitle": "${sourceTitle || topic}",
+      "publishedAt": "${new Date().toISOString()}",
+      "exactQuote": "Short quote or verbatim fact",
       "confidence": 0.95,
       "verified": true
     }
@@ -65,52 +49,77 @@ Return JSON matching this exact structure:
 `;
 
   try {
-    const rawResult = await callGroqDirect(prompt);
+    const rawResult = await executeLLM(prompt, {
+      tier: 'FAST_EXTRACTION',
+      temperature: 0.2,
+      systemPrompt: 'You are a factual evidence graph extraction engine. Extract verifiable facts only.'
+    });
+
     const parsed = ClaimSetSchema.safeParse(rawResult);
     if (parsed.success) {
       return parsed.data;
+    } else {
+      console.warn('[EvidenceGraph] Schema parse failed:', parsed.error);
     }
-  } catch (e) {
-    console.warn('[EvidenceGraph] Extraction fallback to heuristic graph:', e);
+  } catch (e: any) {
+    console.error('[EvidenceGraph] Extraction error:', e.message);
   }
 
-  // Heuristic Grounded ClaimSet Fallback
+  // Degraded state on failure — NO fabricated verified passing state!
   return {
     topic,
     niche,
-    summary: `Verified breakdown of ${topic}`,
+    primarySourceUrl: sourceUrl,
+    summary: `Unverified topic breakdown for ${topic}`,
     claims: [
       {
-        id: 'claim-1',
-        claimText: `Primary viral utility and problem-solving mechanics of ${topic}`,
-        confidence: 0.9,
-        verified: true
-      },
-      {
-        id: 'claim-2',
-        claimText: `Demonstrable real-world outcome and user benefit`,
-        confidence: 0.92,
-        verified: true
+        id: 'claim-unverified-1',
+        claimText: `Unverified claim regarding ${topic}`,
+        sourceUrl: sourceUrl || '',
+        confidence: 0.3,
+        verified: false
       }
-    ]
+    ],
+    degraded: true,
+    error: 'Evidence extraction failed or returned unverified claims.'
   };
 }
 
 /**
- * 2. Claim-Linter: Verifies every sentence in script maps to a claim
+ * 2. Strict Claim-Linter: Verifies every assertive sentence in script maps to a verified claim
  */
 export async function lintScriptAgainstClaims(
   scriptText: string,
   claimSet: ClaimSet
-): Promise<{ passed: boolean; mappedClaims: string[]; orphanedAssertions: string[]; correctedScript?: string }> {
-  const sentences = scriptText.split(/[.!?]+/).map(s => s.trim()).filter(s => s.length > 10);
+): Promise<{ passed: boolean; mappedClaims: string[]; orphanedAssertions: string[]; blockReason?: string }> {
+  if (claimSet.degraded) {
+    return {
+      passed: false,
+      mappedClaims: [],
+      orphanedAssertions: ['Entire script ungrounded due to unverified evidence set.'],
+      blockReason: 'Evidence graph is degraded. Cannot lint script against unverified claims.'
+    };
+  }
+
+  const sentences = scriptText
+    .split(/[.!?]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 8);
+
   const mappedClaims: string[] = [];
   const orphanedAssertions: string[] = [];
 
   for (const sentence of sentences) {
     let matched = false;
     for (const c of claimSet.claims) {
-      const words = c.claimText.toLowerCase().split(/\s+/).filter(w => w.length > 3);
+      if (!c.verified) continue;
+
+      const words = c.claimText
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, '')
+        .split(/\s+/)
+        .filter(w => w.length > 3);
+
       const matchCount = words.filter(w => sentence.toLowerCase().includes(w)).length;
       if (matchCount >= 2 || words.length <= 2) {
         if (!mappedClaims.includes(c.id)) mappedClaims.push(c.id);
@@ -118,15 +127,20 @@ export async function lintScriptAgainstClaims(
         break;
       }
     }
-    if (!matched && (sentence.includes('always') || sentence.includes('never') || sentence.includes('100%') || sentence.includes('secret'))) {
+
+    if (!matched) {
       orphanedAssertions.push(sentence);
     }
   }
 
+  // Pass only if at least 1 verified claim is mapped and orphaned assertions are within strict threshold (max 1 conversational transition)
+  const passed = mappedClaims.length > 0 && orphanedAssertions.length <= 1;
+
   return {
-    passed: orphanedAssertions.length === 0,
-    mappedClaims: mappedClaims.length > 0 ? mappedClaims : claimSet.claims.map(c => c.id),
-    orphanedAssertions
+    passed,
+    mappedClaims,
+    orphanedAssertions,
+    blockReason: passed ? undefined : `Script contains ${orphanedAssertions.length} ungrounded assertions not backed by verified claims.`
   };
 }
 
@@ -155,7 +169,6 @@ export async function retrieveChannelMemory(limit: number = 30): Promise<{
     const pastTitles = Array.from(new Set(jobs.map(j => j.generatedTitle?.trim()).filter(Boolean))) as string[];
     const recentHooks = Array.from(new Set(jobs.map(j => j.scriptHook?.trim()).filter(Boolean))) as string[];
 
-    // Detect if top performing past topic can be expanded into a series
     const topPerformer = jobs.find(j => j.views > 100);
     const suggestedSequelAngle = topPerformer
       ? `Part 2: Why ${topPerformer.topic} is evolving faster than expected`

@@ -1,6 +1,7 @@
 /**
  * Multi-Armed Bandit Learning Loop (SIMPLYYTR SOTA 2026)
  * Dynamically allocates strategy slate: 80% Exploit winning high-APV hooks, 20% Explore novel high-RPM niches.
+ * Real empirical feedback loop derived from prisma.renderJob analytics.
  */
 
 import { prisma } from './utils';
@@ -9,15 +10,15 @@ export interface BanditStrategyWeight {
   strategyName: string;
   weight: number;
   totalViews: number;
+  sampleCount: number;
   averageAPV: number;
-  confidenceScore: number;
 }
 
-const DEFAULT_STRATEGIES: BanditStrategyWeight[] = [
-  { strategyName: 'PATTERN_INTERRUPT', weight: 0.35, totalViews: 12000, averageAPV: 128, confidenceScore: 0.9 },
-  { strategyName: 'PROBLEM_SOLVER', weight: 0.30, totalViews: 15000, averageAPV: 132, confidenceScore: 0.95 },
-  { strategyName: 'CONTRARIAN_TRUTH', weight: 0.20, totalViews: 8500, averageAPV: 122, confidenceScore: 0.85 },
-  { strategyName: 'PSYCHOLOGICAL_PARADOX', weight: 0.15, totalViews: 6000, averageAPV: 120, confidenceScore: 0.8 }
+const INITIAL_STRATEGIES: BanditStrategyWeight[] = [
+  { strategyName: 'PATTERN_INTERRUPT', weight: 0.35, totalViews: 0, sampleCount: 0, averageAPV: 120 },
+  { strategyName: 'PROBLEM_SOLVER', weight: 0.30, totalViews: 0, sampleCount: 0, averageAPV: 125 },
+  { strategyName: 'CONTRARIAN_TRUTH', weight: 0.20, totalViews: 0, sampleCount: 0, averageAPV: 115 },
+  { strategyName: 'PSYCHOLOGICAL_PARADOX', weight: 0.15, totalViews: 0, sampleCount: 0, averageAPV: 118 }
 ];
 
 /**
@@ -29,10 +30,10 @@ export async function selectBanditStrategy(exploreRate: number = 0.20): Promise<
   strategyWeight: number;
 }> {
   const isExploration = Math.random() < exploreRate;
+  const currentWeights = await getComputedStrategyWeights();
 
   if (isExploration) {
-    // Explore random strategy with uniform probability
-    const randomStrategy = DEFAULT_STRATEGIES[Math.floor(Math.random() * DEFAULT_STRATEGIES.length)];
+    const randomStrategy = currentWeights[Math.floor(Math.random() * currentWeights.length)];
     return {
       selectedStrategy: randomStrategy.strategyName,
       isExploration: true,
@@ -40,8 +41,7 @@ export async function selectBanditStrategy(exploreRate: number = 0.20): Promise<
     };
   }
 
-  // Exploit strategy with highest weight
-  const sorted = [...DEFAULT_STRATEGIES].sort((a, b) => b.weight - a.weight);
+  const sorted = [...currentWeights].sort((a, b) => b.weight - a.weight);
   const winner = sorted[0];
   return {
     selectedStrategy: winner.strategyName,
@@ -51,44 +51,63 @@ export async function selectBanditStrategy(exploreRate: number = 0.20): Promise<
 }
 
 /**
- * 2. Syncs YouTube Analytics & Updates Learned Weights
+ * 2. Computes empirical weights from actual database performance
+ */
+export async function getComputedStrategyWeights(): Promise<BanditStrategyWeight[]> {
+  try {
+    const jobs = await prisma.renderJob.findMany({
+      where: { views: { gt: 0 } },
+      select: {
+        videoStyle: true,
+        views: true,
+        ctr: true
+      },
+      take: 100
+    });
+
+    if (jobs.length < 3) {
+      return INITIAL_STRATEGIES;
+    }
+
+    const map: Record<string, { totalViews: number; count: number }> = {
+      'PATTERN_INTERRUPT': { totalViews: 100, count: 1 },
+      'PROBLEM_SOLVER': { totalViews: 100, count: 1 },
+      'CONTRARIAN_TRUTH': { totalViews: 100, count: 1 },
+      'PSYCHOLOGICAL_PARADOX': { totalViews: 100, count: 1 }
+    };
+
+    for (const j of jobs) {
+      const style = j.videoStyle || 'PROBLEM_SOLVER';
+      if (!map[style]) map[style] = { totalViews: 0, count: 0 };
+      map[style].totalViews += j.views || 0;
+      map[style].count += 1;
+    }
+
+    const totalViewsAll = Object.values(map).reduce((sum, v) => sum + v.totalViews, 0);
+
+    return Object.entries(map).map(([strategyName, data]) => ({
+      strategyName,
+      weight: totalViewsAll > 0 ? parseFloat((data.totalViews / totalViewsAll).toFixed(2)) : 0.25,
+      totalViews: data.totalViews,
+      sampleCount: data.count,
+      averageAPV: 120
+    }));
+  } catch (e) {
+    return INITIAL_STRATEGIES;
+  }
+}
+
+/**
+ * 3. Syncs YouTube Analytics & Updates Learned Weights
  */
 export async function syncAnalyticsAndLearn(): Promise<{
   topPerformingAngle: string;
   updatedWeights: BanditStrategyWeight[];
 }> {
-  try {
-    const uploadedJobs = await prisma.renderJob.findMany({
-      where: { status: 'UPLOADED', views: { gt: 0 } },
-      orderBy: { views: 'desc' },
-      take: 50,
-      select: {
-        topic: true,
-        generatedTitle: true,
-        scriptHook: true,
-        views: true,
-        ctr: true,
-        videoStyle: true
-      }
-    });
-
-    if (uploadedJobs.length === 0) {
-      return {
-        topPerformingAngle: 'PATTERN_INTERRUPT',
-        updatedWeights: DEFAULT_STRATEGIES
-      };
-    }
-
-    const topJob = uploadedJobs[0];
-    return {
-      topPerformingAngle: topJob.videoStyle || 'PROBLEM_SOLVER',
-      updatedWeights: DEFAULT_STRATEGIES
-    };
-  } catch (e) {
-    console.warn('[BanditLearning] Sync analytics fallback:', e);
-    return {
-      topPerformingAngle: 'PATTERN_INTERRUPT',
-      updatedWeights: DEFAULT_STRATEGIES
-    };
-  }
+  const weights = await getComputedStrategyWeights();
+  const sorted = [...weights].sort((a, b) => b.weight - a.weight);
+  return {
+    topPerformingAngle: sorted[0]?.strategyName || 'PROBLEM_SOLVER',
+    updatedWeights: weights
+  };
 }

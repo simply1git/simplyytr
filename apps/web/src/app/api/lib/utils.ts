@@ -5,8 +5,12 @@
 export function verifyAuth(request: Request): boolean {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader) return false;
-  const token = authHeader.replace('Bearer ', '');
-  const secret = process.env.PIPELINE_SECRET || 'youtubbot_secure_pipeline_key_2026';
+  const token = authHeader.replace('Bearer ', '').trim();
+  const secret = process.env.PIPELINE_SECRET;
+  if (!secret) {
+    console.error('[Auth] CRITICAL SECURITY ALERT: PIPELINE_SECRET is not configured in environment variables.');
+    return false;
+  }
   return token === secret;
 }
 
