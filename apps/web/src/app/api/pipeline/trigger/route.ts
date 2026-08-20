@@ -96,31 +96,38 @@ Generate content that follows patterns from top performers and avoids patterns f
       }
     }
 
-    // Trigger GitHub Action to wake up Kaggle GPU
-    try {
-      const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
-      if (ghToken) {
-        await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `Bearer ${ghToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ref: 'main' })
-        });
-        console.log('[Pipeline Trigger] Woke up Kaggle via GitHub Actions');
-      } else {
-        console.warn('[Pipeline Trigger] No GITHUB_PAT found. Kaggle must be triggered manually or via cron.');
+    const scriptedCount = jobs.filter(j => j.status === 'SCRIPTED').length;
+    const reviewCount = jobs.filter(j => j.status === 'NEEDS_REVIEW').length;
+
+    // Trigger GitHub Action to wake up Kaggle GPU only if there are SCRIPTED jobs
+    if (scriptedCount > 0) {
+      try {
+        const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
+        if (ghToken) {
+          await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `Bearer ${ghToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ref: 'main' })
+          });
+          console.log('[Pipeline Trigger] Dispatched GPU worker for scripted jobs.');
+        } else {
+          console.warn('[Pipeline Trigger] No GITHUB_PAT found. Kaggle must be triggered manually or via cron.');
+        }
+      } catch (e) {
+        console.error('[Pipeline Trigger] Failed to trigger GitHub Action:', e);
       }
-    } catch (e) {
-      console.error('[Pipeline Trigger] Failed to trigger GitHub Action:', e);
     }
 
     return Response.json({
       status: 'success',
-      message: `Generated ${jobs.length} peak agentic content packages ready for rendering.`,
+      message: `Generated ${jobs.length} package(s): ${scriptedCount} approved to render, ${reviewCount} held for review.`,
       count: jobs.length,
+      scriptedCount,
+      reviewCount,
       jobs: jobs.map(j => ({ id: j.id, topic: j.topic, status: j.status })),
       traces
     });

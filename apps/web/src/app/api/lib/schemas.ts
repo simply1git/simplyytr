@@ -8,9 +8,11 @@ import { z } from 'zod';
 export const ClaimItemSchema = z.object({
   id: z.string(),
   claimText: z.string().min(5),
-  sourceUrl: z.string().optional(),
+  sourceUrl: z.string().url().or(z.literal('')).optional(),
+  sourceTitle: z.string().optional(),
+  publishedAt: z.string().optional(),
+  exactQuote: z.string().optional(),
   confidence: z.number().min(0).max(1),
-  publishDate: z.string().optional(),
   verified: z.boolean().default(true)
 });
 
@@ -18,8 +20,10 @@ export const ClaimSetSchema = z.object({
   topic: z.string(),
   niche: z.string(),
   claims: z.array(ClaimItemSchema).min(1),
-  primarySource: z.string().optional(),
-  summary: z.string()
+  primarySourceUrl: z.string().optional(),
+  summary: z.string(),
+  degraded: z.boolean().default(false),
+  error: z.string().optional()
 });
 
 export const AngleCandidateSchema = z.object({
@@ -27,7 +31,7 @@ export const AngleCandidateSchema = z.object({
   type: z.enum(['PATTERN_INTERRUPT', 'CONTRARIAN_TRUTH', 'PROBLEM_SOLVER', 'PSYCHOLOGICAL_PARADOX', 'DEEP_MYSTERY']),
   hookDraft: z.string().min(10),
   coreNarrative: z.string().min(20),
-  targetDopamineTrigger: z.string(),
+  targetDopamineTrigger: z.string().optional(),
   estimatedHookScore: z.number().min(0).max(100),
   monetizationFitScore: z.number().min(0).max(100)
 });
@@ -42,7 +46,7 @@ export const ShotDirectionSchema = z.object({
 
 export const RetentionPointSchema = z.object({
   second: z.number(),
-  predictedRetentionPct: z.number().min(0).max(100),
+  predictedRetentionPct: z.number().min(0).max(200),
   dropOffRisk: z.enum(['LOW', 'MEDIUM', 'HIGH']),
   pacingNote: z.string()
 });
@@ -52,16 +56,20 @@ export const RetentionSimulationSchema = z.object({
   curve: z.array(RetentionPointSchema),
   lowestRetentionSecond: z.number(),
   lowestRetentionScore: z.number(),
-  passedGate: z.boolean()
+  passedGate: z.boolean(),
+  degraded: z.boolean().default(false),
+  rejectionReason: z.string().optional()
 });
 
 export const AdversaryCritiqueSchema = z.object({
   redTeamScore: z.number().min(0).max(100),
   hookVelocityGrade: z.enum(['A+', 'A', 'B', 'C', 'F']),
   objections: z.array(z.string()),
-  clickbaitAccuracyRatio: z.number().min(0).max(1), // 1.0 = completely aligned with body
+  clickbaitAccuracyRatio: z.number().min(0).max(1),
   requiredRefinements: z.array(z.string()),
-  passedAdversaryGate: z.boolean()
+  passedAdversaryGate: z.boolean(),
+  degraded: z.boolean().default(false),
+  blockReason: z.string().optional()
 });
 
 export const RubricGradeSchema = z.object({
@@ -73,7 +81,8 @@ export const RubricGradeSchema = z.object({
   loopClosure: z.number().min(0).max(10),
   adSafety: z.number().min(0).max(10),
   criticNotes: z.string(),
-  passed: z.boolean()
+  passed: z.boolean(),
+  degraded: z.boolean().default(false)
 });
 
 export const ScriptPackageSchema = z.object({
@@ -98,7 +107,9 @@ export const ScriptPackageSchema = z.object({
   rubric: RubricGradeSchema,
   adversary: AdversaryCritiqueSchema.optional(),
   retentionSim: RetentionSimulationSchema.optional(),
-  syntheticMediaDisclosure: z.boolean().default(true)
+  syntheticMediaDisclosure: z.boolean().default(true),
+  degraded: z.boolean().default(false),
+  blockReason: z.string().optional()
 });
 
 export type ClaimItem = z.infer<typeof ClaimItemSchema>;

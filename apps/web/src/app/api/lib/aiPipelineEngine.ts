@@ -1,30 +1,13 @@
 /**
- * Multi-Stage "Top 1%" AI Generation & Critic Reflection Engine (SIMPLYYTR)
+ * Multi-Stage "Top 1%" AI Generation & Critic Reflection Engine (SIMPLYYTR SOTA 2026)
+ * Generates N candidate angles, executes head-to-head battle, and enforces objective rubric grading.
  */
 
 import { scanAndSanitizeScript, ComplianceScanResult } from './complianceProxy';
 import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, ViralProduct } from './productRadar';
-
-export interface AngleCandidate {
-  id: string;
-  type: 'PATTERN_INTERRUPT' | 'CONTRARIAN_TRUTH' | 'PROBLEM_SOLVER' | 'PSYCHOLOGICAL_PARADOX' | 'DEEP_MYSTERY';
-  hookDraft: string;
-  coreNarrative: string;
-  estimatedHookScore: number;
-  monetizationFitScore: number;
-}
-
-export interface RubricGrade {
-  overallScore: number; // 0-100
-  hookStrength: number; // 0-10
-  informationVelocity: number; // 0-10
-  retentionCurve: number; // 0-10
-  originality: number; // 0-10
-  loopClosure: number; // 0-10
-  adSafety: number; // 0-10
-  criticNotes: string;
-  passed: boolean;
-}
+import { executeLLM } from './llmClient';
+import { headToHeadJudge } from './adversarialQualityGate';
+import { ClaimSet, AngleCandidate, RubricGrade, AngleCandidateSchema } from './schemas';
 
 export interface ComprehensiveContentPackage {
   topic: string;
@@ -47,62 +30,23 @@ export interface ComprehensiveContentPackage {
   compliance: ComplianceScanResult;
   rubric: RubricGrade;
   syntheticMediaDisclosure: boolean;
+  degraded?: boolean;
 }
 
-async function callGroqLLM(prompt: string, jsonMode: boolean = true): Promise<any> {
-  const apiKey = process.env.GROQ_API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error('No GROQ_API_KEY or GEMINI_API_KEY set in environment');
+async function stageGroundContext(topic: string, niche: string, claimSet?: ClaimSet): Promise<string> {
+  if (claimSet && claimSet.claims.length > 0 && !claimSet.degraded) {
+    return claimSet.claims.map(c => `- [${c.id}] ${c.claimText} (Quote: "${c.exactQuote || c.claimText}")`).join('\n');
   }
 
-  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are the world-class Top 1% YouTube Shorts Growth Strategist, Retention Copywriter, and Content Critic. Output valid JSON only when requested.'
-        },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.7,
-      response_format: jsonMode ? { type: 'json_object' } : undefined
-    }),
-    signal: AbortSignal.timeout(20000)
-  });
-
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Groq LLM error (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  const rawContent = data?.choices?.[0]?.message?.content || '{}';
-  if (jsonMode) {
-    try {
-      return JSON.parse(rawContent.trim().replace(/^```json/, '').replace(/```$/, ''));
-    } catch (e) {
-      return { raw: rawContent };
-    }
-  }
-  return rawContent;
-}
-
-async function stageGroundContext(topic: string, niche: string): Promise<string> {
   const prompt = `
 Topic: "${topic}"
 Niche: "${niche}"
 
-Extract 3-4 concrete, mind-blowing, and highly specific factual takeaways or real-world utilities about this topic that viewers would find irresistible.
+Extract 3-4 concrete, verified factual takeaways or real-world problem statements.
 Return JSON: { "grounded_facts": ["fact 1", "fact 2", "fact 3"] }
 `;
   try {
-    const result = await callGroqLLM(prompt);
+    const result = await executeLLM(prompt, { tier: 'FAST_EXTRACTION', temperature: 0.2 });
     const facts = result?.grounded_facts || [];
     return facts.join(' | ');
   } catch (e) {
@@ -110,26 +54,28 @@ Return JSON: { "grounded_facts": ["fact 1", "fact 2", "fact 3"] }
   }
 }
 
-async function stageAnglesAndRank(topic: string, niche: string, groundedContext: string, videoStyle: string): Promise<AngleCandidate> {
+async function stageAngles(topic: string, niche: string, groundedContext: string, banditStrategy: string = 'PATTERN_INTERRUPT'): Promise<AngleCandidate[]> {
   const prompt = `
 Topic: "${topic}"
-Grounded Facts: "${groundedContext}"
-Video Style: "${videoStyle}"
+Niche: "${niche}"
+Grounded Claims: "${groundedContext}"
+Primary Strategic Archetype: "${banditStrategy}"
 
-Generate 4 diverse high-retention angle mechanisms for YouTube Shorts:
-1. Pattern Interrupt (visual shock or paradox)
-2. Contrarian Truth (debunking common belief)
-3. Urgent Problem-Solver (immediate everyday benefit)
-4. Psychological Paradox (curiosity gap)
+Generate 3 diverse high-retention angle mechanisms for YouTube Shorts:
+1. ${banditStrategy} (Primary chosen archetype)
+2. Contrarian Truth / Curiosity Gap
+3. Urgent Problem-Solver
 
 Return JSON with format:
 {
   "angles": [
     {
-      "type": "PATTERN_INTERRUPT",
-      "hookDraft": "0-2s hook sentence",
-      "coreNarrative": "core narrative approach",
-      "estimatedHookScore": 95,
+      "id": "angle-1",
+      "type": "${banditStrategy}",
+      "hookDraft": "0-2s hook sentence that immediately stops scrolling",
+      "coreNarrative": "core high-velocity narrative premise",
+      "targetDopamineTrigger": "Instant paradox / shock",
+      "estimatedHookScore": 92,
       "monetizationFitScore": 90
     }
   ]
@@ -137,38 +83,39 @@ Return JSON with format:
 `;
 
   try {
-    const data = await callGroqLLM(prompt);
-    const angles: AngleCandidate[] = (data?.angles || []).map((a: any, idx: number) => ({
-      id: `angle-${idx}`,
-      type: a.type || 'PATTERN_INTERRUPT',
-      hookDraft: a.hookDraft || `Wait until you see how this changes everything with ${topic}...`,
-      coreNarrative: a.coreNarrative || topic,
-      estimatedHookScore: a.estimatedHookScore || 85,
-      monetizationFitScore: a.monetizationFitScore || 85
-    }));
+    const data = await executeLLM(prompt, { tier: 'REASONING_AND_CRITIQUE', temperature: 0.4 });
+    const rawAngles = data?.angles || [];
+    const validAngles: AngleCandidate[] = [];
 
-    if (angles.length > 0) {
-      angles.sort((a, b) => (b.estimatedHookScore + b.monetizationFitScore) - (a.estimatedHookScore + a.monetizationFitScore));
-      return angles[0];
+    for (const a of rawAngles) {
+      const parsed = AngleCandidateSchema.safeParse(a);
+      if (parsed.success) {
+        validAngles.push(parsed.data);
+      }
     }
-  } catch (e) {
-    console.warn('[AI Stage] Angle generation fallback:', e);
+
+    if (validAngles.length > 0) return validAngles;
+  } catch (e: any) {
+    console.warn('[AI Stage] Angle generation error:', e.message);
   }
 
-  return {
-    id: 'angle-fallback',
-    type: 'PATTERN_INTERRUPT',
-    hookDraft: `Most people have no idea this exists...`,
-    coreNarrative: topic,
-    estimatedHookScore: 88,
-    monetizationFitScore: 85
-  };
+  return [
+    {
+      id: 'angle-default',
+      type: 'PATTERN_INTERRUPT',
+      hookDraft: `Most people have no idea this exists for ${topic}...`,
+      coreNarrative: topic,
+      targetDopamineTrigger: 'Curiosity gap',
+      estimatedHookScore: 80,
+      monetizationFitScore: 80
+    }
+  ];
 }
 
-async function stageScriptAndPackage(
+async function generateSingleScriptDraft(
   topic: string,
   niche: string,
-  winningAngle: AngleCandidate,
+  angle: AngleCandidate,
   videoStyle: 'PRODUCT_FIND' | 'REMASTER_REACTION' | 'CURIOSITY_SPLITSCREEN' | 'STANDARD',
   matchedProduct: ViralProduct | null,
   tone: string = 'Clickbaity'
@@ -179,15 +126,15 @@ async function stageScriptAndPackage(
 You are the world-class Top 1% YouTube Shorts Scriptwriter.
 TOPIC: "${topic}"
 NICHE: "${niche}"
-SELECTED WINNING ANGLE: ${winningAngle.type}
-HOOK CONCEPT: "${winningAngle.hookDraft}"
+ANGLE: ${angle.type}
+HOOK DRAFT: "${angle.hookDraft}"
 PRODUCT: ${isProduct ? `"${matchedProduct?.name}" (${matchedProduct?.pricePoint}) - Solves: ${matchedProduct?.problemSolved}` : 'None'}
 TONE: "${tone}"
 
-Write a viral 30-40 second short script engineered for >120% retention:
+Write a viral 30-35 second script engineered for >120% retention:
 1. HOOK (0-2s): Start mid-action. Immediate pattern interrupt.
 2. BODY (3-25s): Fast pacing, delivering 1 visual revelation every 3 seconds.
-3. SEAMLESS LOOP CTA (26-30s): Point to pinned comment discount/links, and make the very last word lead naturally back into the first word of the hook (infinite loop).
+3. SEAMLESS LOOP CTA (26-30s): Point to pinned links, and make the very last word lead naturally back into the first word of the hook (infinite loop).
 4. TITLE VARIANTS: 3 irresistible titles (<60 chars with emojis & #shorts).
 5. VISUAL PROMPTS: 4 distinct vivid stock B-roll search queries for each 5-second interval.
 
@@ -203,23 +150,7 @@ Return JSON:
 }
 `;
 
-  try {
-    return await callGroqLLM(prompt);
-  } catch (e) {
-    return {
-      titles: [
-        isProduct ? `This ${matchedProduct?.pricePoint} Amazon Find Solves Everything! 🤯 #shorts` : `The Truth About ${topic.substring(0, 40)} #shorts`,
-        `Why Everyone Is Talking About This Right Now #shorts`,
-        `Never Ignore This 1 Simple Trick... #shorts`
-      ],
-      description: isProduct ? `Get it before it sells out! Link in pinned comment.` : `Full breakdown of ${topic}. Subscribe for more!`,
-      tags: ['shorts', 'viral', 'trending', 'technology', 'lifehack'],
-      hook: winningAngle.hookDraft,
-      body: isProduct ? `Here is why this ${matchedProduct?.name} went viral. It eliminates ${matchedProduct?.problemSolved} instantly.` : `Here is what nobody tells you about ${topic}.`,
-      cta: `Check the top pinned comment for all links, because...`,
-      visualPrompts: ['problem demonstration', 'satisfying solution action', 'close up product feature', 'final payoff result']
-    };
-  }
+  return await executeLLM(prompt, { tier: 'REASONING_AND_CRITIQUE', temperature: 0.6 });
 }
 
 async function stageCriticAndGrade(scriptData: any): Promise<RubricGrade> {
@@ -251,30 +182,33 @@ Return JSON:
 `;
 
   try {
-    const grade = await callGroqLLM(prompt);
+    const grade = await executeLLM(prompt, { tier: 'REASONING_AND_CRITIQUE', temperature: 0.2 });
     const overall = grade.overallScore || Math.round(((grade.hookStrength + grade.informationVelocity + grade.retentionCurve + grade.originality + grade.loopClosure + grade.adSafety) / 6) * 10);
+    const passed = overall >= 80;
     return {
       overallScore: overall,
-      hookStrength: grade.hookStrength || 9,
-      informationVelocity: grade.informationVelocity || 9,
-      retentionCurve: grade.retentionCurve || 9,
-      originality: grade.originality || 9,
-      loopClosure: grade.loopClosure || 9,
+      hookStrength: grade.hookStrength || 8,
+      informationVelocity: grade.informationVelocity || 8,
+      retentionCurve: grade.retentionCurve || 8,
+      originality: grade.originality || 8,
+      loopClosure: grade.loopClosure || 8,
       adSafety: grade.adSafety || 10,
-      criticNotes: grade.criticNotes || 'Passed quality criteria with high hook velocity.',
-      passed: overall >= 80
+      criticNotes: grade.criticNotes || 'Graded on retention curve and velocity.',
+      passed,
+      degraded: false
     };
-  } catch (e) {
+  } catch (e: any) {
     return {
-      overallScore: 88,
-      hookStrength: 9,
-      informationVelocity: 9,
-      retentionCurve: 9,
-      originality: 8,
-      loopClosure: 9,
-      adSafety: 10,
-      criticNotes: 'Heuristic evaluation: Passed retention criteria.',
-      passed: true
+      overallScore: 0,
+      hookStrength: 0,
+      informationVelocity: 0,
+      retentionCurve: 0,
+      originality: 0,
+      loopClosure: 0,
+      adSafety: 0,
+      criticNotes: `Critic evaluation failed: ${e.message}`,
+      passed: false,
+      degraded: true
     };
   }
 }
@@ -283,7 +217,9 @@ export async function executeMultiStageGeneration(
   topic: string,
   niche: string = 'General / Autonomous',
   videoStyle: 'PRODUCT_FIND' | 'REMASTER_REACTION' | 'CURIOSITY_SPLITSCREEN' | 'STANDARD' = 'PRODUCT_FIND',
-  settings?: any
+  settings?: any,
+  banditStrategy: string = 'PATTERN_INTERRUPT',
+  claimSet?: ClaimSet
 ): Promise<ComprehensiveContentPackage> {
   const amazonTag = settings?.amazonAssociateTag || 'simplyytr-20';
   const customPrefix = settings?.customAffiliatePrefix || '';
@@ -296,9 +232,47 @@ export async function executeMultiStageGeneration(
     affiliateBundle = buildMultiAffiliateBundle(matchedProduct, amazonTag, customPrefix);
   }
 
-  const groundedContext = await stageGroundContext(topic, niche);
-  const winningAngle = await stageAnglesAndRank(topic, niche, groundedContext, videoStyle);
-  const packaged = await stageScriptAndPackage(topic, niche, winningAngle, videoStyle, matchedProduct, tone);
+  // 1. Ground Context from real ClaimSet
+  const groundedContext = await stageGroundContext(topic, niche, claimSet);
+
+  // 2. Generate Candidate Angles
+  const angles = await stageAngles(topic, niche, groundedContext, banditStrategy);
+
+  // 3. Parallel-generate script drafts for candidates
+  const scriptCandidates: any[] = [];
+  for (const angle of angles) {
+    try {
+      const draft = await generateSingleScriptDraft(topic, niche, angle, videoStyle, matchedProduct, tone);
+      scriptCandidates.push({
+        angle,
+        draft
+      });
+    } catch (e: any) {
+      console.warn(`[AI Pipeline] Draft failed for angle ${angle.id}:`, e.message);
+    }
+  }
+
+  if (scriptCandidates.length === 0) {
+    throw new Error('All script candidates failed to generate.');
+  }
+
+  // 4. Head-to-Head Battle Judge
+  let winningCandidate = scriptCandidates[0];
+  if (scriptCandidates.length > 1) {
+    const judgeInput = scriptCandidates.map(c => ({
+      angleName: c.angle.type,
+      title: c.draft.titles?.[0] || topic,
+      hook: c.draft.hook,
+      body: c.draft.body
+    }));
+    const judgeResult = await headToHeadJudge(topic, judgeInput);
+    winningCandidate = scriptCandidates[judgeResult.winningIndex] || scriptCandidates[0];
+  }
+
+  const winningAngle = winningCandidate.angle;
+  const packaged = winningCandidate.draft;
+
+  // 5. Objective Rubric Critic
   const rubric = await stageCriticAndGrade(packaged);
 
   const fullNarration = `${packaged.hook} ${packaged.body} ${packaged.cta}`.trim();
@@ -334,6 +308,7 @@ export async function executeMultiStageGeneration(
     pinnedCommentText: pinnedComment,
     compliance,
     rubric,
-    syntheticMediaDisclosure: true
+    syntheticMediaDisclosure: true,
+    degraded: rubric.degraded
   };
 }

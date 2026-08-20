@@ -99,27 +99,32 @@ INSTRUCTION: Adapt your hook structure and title style to match the pacing and v
 
     const job = await prisma.renderJob.findUnique({ where: { id: result.trace.jobCreatedId } });
 
-    // Wake up worker if needed
-    try {
-      const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
-      if (ghToken) {
-        await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/vnd.github.v3+json',
-            'Authorization': `Bearer ${ghToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ref: 'main' })
-        });
+    // Wake up worker if needed and if job passed all gates
+    if (job?.status === 'SCRIPTED') {
+      try {
+        const ghToken = process.env.GITHUB_PAT || process.env.GITHUB_TOKEN;
+        if (ghToken) {
+          await fetch('https://api.github.com/repos/simply1git/simplyytr/actions/workflows/trigger-kaggle.yml/dispatches', {
+            method: 'POST',
+            headers: {
+              'Accept': 'application/vnd.github.v3+json',
+              'Authorization': `Bearer ${ghToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ ref: 'main' })
+          });
+          console.log('[Pipeline Auto-Trigger] Dispatched GPU worker for scripted job.');
+        }
+      } catch (e) {
+        console.warn('GitHub Action trigger non-fatal error:', e);
       }
-    } catch (e) {
-      console.warn('GitHub Action trigger non-fatal error:', e);
     }
 
     return Response.json({
       status: 'success',
-      message: `Peak agentic job generated and scripted: "${job?.topic}"`,
+      message: job?.status === 'SCRIPTED'
+        ? `Peak agentic job generated and approved for render: "${job?.topic}"`
+        : `Peak agentic job generated and held for review: "${job?.topic}"`,
       job: {
         id: job?.id,
         topic: job?.topic,
