@@ -65,20 +65,21 @@ import re
 
 def clean_search_keyword(kw):
     if not kw:
-        return "motivation"
+        return "motivation podcast"
     import re
     cleaned = re.sub(r'[^\w\s]', ' ', kw)
     stop_words = {
-        'secret', 'secrets', 'shocking', 'unstoppable', 'success', 'motivation', 
-        'surprising', 'believe', 'won', 't', 'hack', 'hacks', 'story', 'routine',
+        'secret', 'secrets', 'shocking', 'unstoppable', 'motivation', 
+        'surprising', 'believe', 'won', 't', 'hacks', 'routine',
         'discover', 'discovers', 'uncover', 'uncovers', 'amazing', 'insane', 
-        'unbelievable', 'viral', 'trending', 'how', 'to', 'why', 'what', 'is', 'the',
-        'you', 'your', 'daily', 'routine', 'method', 'way'
+        'unbelievable', 'how', 'to', 'why', 'what', 'is', 'the',
+        'you', 'your', 'daily', 'method', 'way'
     }
     words = [w.strip() for w in cleaned.split() if w.strip().lower() not in stop_words]
-    if len(words) > 3:
-        words = words[:3]
-    return " ".join(words) if words else "motivation"
+    # Preserve creator names (e.g. Raj Shamani, Alex Hormozi, etc.)
+    if len(words) > 5:
+        words = words[:5]
+    return " ".join(words) if words else kw.strip()
 
 def parse_bilibili_duration(duration_str):
     """Convert Bilibili duration format (e.g. '0:50', '1:02:30') to seconds."""
@@ -119,13 +120,11 @@ def search_bilibili(keyword):
 
 def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=None):
     """
-    Searches YouTube for Shorts matching the keyword, sorts by view count,
-    and downloads the most viral one under 60 seconds that hasn't been used yet.
-    If YouTube search fails (e.g., geoblocked or rate-limited), it falls back
-    to sourcing content from Bilibili (self-healing / versatile sourcing).
+    Searches YouTube for viral clips matching the creator/podcast/topic keyword,
+    sorts by view count, and downloads the best matching clip.
     """
     cleaned_kw = clean_search_keyword(keyword)
-    logging.info(f"Searching for viral Shorts using keyword: {keyword} (Cleaned search query: '{cleaned_kw}')")
+    logging.info(f"Searching for viral Shorts/Podcast clips using keyword: '{keyword}' (Search query: '{cleaned_kw}')")
     
     used_ids = set()
     if vercel_url and pipeline_secret:
@@ -143,32 +142,43 @@ def download_viral_short(keyword, temp_dir, vercel_url=None, pipeline_secret=Non
         'no_warnings': True,
         'nocheckcertificate': True,
         'socket_timeout': 15,
-        'extractor_args': {'youtube': {'client': ['android', 'ios']}}
+        'extractor_args': {'youtube': {'client': ['android', 'ios', 'web']}}
     }
     
     best_video = None
     is_bilibili = False
     
-    # Try YouTube first
-    try:
-        search_query = f"ytsearch20:{cleaned_kw} #shorts"
-        with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
-            info = ydl.extract_info(search_query, download=False)
-            if 'entries' in info and info['entries']:
-                valid_entries = []
-                for entry in info['entries']:
-                    video_id = entry.get('id')
-                    if video_id in used_ids:
-                        continue
-                        
-                    duration = entry.get('duration')
-                    if duration is not None and duration <= 60:
-                        valid_entries.append(entry)
-                        
-                if valid_entries:
-                    best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0), reverse=True)[0]
-    except Exception as e:
-        logging.warning(f"YouTube search blocked or failed: {e}. Falling back to Bilibili...")
+    search_candidates = [
+        f"ytsearch25:{cleaned_kw} shorts",
+        f"ytsearch25:{cleaned_kw} podcast",
+        f"ytsearch25:{cleaned_kw}"
+    ]
+
+    for search_query in search_candidates:
+        try:
+            logging.info(f"Querying YouTube: '{search_query}'")
+            with yt_dlp.YoutubeDL(ydl_opts_search) as ydl:
+                info = ydl.extract_info(search_query, download=False)
+                if 'entries' in info and info['entries']:
+                    valid_entries = []
+                    for entry in info['entries']:
+                        if not entry:
+                            continue
+                        video_id = entry.get('id')
+                        if video_id in used_ids:
+                            continue
+                            
+                        duration = entry.get('duration')
+                        # Allow clips up to 95 seconds
+                        if duration is None or (0 < duration <= 95):
+                            valid_entries.append(entry)
+                            
+                    if valid_entries:
+                        best_video = sorted(valid_entries, key=lambda x: x.get('view_count', 0) or 0, reverse=True)[0]
+                        logging.info(f"Matched YouTube candidate: '{best_video.get('title')}' (Duration: {best_video.get('duration')}s)")
+                        break
+        except Exception as e:
+            logging.warning(f"YouTube search query '{search_query}' failed: {e}")
 
     # Self-healing fallback to Bilibili
     if not best_video:
@@ -430,10 +440,13 @@ def setup_openvoice():
 def clone_voice(text, reference_audio_path, output_path, voice_name="en-US-GuyNeural"):
     logging.info(f"Cloning voice/generating voiceover for text: {text[:30]}...")
     try:
-        from voice_cloner import clone_voice as run_clone
-        return run_clone(text, reference_audio_path, output_path, voice_name)
+        import importlib
+        _vc = importlib.import_module("voice_cloner")
+        run_clone = getattr(_vc, "clone_voice", None)
+        if run_clone:
+            return run_clone(text, reference_audio_path, output_path, voice_name)
     except Exception as e:
-        logging.error(f"Failed to run voice_cloner: {e}. Falling back to Edge-TTS...")
+        logging.info(f"Voice cloner not available ({e}). Falling back to Edge-TTS...")
         subtitle_path = output_path.replace('.wav', '.vtt').replace('.mp3', '.vtt')
         cmd = [
             "edge-tts",
@@ -991,12 +1004,24 @@ def main():
     while True:
         logging.info("Checking for pending jobs via worker-job endpoint...")
         try:
-            config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+            config_res = requests.get(
+                f"{VERCEL_URL}/api/pipeline/worker-job", 
+                headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                timeout=45
+            )
             if config_res.status_code == 404:
                 logging.info("No pending jobs found. Generating a new one via Auto-Trigger...")
-                res = requests.post(f"{VERCEL_URL}/api/pipeline/auto-trigger", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+                res = requests.post(
+                    f"{VERCEL_URL}/api/pipeline/auto-trigger", 
+                    headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                    timeout=60
+                )
                 res.raise_for_status()
-                config_res = requests.get(f"{VERCEL_URL}/api/pipeline/worker-job", headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"})
+                config_res = requests.get(
+                    f"{VERCEL_URL}/api/pipeline/worker-job", 
+                    headers={"Authorization": f"Bearer {PIPELINE_SECRET}", "x-worker-version": "36"},
+                    timeout=45
+                )
             
             config_res.raise_for_status()
             config_data = config_res.json()
@@ -1004,8 +1029,8 @@ def main():
             config = config_data.get('config', {})
         except Exception as e:
             logging.error(f"Failed to fetch job from Vercel: {e}")
-            logging.info("Sleeping for 60 seconds before retrying...")
-            time.sleep(60)
+            logging.info("Sleeping for 30 seconds before retrying...")
+            time.sleep(30)
             continue
 
         if not job:

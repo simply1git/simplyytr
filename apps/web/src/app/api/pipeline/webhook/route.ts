@@ -52,6 +52,14 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    const { logSystemEvent } = await import('../../lib/logStore');
+    logSystemEvent({
+      level: 'SUCCESS',
+      stage: 'STORAGE',
+      jobId,
+      message: `Render Complete & Stored in R2: (Job ${jobId.slice(-8)}) -> Video: ${videoUrl || 'N/A'}`
+    });
+
     // If Online Auto-Publish switch is enabled, publish immediately via YouTube Data API v3
     const shouldPublish = (settings?.autoPublishOnline ?? false) && videoUrl;
     if (shouldPublish) {
@@ -77,10 +85,24 @@ export async function POST(request: NextRequest) {
               error: null
             }
           });
+
+          logSystemEvent({
+            level: 'SUCCESS',
+            stage: 'PUBLISHING',
+            jobId,
+            message: `YouTube Upload Success: (Job ${jobId.slice(-8)}) -> https://youtube.com/shorts/${pubResult.youtubeVideoId}`
+          });
+
           return Response.json({ status: 'published', jobId, youtubeVideoId: pubResult.youtubeVideoId, message: 'Video rendered and published autonomously to YouTube!' });
         }
       } catch (pubErr) {
         console.warn('[Pipeline Webhook] Auto-publish non-fatal error:', pubErr);
+        logSystemEvent({
+          level: 'WARN',
+          stage: 'PUBLISHING',
+          jobId,
+          message: `Auto-publish warning: ${String(pubErr)}`
+        });
       }
     }
 
