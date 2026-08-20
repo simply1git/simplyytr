@@ -29,22 +29,20 @@ import yt_dlp
 from PIL import Image, ImageDraw, ImageFont
 
 PREMIUM_SATISFYING_QUERIES = [
-    "satisfying kinetic sand",
-    "minecraft parkour gameplay",
+    "cinematic movie trailer 4k",
+    "spiderman neon city skyline 4k",
+    "cyberpunk neon city drone 4k",
+    "dramatic blockbuster visual effects",
+    "futuristic sci fi neon lighting",
+    "gta 5 cinematic car drift 4k",
+    "epic slow motion movie explosion",
+    "minecraft parkour 60fps gameplay",
+    "subway surfers 60fps gameplay",
+    "satisfying hydraulic press crush",
+    "satisfying kinetic sand loop",
     "satisfying ASMR slime",
-    "soap cutting satisfying",
-    "wood carving art",
-    "fluid art painting",
-    "subway surfers gameplay",
-    "relaxing looping animation",
-    "gta 5 ramp jumps",
-    "hydraulic press crush",
-    "satisfying paint mixing",
-    "marble run physics",
-    "nature landscape drone",
-    "city neon rain walk",
-    "calm ocean waves",
-    "relaxing mountain view"
+    "fluid art painting loop",
+    "marble run physics satisfying"
 ]
 
 # Attempt importing faster_whisper conditionally via dynamic import
@@ -319,29 +317,33 @@ def generate_kinetic_ass(audio_path, output_ass_path, model_size="base"):
                     "start": word.start,
                     "end": word.end
                 })
-        logging.info(f"Extracted {len(words_data)} words. Generating ASS file...")
-        
-        ass_content = """[Script Info]
+        ass_header = """[Script Info]
 ScriptType: v4.00+
 PlayResX: 1080
 PlayResY: 1920
+ScaledBorderAndShadow: yes
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-Style: Default,Arial,90,&H0000FFFF,&H0000FFFF,&H00000000,&H80000000,-1,0,0,0,100,100,0,0,1,8,4,5,10,10,10,1
+Style: Default,Impact,100,&H00FFFFFF,&H000000FF,&H00000000,&H80000000,-1,0,0,0,100,100,1,0,1,14,6,5,20,20,20,1
 
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
-        for w in words_data:
+        accent_colors = ["&H0000FFFF", "&H00FFFF00", "&H0000FF00", "&H00FFFFFF"]
+        dialogue_lines = []
+        for i, w in enumerate(words_data):
             start_time = format_time_ass(w['start'])
             end_time = format_time_ass(w['end'])
-            text = w['word']
-            ass_content += f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{text}\n"
+            raw_text = w['word'].upper()
+            color = accent_colors[i % len(accent_colors)]
+            pop_anim = r"{\t(0,60,\fscx120\fscy120)\t(60,120,\fscx100\fscy100)}"
+            color_tag = r"{\1c" + color + r"}"
+            dialogue_lines.append(f"Dialogue: 0,{start_time},{end_time},Default,,0,0,0,,{pop_anim}{color_tag}{raw_text}\n")
 
         with open(output_ass_path, "w", encoding="utf-8") as f:
-            f.write(ass_content)
-        logging.info(f"Kinetic typography ASS saved to {output_ass_path}")
+            f.write(ass_header + "".join(dialogue_lines))
+        logging.info(f"SOTA Top 1% Kinetic typography ASS saved to {output_ass_path}")
         return output_ass_path
     except Exception as e:
         logging.error(f"Failed to generate kinetic ASS subtitles: {e}")
