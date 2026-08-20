@@ -83,12 +83,18 @@ Generate content that follows patterns from top performers and avoids patterns f
     const jobs = [];
     const traces = [];
 
+    const activeStyle = body.videoStyle || (
+      settings.copyPasteMode === 'clone_avatar' ? 'REMASTER_REACTION' :
+      settings.copyPasteMode === 'split_screen' ? 'CURIOSITY_SPLITSCREEN' :
+      settings.copyPasteMode === 'search_trends' ? 'PRODUCT_FIND' : 'STANDARD'
+    );
+
     for (let i = 0; i < count; i++) {
       const { executePeakAgenticRun } = await import('../../lib/agenticOrchestrator');
       const result = await executePeakAgenticRun({
         forceNiche: body.niche || (settings.targetNiche !== 'Motivation' && settings.targetNiche !== 'General / Multi-Niche' ? settings.targetNiche : undefined),
         targetChannels: settings.targetChannels,
-        defaultStyle: (settings as any).defaultVideoStyle || 'PRODUCT_FIND',
+        defaultStyle: activeStyle,
         settings
       });
 

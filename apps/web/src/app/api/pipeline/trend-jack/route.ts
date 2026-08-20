@@ -46,6 +46,7 @@ Return a JSON object with EXACTLY these keys:
         scriptBody: script.body || '',
         scriptCta: script.cta || '',
         visualPrompts: script.visual_prompts || [],
+        videoStyle: 'REMASTER_REACTION',
         voiceName,
         generatedTitle: script.title || `${targetTopic} #shorts`,
         generatedDescription: script.description || '',
