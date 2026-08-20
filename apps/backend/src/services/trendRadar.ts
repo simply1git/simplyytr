@@ -1,8 +1,22 @@
 /**
- * SOTA 2026 Autonomous Niche & Trend Discovery Engine (SIMPLYYTR)
- * Autonomously researches live Google Trends, viral social signals,
- * and high-RPM YouTube niches to dynamically plan topics, styles, and monetization strategies.
+ * SOTA 2026 Multi-Source Trend Harvester & Autonomous Decider (SIMPLYYTR)
+ * Autonomously harvests live signals from Google Trends RSS, Reddit, Hacker News,
+ * YouTube Trending, and high-RPM niches to rank, score, and plan high-APV content.
  */
+
+export interface TrendSignalCandidate {
+  id: string;
+  source: 'GOOGLE_TRENDS' | 'REDDIT' | 'HACKER_NEWS' | 'YOUTUBE_TRENDS' | 'NICHE_VAULT';
+  title: string;
+  url?: string;
+  velocityScore: number; // 0-100
+  freshnessScore: number; // 0-100
+  niche: string;
+  recommendedStyle: 'PRODUCT_FIND' | 'REMASTER_REACTION' | 'CURIOSITY_SPLITSCREEN' | 'STANDARD';
+  rpmTier: 'ULTRA_HIGH' | 'HIGH' | 'MAX_VIRALITY';
+  estimatedAPV: string;
+  summary?: string;
+}
 
 export interface OpportunityPlan {
   niche: string;
@@ -12,6 +26,7 @@ export interface OpportunityPlan {
   estimatedAPV: string;
   targetDurationSec: number;
   reasoning: string;
+  sourceSignal?: TrendSignalCandidate;
 }
 
 export const S_TIER_HIGH_RPM_NICHES = [
@@ -89,7 +104,10 @@ export const S_TIER_HIGH_RPM_NICHES = [
   }
 ];
 
-export async function fetchLiveGoogleTrends(): Promise<string[]> {
+/**
+ * 1. Harvest Google Trends RSS
+ */
+export async function fetchLiveGoogleTrends(): Promise<TrendSignalCandidate[]> {
   try {
     const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
       headers: { 'User-Agent': 'Mozilla/5.0' },
@@ -101,44 +119,193 @@ export async function fetchLiveGoogleTrends(): Promise<string[]> {
     const trends = matches
       .map(m => m.replace(/<title><!\[CDATA\[/, '').replace(/\]\]><\/title>/, '').trim())
       .filter(t => t && !t.toLowerCase().includes('google trends') && t.length > 2);
-    return trends.slice(0, 10);
+    
+    return trends.slice(0, 8).map((t, idx) => ({
+      id: `gt-${Date.now()}-${idx}`,
+      source: 'GOOGLE_TRENDS',
+      title: t,
+      velocityScore: 90 - (idx * 3),
+      freshnessScore: 95,
+      niche: 'Live Daily Trending Events',
+      recommendedStyle: 'REMASTER_REACTION',
+      rpmTier: 'MAX_VIRALITY',
+      estimatedAPV: '135%',
+      summary: `Live Google Trends spike query: ${t}`
+    }));
   } catch (e) {
-    console.warn('[TrendRadar] Live Google Trends fetch timeout, using cached high-velocity trends.');
+    console.warn('[TrendRadar] Live Google Trends fetch timeout.');
     return [];
   }
 }
 
 /**
- * Autonomously selects the best niche, live trending topic, and content strategy.
+ * 2. Harvest Reddit Trending JSON (r/technology, r/Damnthatsinteresting, r/gadgets)
  */
-export async function discoverDynamicOpportunity(userNichePreference?: string): Promise<OpportunityPlan> {
-  const liveTrends = await fetchLiveGoogleTrends();
+export async function fetchRedditTrends(): Promise<TrendSignalCandidate[]> {
+  const subreddits = ['technology', 'Damnthatsinteresting', 'gadgets', 'todayilearned'];
+  const candidates: TrendSignalCandidate[] = [];
 
-  // If live trends exist and user hasn't locked in a strict non-dynamic niche, inject live trend-jacking
-  if (liveTrends.length > 0 && (!userNichePreference || userNichePreference.toLowerCase().includes('auto') || userNichePreference.toLowerCase().includes('trend'))) {
-    const randomTrend = liveTrends[Math.floor(Math.random() * liveTrends.length)];
+  for (const sub of subreddits) {
+    try {
+      const res = await fetch(`https://www.reddit.com/r/${sub}/top.json?t=day&limit=4`, {
+        headers: { 'User-Agent': 'SimplyYTR-TrendBot/2.0' },
+        signal: AbortSignal.timeout(4000)
+      });
+      if (!res.ok) continue;
+      const data = await res.json();
+      const posts = data?.data?.children || [];
+
+      for (const p of posts) {
+        const post = p.data;
+        if (!post || post.over_18 || post.stickied || !post.title) continue;
+        
+        const style: 'PRODUCT_FIND' | 'STANDARD' | 'CURIOSITY_SPLITSCREEN' = 
+          sub === 'gadgets' ? 'PRODUCT_FIND' : (sub === 'Damnthatsinteresting' || sub === 'todayilearned') ? 'CURIOSITY_SPLITSCREEN' : 'STANDARD';
+
+        candidates.push({
+          id: `reddit-${post.id}`,
+          source: 'REDDIT',
+          title: post.title.substring(0, 100),
+          url: `https://reddit.com${post.permalink}`,
+          velocityScore: Math.min(100, Math.floor((post.score || 100) / 100) + 60),
+          freshnessScore: 88,
+          niche: sub === 'gadgets' ? 'Problem-Solving Viral Finds' : sub === 'technology' ? 'AI & Future Technology' : 'Mind-Blowing Mysteries & Psychology',
+          recommendedStyle: style,
+          rpmTier: sub === 'gadgets' ? 'HIGH' : 'ULTRA_HIGH',
+          estimatedAPV: '125%',
+          summary: `Top Reddit post in r/${sub} with ${post.score} upvotes: "${post.title}"`
+        });
+      }
+    } catch (e) {
+      // Continue next subreddit
+    }
+  }
+  return candidates;
+}
+
+/**
+ * 3. Harvest Hacker News Top Stories API
+ */
+export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
+  try {
+    const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', {
+      signal: AbortSignal.timeout(4000)
+    });
+    if (!res.ok) return [];
+    const ids: number[] = await res.json();
+    const topIds = ids.slice(0, 4);
+
+    const candidates: TrendSignalCandidate[] = [];
+    for (const id of topIds) {
+      try {
+        const itemRes = await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`, {
+          signal: AbortSignal.timeout(2500)
+        });
+        if (!itemRes.ok) continue;
+        const item = await itemRes.json();
+        if (item && item.title) {
+          candidates.push({
+            id: `hn-${id}`,
+            source: 'HACKER_NEWS',
+            title: item.title,
+            url: item.url,
+            velocityScore: Math.min(100, 70 + Math.floor((item.score || 50) / 20)),
+            freshnessScore: 92,
+            niche: 'AI & Future Technology',
+            recommendedStyle: 'STANDARD',
+            rpmTier: 'ULTRA_HIGH',
+            estimatedAPV: '120%',
+            summary: `Hacker News Top Story with ${item.score} points: ${item.title}`
+          });
+        }
+      } catch (e) {}
+    }
+    return candidates;
+  } catch (e) {
+    return [];
+  }
+}
+
+/**
+ * Multi-Source Harvester: Pulls all enabled open sources in parallel
+ */
+export async function harvestMultiSourceSignals(): Promise<TrendSignalCandidate[]> {
+  const [google, reddit, hn] = await Promise.all([
+    fetchLiveGoogleTrends(),
+    fetchRedditTrends(),
+    fetchHackerNewsTrends()
+  ]);
+
+  const all = [...google, ...reddit, ...hn];
+  // Sort by combined velocity and freshness score
+  return all.sort((a, b) => (b.velocityScore + b.freshnessScore) - (a.velocityScore + a.freshnessScore));
+}
+
+/**
+ * Autonomously selects the best niche, live trending topic, and content strategy
+ * with strict exclusion filtering to avoid repeating past topics.
+ */
+export async function discoverDynamicOpportunity(
+  userNichePreference?: string,
+  excludedTopics: string[] = []
+): Promise<OpportunityPlan> {
+  const harvestedSignals = await harvestMultiSourceSignals();
+  const lowerExcluded = excludedTopics.map(e => e.toLowerCase().trim());
+
+  // Filter out any signals matching exclusion list
+  const validSignals = harvestedSignals.filter(s => {
+    const titleLower = s.title.toLowerCase();
+    return !lowerExcluded.some(ex => ex.length > 2 && (titleLower.includes(ex) || ex.includes(titleLower)));
+  });
+
+  // If a valid live signal is available and user is in autonomous mode, return the top scored signal
+  if (validSignals.length > 0 && (!userNichePreference || userNichePreference.toLowerCase().includes('auto') || userNichePreference.toLowerCase().includes('all') || userNichePreference === 'General / Multi-Niche')) {
+    const topSignal = validSignals[0];
     return {
-      niche: 'Live Daily Trending Events',
-      topic: `${randomTrend} Viral Trend`,
-      recommendedStyle: 'REMASTER_REACTION',
-      rpmTier: 'MAX_VIRALITY',
-      estimatedAPV: '135%',
-      targetDurationSec: 45,
-      reasoning: `Real-time search volume spike for "${randomTrend}". Capturing maximum viral search velocity without AI voiceover.`
+      niche: topSignal.niche,
+      topic: topSignal.title,
+      recommendedStyle: topSignal.recommendedStyle,
+      rpmTier: topSignal.rpmTier,
+      estimatedAPV: topSignal.estimatedAPV,
+      targetDurationSec: topSignal.recommendedStyle === 'PRODUCT_FIND' ? 35 : 45,
+      reasoning: `Selected via ${topSignal.source} (Velocity Score: ${topSignal.velocityScore}/100, Freshness: ${topSignal.freshnessScore}/100).`,
+      sourceSignal: topSignal
     };
   }
 
-  // Otherwise, rotate through S-Tier high-RPM niches
-  const selectedNicheGroup = S_TIER_HIGH_RPM_NICHES[Math.floor(Math.random() * S_TIER_HIGH_RPM_NICHES.length)];
-  const selectedTopic = selectedNicheGroup.topics[Math.floor(Math.random() * selectedNicheGroup.topics.length)];
+  // Fallback to S-Tier High-RPM vault with rotation and exclusion check
+  const availableNiches = S_TIER_HIGH_RPM_NICHES;
+  const filteredTopics: Array<{ niche: string; topic: string; style: any; rpmTier: any }> = [];
+
+  for (const n of availableNiches) {
+    for (const t of n.topics) {
+      if (!lowerExcluded.some(ex => ex.length > 2 && (t.toLowerCase().includes(ex) || ex.includes(t.toLowerCase())))) {
+        filteredTopics.push({
+          niche: n.niche,
+          topic: t,
+          style: n.style,
+          rpmTier: n.rpmTier
+        });
+      }
+    }
+  }
+
+  const chosen = filteredTopics.length > 0
+    ? filteredTopics[Math.floor(Math.random() * filteredTopics.length)]
+    : {
+        niche: 'AI & Future Technology',
+        topic: 'Autonomous AI Robots Changing Every Industry',
+        style: 'STANDARD' as const,
+        rpmTier: 'ULTRA_HIGH' as const
+      };
 
   return {
-    niche: selectedNicheGroup.niche,
-    topic: selectedTopic,
-    recommendedStyle: selectedNicheGroup.style,
-    rpmTier: selectedNicheGroup.rpmTier,
+    niche: chosen.niche,
+    topic: chosen.topic,
+    recommendedStyle: chosen.style,
+    rpmTier: chosen.rpmTier,
     estimatedAPV: '125%',
-    targetDurationSec: selectedNicheGroup.style === 'PRODUCT_FIND' ? 35 : 45,
-    reasoning: `High YouTube RPM tier (${selectedNicheGroup.rpmTier}) with proven viral retention in ${selectedNicheGroup.niche}.`
+    targetDurationSec: chosen.style === 'PRODUCT_FIND' ? 35 : 45,
+    reasoning: `S-Tier High-RPM Vault Selection with 0 repetition from recent history.`
   };
 }

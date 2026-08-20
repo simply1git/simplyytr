@@ -34,8 +34,11 @@ export async function POST(request: NextRequest) {
       return Response.json({ status: 'error_recorded', jobId });
     }
 
+    // Fetch system settings to check autonomy dial
+    const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
+    
     // Rendering succeeded
-    await prisma.renderJob.update({
+    const updatedJob = await prisma.renderJob.update({
       where: { id: jobId },
       data: {
         status: 'READY',
@@ -46,7 +49,38 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return Response.json({ status: 'success', jobId, message: 'Job marked as READY for upload' });
+    // If Auto-Pilot is enabled, publish immediately via YouTube Data API v3
+    if (settings?.autoPilotEnabled && videoUrl) {
+      try {
+        const { publishToYouTubeDataApi } = await import('../../lib/youtubePublisher');
+        const pubResult = await publishToYouTubeDataApi({
+          videoUrl,
+          thumbnailUrl: thumbnailUrl || undefined,
+          title: existingJob.generatedTitle || `Viral: ${existingJob.topic} #shorts`,
+          description: existingJob.generatedDescription || `Check out ${existingJob.topic}! #shorts`,
+          tags: existingJob.generatedTags || ['shorts', 'viral'],
+          pinnedCommentText: existingJob.pinnedCommentText || undefined,
+          privacyStatus: 'public'
+        });
+
+        if (pubResult.success && pubResult.youtubeVideoId) {
+          await prisma.renderJob.update({
+            where: { id: jobId },
+            data: {
+              status: 'UPLOADED',
+              publishedYoutubeId: pubResult.youtubeVideoId,
+              uploadedAt: new Date(),
+              error: null
+            }
+          });
+          return Response.json({ status: 'published', jobId, youtubeVideoId: pubResult.youtubeVideoId, message: 'Video rendered and published autonomously to YouTube!' });
+        }
+      } catch (pubErr) {
+        console.warn('[Pipeline Webhook] Auto-publish non-fatal error:', pubErr);
+      }
+    }
+
+    return Response.json({ status: 'ready', jobId, message: 'Job marked as READY for review / publishing' });
   } catch (err) {
     console.error('[Pipeline Webhook] Error:', err);
     return Response.json({ error: String(err) }, { status: 500 });

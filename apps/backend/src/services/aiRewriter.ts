@@ -33,7 +33,7 @@ export async function generateFullOrchestratedScript(
     settings?: any,
     rlyaRetentionInsights?: { dropOffTimestamp?: number; recommendedPacing?: string }
 ): Promise<ScriptGenerationResult> {
-    const groqKey = process.env.GROQ_API_KEY || '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';
+    const groqKey = process.env.GROQ_API_KEY || '';
     const tone = settings?.geminiTone || 'Clickbaity';
     const videoStyle = settings?.defaultVideoStyle || settings?.videoStyle || 'PRODUCT_FIND';
     const amazonTag = settings?.amazonAssociateTag || 'simplyytr-20';

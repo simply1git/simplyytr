@@ -39,14 +39,28 @@ next-env.d.ts
 # local uploader agent downloads and storage
 apps/uploader-agent/downloads/
 apps/uploader-agent/storage/
+storage/
+storage/chrome_profile/
 temp_assets/
+ytdownlod/
 *.mp4
 *.mp3
+*.wav
 *.jpg
+*.png
 *.vtt
+*.ass
+*.db
+*.sqlite
+*.log
+debug_create_failed.png
 
-# Kaggle API keys
+# Kaggle & Google API keys / tokens
 kaggle.json
+client_secret.json
+client_secrets.json
+token.json
+youtube_credentials.json
 
 # python
 __pycache__/
