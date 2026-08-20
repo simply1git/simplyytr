@@ -203,6 +203,27 @@ export default function SimplyYtrCommandCenter() {
     }
   };
 
+  // 1-Click Publish to YouTube
+  const handlePublishJob = async (jobId: string) => {
+    const tId = toast.loading("Publishing video to YouTube Data API v3...");
+    try {
+      const res = await fetch("/api/pipeline/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId })
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        toast.success("Video Published to YouTube Shorts! 🎉", { id: tId });
+        fetchJobs();
+      } else {
+        toast.error(`Publish failed: ${data.error || "Unknown error"}`, { id: tId });
+      }
+    } catch (e) {
+      toast.error("Failed to publish video.", { id: tId });
+    }
+  };
+
   // Sync YouTube Views and Feedback Telemetry
   const syncAnalytics = async () => {
     setSyncing(true);
@@ -411,6 +432,41 @@ export default function SimplyYtrCommandCenter() {
             >
               <span className="material-symbols-outlined text-[16px]">delete_sweep</span>
               CLEAR QUEUE
+            </button>
+
+            {/* YOUTUBE ONLINE AUTO-PUBLISH TOGGLE SWITCH */}
+            <button
+              onClick={async () => {
+                const nextState = !settings.autoPublishOnline;
+                const updated = { ...settings, autoPublishOnline: nextState };
+                setSettings(updated);
+                try {
+                  await fetch("/api/settings", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ autoPublishOnline: nextState })
+                  });
+                  if (nextState) {
+                    toast.success("YouTube Online Auto-Publish ACTIVATED! Rendered videos will upload to YouTube automatically.");
+                  } else {
+                    toast.success("YouTube Online Auto-Publish PAUSED! Rendered videos will be saved in R2 for manual 1-click publishing.");
+                  }
+                } catch (e) {
+                  toast.error("Failed to update auto-publish switch");
+                }
+              }}
+              className={`px-4 py-2.5 rounded font-mono-terminal text-xs font-bold transition-all flex items-center gap-2 border ${
+                settings.autoPublishOnline
+                  ? "bg-purple-500/20 text-purple-300 border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)]"
+                  : "bg-[#1c1b1c] text-zinc-400 border-zinc-700 hover:border-zinc-500"
+              }`}
+            >
+              <span className="material-symbols-outlined text-[16px]">
+                {settings.autoPublishOnline ? "cloud_upload" : "cloud_off"}
+              </span>
+              <span>
+                YOUTUBE AUTO-PUBLISH: {settings.autoPublishOnline ? "ONLINE" : "PAUSED (HOLD IN R2)"}
+              </span>
             </button>
 
             {/* TRIGGER 1 JOB BUTTON */}
@@ -655,6 +711,15 @@ export default function SimplyYtrCommandCenter() {
                                 className="px-2.5 py-1 bg-[#00f0ff]/10 hover:bg-[#00f0ff]/20 text-[#00f0ff] border border-[#00f0ff]/30 rounded text-[11px] font-bold"
                               >
                                 ▶ Watch
+                              </button>
+                            )}
+                            {job.status === "READY" && job.videoUrl && !job.publishedYoutubeId && (
+                              <button
+                                onClick={() => handlePublishJob(job.id)}
+                                className="px-2.5 py-1 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 rounded text-[11px] font-bold inline-flex items-center gap-1 shadow-[0_0_10px_rgba(168,85,247,0.3)]"
+                              >
+                                <span className="material-symbols-outlined text-[13px]">publish</span>
+                                🚀 Publish
                               </button>
                             )}
                             {job.publishedYoutubeId && (
