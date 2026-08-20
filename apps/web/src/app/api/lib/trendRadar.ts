@@ -1,7 +1,5 @@
 /**
  * SOTA 2026 Multi-Source Trend Harvester & Autonomous Decider (SIMPLYYTR)
- * Autonomously harvests live signals from Google Trends RSS, Reddit, Hacker News,
- * YouTube Trending, and high-RPM niches to rank, score, and plan high-APV content.
  */
 
 export interface TrendSignalCandidate {
@@ -104,9 +102,6 @@ export const S_TIER_HIGH_RPM_NICHES = [
   }
 ];
 
-/**
- * 1. Harvest Google Trends RSS
- */
 export async function fetchLiveGoogleTrends(): Promise<TrendSignalCandidate[]> {
   try {
     const res = await fetch('https://trends.google.com/trending/rss?geo=US', {
@@ -133,14 +128,10 @@ export async function fetchLiveGoogleTrends(): Promise<TrendSignalCandidate[]> {
       summary: `Live Google Trends spike query: ${t}`
     }));
   } catch (e) {
-    console.warn('[TrendRadar] Live Google Trends fetch timeout.');
     return [];
   }
 }
 
-/**
- * 2. Harvest Reddit Trending JSON (r/technology, r/Damnthatsinteresting, r/gadgets)
- */
 export async function fetchRedditTrends(): Promise<TrendSignalCandidate[]> {
   const subreddits = ['technology', 'Damnthatsinteresting', 'gadgets', 'todayilearned'];
   const candidates: TrendSignalCandidate[] = [];
@@ -176,16 +167,11 @@ export async function fetchRedditTrends(): Promise<TrendSignalCandidate[]> {
           summary: `Top Reddit post in r/${sub} with ${post.score} upvotes: "${post.title}"`
         });
       }
-    } catch (e) {
-      // Continue next subreddit
-    }
+    } catch (e) {}
   }
   return candidates;
 }
 
-/**
- * 3. Harvest Hacker News Top Stories API
- */
 export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
   try {
     const res = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json', {
@@ -226,9 +212,6 @@ export async function fetchHackerNewsTrends(): Promise<TrendSignalCandidate[]> {
   }
 }
 
-/**
- * Multi-Source Harvester: Pulls all enabled open sources in parallel
- */
 export async function harvestMultiSourceSignals(): Promise<TrendSignalCandidate[]> {
   const [google, reddit, hn] = await Promise.all([
     fetchLiveGoogleTrends(),
@@ -237,14 +220,9 @@ export async function harvestMultiSourceSignals(): Promise<TrendSignalCandidate[
   ]);
 
   const all = [...google, ...reddit, ...hn];
-  // Sort by combined velocity and freshness score
   return all.sort((a, b) => (b.velocityScore + b.freshnessScore) - (a.velocityScore + a.freshnessScore));
 }
 
-/**
- * Autonomously selects the best niche, live trending topic, and content strategy
- * with strict exclusion filtering to avoid repeating past topics.
- */
 export async function discoverDynamicOpportunity(
   userNichePreference?: string,
   excludedTopics: string[] = []
@@ -252,13 +230,11 @@ export async function discoverDynamicOpportunity(
   const harvestedSignals = await harvestMultiSourceSignals();
   const lowerExcluded = excludedTopics.map(e => e.toLowerCase().trim());
 
-  // Filter out any signals matching exclusion list
   const validSignals = harvestedSignals.filter(s => {
     const titleLower = s.title.toLowerCase();
     return !lowerExcluded.some(ex => ex.length > 2 && (titleLower.includes(ex) || ex.includes(titleLower)));
   });
 
-  // If a valid live signal is available and user is in autonomous mode, return the top scored signal
   if (validSignals.length > 0 && (!userNichePreference || userNichePreference.toLowerCase().includes('auto') || userNichePreference.toLowerCase().includes('all') || userNichePreference === 'General / Multi-Niche')) {
     const topSignal = validSignals[0];
     return {
@@ -273,7 +249,6 @@ export async function discoverDynamicOpportunity(
     };
   }
 
-  // Fallback to S-Tier High-RPM vault with rotation and exclusion check
   const availableNiches = S_TIER_HIGH_RPM_NICHES;
   const filteredTopics: Array<{ niche: string; topic: string; style: any; rpmTier: any }> = [];
 
