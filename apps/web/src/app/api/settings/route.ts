@@ -10,7 +10,25 @@ export async function GET() {
     }
     return Response.json({ settings });
   } catch (err) {
-    return Response.json({ error: String(err) }, { status: 500 });
+    console.error('[Settings GET] Database error:', err);
+    // Return resilient default settings object so frontend never breaks
+    return Response.json({
+      settings: {
+        id: 1,
+        targetNiche: 'Motivation & Success',
+        targetChannels: 'Alex Hormozi, Andrew Huberman, Raj Shamani',
+        copyPasteMode: 'clone_avatar',
+        defaultVideoStyle: 'PRODUCT_FIND',
+        autoPilotEnabled: false,
+        autoPublishOnline: false,
+        enableSelfLearningAI: true,
+        adSafeFilterEnabled: true,
+        trendJackingEnabled: true,
+        renderEngine: 'HYBRID',
+        useGpu: true
+      },
+      warning: 'Fallback settings returned due to database connection exception: ' + String(err)
+    });
   }
 }
 
