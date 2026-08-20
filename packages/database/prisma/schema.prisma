@@ -150,6 +150,7 @@ model SystemSettings {
   customTopicPrompt     String?
   enableSelfLearningAI  Boolean  @default(false)
   autoPilotEnabled      Boolean  @default(false)
+  autoPublishOnline     Boolean  @default(false) // Toggle online YouTube publishing vs holding in R2 review queue
 
   // SOTA 2026 Capabilities
   adSafeFilterEnabled   Boolean  @default(true)

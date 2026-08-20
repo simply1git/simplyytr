@@ -49,8 +49,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // If Auto-Pilot is enabled, publish immediately via YouTube Data API v3
-    if (settings?.autoPilotEnabled && videoUrl) {
+    // If Online Auto-Publish switch is enabled, publish immediately via YouTube Data API v3
+    const shouldPublish = (settings?.autoPublishOnline ?? false) && videoUrl;
+    if (shouldPublish) {
       try {
         const { publishToYouTubeDataApi } = await import('../../lib/youtubePublisher');
         const pubResult = await publishToYouTubeDataApi({
@@ -80,7 +81,13 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return Response.json({ status: 'ready', jobId, message: 'Job marked as READY for review / publishing' });
+    return Response.json({
+      status: 'ready',
+      jobId,
+      message: shouldPublish
+        ? 'Video rendered and published.'
+        : 'Video rendered successfully and stored in R2. Online auto-publishing is currently paused (ready for 1-click publishing).'
+    });
   } catch (err) {
     console.error('[Pipeline Webhook] Error:', err);
     return Response.json({ error: String(err) }, { status: 500 });

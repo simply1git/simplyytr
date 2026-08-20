@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     // Allowed fields whitelist for SystemSettings
     const allowedKeys = [
       'targetNiche', 'targetChannels', 'copyPasteMode', 'geminiTone',
-      'enableSelfLearningAI', 'autoPilotEnabled', 'adSafeFilterEnabled',
+      'enableSelfLearningAI', 'autoPilotEnabled', 'autoPublishOnline', 'adSafeFilterEnabled',
       'trendJackingEnabled', 'rlyaLearningRate', 'renderEngine',
       'defaultVideoStyle', 'amazonAssociateTag', 'customAffiliatePrefix',
       'enableGlowCaptions', 'enableSplitScreen', 'enableCinematicLut',
