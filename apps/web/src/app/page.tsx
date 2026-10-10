@@ -198,8 +198,7 @@ export default function SimplyYtrCommandCenter() {
       const res = await fetch("/api/pipeline/control", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]'}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ action, mode })
       });
@@ -226,8 +225,7 @@ export default function SimplyYtrCommandCenter() {
       const res = await fetch("/api/pipeline/trigger", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]'}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify({ count: 1, force: true }),
       });
@@ -296,7 +294,10 @@ export default function SimplyYtrCommandCenter() {
     const tId = toast.loading("Syncing YouTube Analytics & Retention Curves...");
     try {
       const res = await fetch("/api/cron/analytics", {
-        headers: { "Authorization": `Bearer ${process.env.NEXT_PUBLIC_PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]'}` }
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        }
       });
       const data = await res.json();
       toast.success(`Analytics Synced! Updated ${data.syncedJobsCount || 0} jobs`, { id: tId });

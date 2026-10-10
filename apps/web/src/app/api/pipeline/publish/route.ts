@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '../../lib/utils';
+import { verifyAuth, unauthorized, prisma } from '../../lib/utils';
 import { publishToYouTubeDataApi } from '../../lib/youtubePublisher';
 
 export const maxDuration = 60;
@@ -8,8 +8,11 @@ export const dynamic = 'force-dynamic';
 // POST /api/pipeline/publish
 // Manually triggers 1-click YouTube Data API v3 publication for a READY job
 export async function POST(request: NextRequest) {
+  if (!verifyAuth(request)) {
+    return unauthorized();
+  }
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { jobId } = body;
 
     if (!jobId) {

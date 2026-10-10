@@ -1,10 +1,13 @@
 import { NextRequest } from 'next/server';
-import { callGroq, prisma } from '../../lib/utils';
+import { verifyAuth, unauthorized, callGroq, prisma } from '../../lib/utils';
 
 export const maxDuration = 60;
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
+  if (!verifyAuth(request)) {
+    return unauthorized();
+  }
   try {
     const body = await request.json().catch(() => ({}));
     const targetTopic = body.topic || 'Why AI is Replacing Coding in 2026';

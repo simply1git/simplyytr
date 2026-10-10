@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "project": {
+    "id": "simplyytr",
+    "name": "SIMPLYYTR 2.0"
+  },
+  "source_of_truth": {
+    "spec_hash_sha256": "b59ef0a5e4c11ccbe6c1e62539e75b65d97872353c8df59397948cc4ba6ff78f",
+    "git_commit": "188ae0c",
+    "git_branch": "main"
+  },
+  "builder": {
+    "id": "antigravity",
+    "version": "2.0",
+    "model": "Gemini 3.8 Flash (High)",
+    "session_id": "bc53e391-5899-43ef-8b2b-49dc004f824a"
+  },
+  "state": {
+    "phase": 0,
+    "active_task_id": "prepare-sanitized-release-clone-and-verification",
+    "status": "RELEASE_CANDIDATE_PREPARED",
+    "exit_decision": "READY FOR PHASE 1 REVIEW (PENDING REMOTE FORCE-PUSH AUTHORIZATION)",
+    "blockers": [
+      "CRITICAL: Remote GitHub origin (https://github.com/simply1git/simplyytr.git) still contains sensitive Git history (HEAD ed8436f); force-push of sanitized release and commit cache purge pending user authorization.",
+      "HIGH: Local workspace (D:\\Projects\\SIMPLYYTR) is on un-scrubbed commit f3d038d; must be re-aligned with cleaned 5284d42 base post-push.",
+      "GATED: Phase 1 implementation blocked until remote history is verified clean."
+    ],
+    "next_actions": [
+      "User reviews docs/audit/SANITIZED_RELEASE_READINESS.md and authorizes force-push to origin.",
+      "User submits commit cache purge request to GitHub Support.",
+      "Safely re-align local workspace onto 5284d42 base without losing untracked audit work.",
+      "Kick off Phase 1 Foundation Slice."
+    ],
+    "last_verified_tests": [
+      "OS and Git root verification: PASS",
+      "Kit integrity verification: PASS",
+      "Live AlphaSignal web verification: PASS",
+      "Repository static code inspection: PASS",
+      "Independent Security & License Verification: PASS (12/12 findings verified)",
+      "Comprehensive Security Regression Test Suite (node tests/security/auth_verification.test.js): PASS (31/31 passed)",
+      "Credential Guard Pre-Commit Script (node scripts/verify_no_secrets.js): PASS",
+      "Client Bundle Secret Leakage Audit: PASS (0 references in page.tsx / .env.example / workflows / workers)",
+      "Portability / JSON schema validation: PASS",
+      "Read-Only Git Cleanup Target & Remote Verification: PASS WITH BLOCKERS (Mirror 100% sanitized, remote & workspace un-rewritten)",
+      "Sanitized Release Clone Setup & Eradication Verification: PASS (0 occurrences of tokens/profiles, 31/31 auth tests pass)"
+    ]
+  },
+  "decisions": [
+    "D-0001 Builder portability via repository canonical memory",
+    "D-0002 Provider independence with zero required paid API keys",
+    "D-0003 Modular monolith in Python (FastAPI) + PostgreSQL + pgvector first",
+    "D-0004 Clean Core Rebuild over Legacy Patching",
+    "D-0005 Official YouTube Data API v3 over Stealth Browser Automation",
+    "D-0006 Gate Phase 1 behind credential revocation and Chrome profile untracking",
+    "D-0007 Fail-closed constant-time authentication for web API and workflow containment",
+    "D-0008 Strict separation of server-to-server worker authentication from browser user session flows; zero shared secrets in browser bundles"
+  ],
+  "lessons": [
+    "L-0001 Always use recursive wildcards (**/pattern/**) in root .gitignore for sensitive local data",
+    "L-0002 Check build compilability across all monorepo packages before trusting architecture docs",
+    "L-0003 Untracked local audit files are invisible to fresh clones until committed; history must be sanitized before pushing",
+    "L-0004 Never treat client-supplied HTTP request headers (Sec-Fetch-Site, Origin) as standalone authentication",
+    "L-0005 Never expose server-to-server shared secrets to browser code via NEXT_PUBLIC_* or client localStorage",
+    "L-0006 History rewriting with git-filter-repo prunes empty commits; a commit deleting a path becomes empty after the path is filtered out"
+  ],
+  "incidents": [
+    "INC-0001 Discovery of committed Chrome session profile in apps/storage/chrome_profile",
+    "INC-0002 Discovery of hardcoded fallback pipeline token in GitHub Actions workflows",
+    "INC-0003 Discovery of API middleware authentication bypass via spoofed headers (SEC-011)",
+    "INC-0004 Remediation of client-side secret exposure pattern (NEXT_PUBLIC_PIPELINE_SECRET / getClientAuthToken purged)",
+    "INC-0005 Disambiguation of git-filter-repo execution target: verified isolated mirror was rewritten while workspace and remote remain un-rewritten"
+  ],
+  "files_changed": [
+    "apps/web/src/app/api/lib/utils.ts",
+    "apps/web/src/app/api/lib/auth.ts",
+    "apps/web/src/app/page.tsx",
+    ".github/workflows/content_pipeline.yml",
+    ".github/workflows/render-worker.yml",
+    "kaggle-worker/video_generator.py",
+    "kaggle_pull/youtubbot-worker.py",
+    ".gitignore",
+    ".env.example",
+    "tests/security/auth_verification.test.js",
+    "scripts/verify_no_secrets.js",
+    "docs/audit/GIT_HISTORY_CLEANUP_PLAN.md",
+    "docs/audit/GIT_CLEANUP_TARGET_VERIFICATION.md",
+    "docs/audit/PHASE_0_FORENSIC_AUDIT.md",
+    "docs/audit/MIGRATION_MATRIX.md",
+    "docs/audit/SECURITY_FINDINGS.md",
+    "docs/audit/LICENSE_FINDINGS.md",
+    "docs/audit/PHASE_1_PLAN.md",
+    "docs/audit/KIT_INTEGRATION_CONFLICTS.md",
+    "docs/audit/ALPHASIGNAL_VERIFICATION.md",
+    "docs/audit/PHASE_0_REVIEW_CHECKLIST.md",
+    "docs/audit/PHASE_0_INDEPENDENT_REVIEW.md",
+    ".agent/state/CURRENT_STATE.md",
+    ".agent/state/BLOCKERS.md",
+    ".agent/state/NEXT_ACTIONS.md",
+    ".agent/memory/DECISIONS.md",
+    ".agent/memory/LESSONS.md",
+    ".agent/memory/INCIDENTS.md",
+    ".agent/transfer/transfer_manifest.json"
+  ],
+  "artifacts": [
+    "docs/audit/PHASE_0_FORENSIC_AUDIT.md",
+    "docs/audit/MIGRATION_MATRIX.md",
+    "docs/audit/SECURITY_FINDINGS.md",
+    "docs/audit/LICENSE_FINDINGS.md",
+    "docs/audit/PHASE_1_PLAN.md",
+    "docs/audit/KIT_INTEGRATION_CONFLICTS.md",
+    "docs/audit/ALPHASIGNAL_VERIFICATION.md",
+    "docs/audit/PHASE_0_REVIEW_CHECKLIST.md",
+    "docs/audit/PHASE_0_INDEPENDENT_REVIEW.md",
+    "docs/audit/GIT_HISTORY_CLEANUP_PLAN.md",
+    "docs/audit/GIT_CLEANUP_TARGET_VERIFICATION.md",
+    "docs/audit/SANITIZED_RELEASE_READINESS.md"
+  ],
+  "environment_prerequisites": [
+    "Windows / Linux host",
+    "Git 2.40+",
+    "Node.js 20+",
+    "Python 3.11+",
+    "Docker & Docker Compose"
+  ],
+  "secret_references": [],
+  "integrity": {
+    "bundle_sha256": "VERIFIED_PHASE_0"
+  }
+}

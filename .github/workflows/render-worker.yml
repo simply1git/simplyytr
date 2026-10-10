@@ -34,11 +34,18 @@ jobs:
           pip install --upgrade pip
           pip install boto3 requests srt edge-tts Pillow yt-dlp
 
+      - name: Validate Pipeline Secrets
+        run: |
+          if [ -z "${{ secrets.PIPELINE_SECRET }}" ]; then
+            echo "::error::Required secret PIPELINE_SECRET is not configured. Failing closed."
+            exit 1
+          fi
+
       - name: Execute Autonomous Video Generation
         env:
-          VERCEL_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}
-          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}
-          PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]' }}
+          VERCEL_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL }}
+          VERCEL_API_URL: ${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL }}
+          PIPELINE_SECRET: ${{ secrets.PIPELINE_SECRET }}
           R2_ACCOUNT_ID: ${{ secrets.R2_ACCOUNT_ID }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}

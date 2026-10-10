@@ -1016,8 +1016,16 @@ def cleanup_temp_dir(temp_dir):
         os.makedirs(temp_dir, exist_ok=True)
 
 def main():
-    VERCEL_URL = os.environ.get("VERCEL_URL", "https://simplyytr.vercel.app")
-    PIPELINE_SECRET = os.environ.get("PIPELINE_SECRET", "[REDACTED_FALLBACK_TOKEN]")
+    VERCEL_URL = os.environ.get("VERCEL_URL")
+    PIPELINE_SECRET = os.environ.get("PIPELINE_SECRET")
+    
+    if not PIPELINE_SECRET:
+        logging.error("CRITICAL: PIPELINE_SECRET environment variable is not configured. Failing closed.")
+        sys.exit(1)
+        
+    if not VERCEL_URL:
+        logging.error("CRITICAL: VERCEL_URL environment variable is not configured. Failing closed.")
+        sys.exit(1)
     
     logging.info("Starting Continuous Orchestrator Loop...")
     while True:

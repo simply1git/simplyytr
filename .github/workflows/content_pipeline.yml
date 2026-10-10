@@ -18,8 +18,18 @@ jobs:
     steps:
       - name: Trigger Content Pipeline
         run: |
-          TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}"
-          SECRET_KEY="${{ secrets.PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]' }}"
+          TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL }}"
+          SECRET_KEY="${{ secrets.PIPELINE_SECRET }}"
+
+          if [ -z "$TARGET_URL" ]; then
+            echo "::error::Required secret VERCEL_API_URL or VERCEL_URL is not configured. Failing closed."
+            exit 1
+          fi
+
+          if [ -z "$SECRET_KEY" ]; then
+            echo "::error::Required secret PIPELINE_SECRET is not configured. Failing closed."
+            exit 1
+          fi
           
           echo "Triggering pipeline at: $TARGET_URL"
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
@@ -51,9 +61,20 @@ jobs:
         run: |
           HOUR=$(date -u +"%H")
           if [ "$HOUR" = "00" ]; then
-            TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL || 'https://simplyytr.vercel.app' }}"
-            SECRET_KEY="${{ secrets.PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]' }}"
-            curl -s -X POST \
+            TARGET_URL="${{ secrets.VERCEL_API_URL || secrets.VERCEL_URL }}"
+            SECRET_KEY="${{ secrets.PIPELINE_SECRET }}"
+
+            if [ -z "$TARGET_URL" ]; then
+              echo "::error::Required secret VERCEL_API_URL or VERCEL_URL is not configured for analytics sync. Failing closed."
+              exit 1
+            fi
+
+            if [ -z "$SECRET_KEY" ]; then
+              echo "::error::Required secret PIPELINE_SECRET is not configured for analytics sync. Failing closed."
+              exit 1
+            fi
+
+            curl -s -f -X POST \
               "${TARGET_URL%/}/api/cron/analytics" \
               -H "Authorization: Bearer $SECRET_KEY"
             echo "✅ Analytics sync triggered"

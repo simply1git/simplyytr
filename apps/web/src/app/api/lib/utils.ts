@@ -1,30 +1,15 @@
 // Shared utilities for all API routes
 // Provides auth middleware, Supabase client setup, and Groq integration
 
-// ─── Auth Helper ────────────────────────────────────────
-export function verifyAuth(request: Request): boolean {
-  // 1. Allow same-origin browser dashboard requests
-  const secFetchSite = request.headers.get('sec-fetch-site');
-  const origin = request.headers.get('origin');
-  const host = request.headers.get('host');
-  if (secFetchSite === 'same-origin') {
-    return true;
-  }
-  if (origin && host && (origin.includes(host) || origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('vercel.app'))) {
-    return true;
-  }
-
-  // 2. Token-based authentication for external worker & GitHub Actions
-  const authHeader = request.headers.get('Authorization');
-  if (!authHeader) return false;
-  const token = authHeader.replace('Bearer ', '').trim();
-  const secret = process.env.PIPELINE_SECRET || '[REDACTED_FALLBACK_TOKEN]';
-  return token === secret;
-}
-
-export function unauthorized() {
-  return Response.json({ error: 'Unauthorized. Please provide a valid Authorization header.' }, { status: 401 });
-}
+export {
+  verifyAuth,
+  verifyWorkerAuth,
+  verifyDashboardAuth,
+  verifyCsrfProtection,
+  unauthorized,
+  timingSafeEqualStr,
+  getCookieValue,
+} from './auth';
 
 // ─── Groq LLM Client ───────────────────────────────────
 export async function callGroq(prompt: string, options?: { temperature?: number; maxTokens?: number }) {

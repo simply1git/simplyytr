@@ -36,13 +36,23 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# local uploader agent downloads and storage
-apps/uploader-agent/downloads/
-apps/uploader-agent/storage/
-storage/
-storage/chrome_profile/
-temp_assets/
+# local storage and browser session containment (STRICT - NEVER COMMIT)
+**/chrome_profile/**
+**/chrome_data/**
+**/user_data/**
+**/*chrome*profile*/**
+**/Default/Network/Cookies*
+**/Default/Login Data*
+**/Default/Web Data*
+**/Local State*
+**/storage/**
+**/apps/*/storage/**
+**/apps/uploader-agent/downloads/**
+**/apps/uploader-agent/storage/**
+**/temp_assets/**
 ytdownlod/
+
+# media and temporary binaries
 *.mp4
 *.mp3
 *.wav
@@ -50,21 +60,35 @@ ytdownlod/
 *.png
 *.vtt
 *.ass
-*.db
-*.sqlite
-*.log
 debug_create_failed.png
 
-# Kaggle & Google API keys / tokens
-kaggle.json
-client_secret.json
-client_secrets.json
-token.json
-youtube_credentials.json
+# databases and sqlite artifacts
+*.db
+*.db-journal
+*.db-wal
+*.sqlite
+*.sqlite3
+*.log
 
-# python
+# Kaggle & Google API keys / tokens / certificates (recursive match)
+**/kaggle.json
+**/client_secret*.json
+**/service_account*.json
+**/token*.json
+**/tokens.json
+**/youtube_credentials.json
+**/*.pem
+**/*.key
+**/*.pfx
+**/*.p12
+**/*.pkcs12
+
+# python artifacts
 __pycache__/
 *.pyc
 kaggle_logs/
 kaggle-logs/
 temp_repo/
+scratch/
+
+

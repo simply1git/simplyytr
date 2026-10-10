@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '../lib/utils';
+import { verifyAuth, unauthorized, prisma } from '../lib/utils';
 
 // GET /api/settings
 export async function GET() {
@@ -34,8 +34,11 @@ export async function GET() {
 
 // POST /api/settings
 export async function POST(request: NextRequest) {
+  if (!verifyAuth(request)) {
+    return unauthorized();
+  }
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     
     // Allowed fields whitelist for SystemSettings
     const allowedKeys = [
