@@ -46,6 +46,7 @@ app.use('/api/settings', settingsRouter);
 import { executeScrape } from './queue/youtubeScraper';
 import { executePublish } from './queue/youtubePublisher';
 import { executeAnalytics } from './queue/analyticsTracker';
+import { isLegacyScraperPipelineEnabled } from './queue/legacyGuard';
 import cron from 'node-cron';
 
 app.listen(PORT, () => {
@@ -63,28 +64,32 @@ app.listen(PORT, () => {
       const currentMinute = now.getMinutes().toString().padStart(2, '0');
       const currentTimeString = `${currentHour}:${currentMinute}`;
 
-      // 1. Check if we should scrape
-      if (!settings.lastScrapedAt) {
-        systemState.setTask("Checking for new trends...");
-        await executeScrape();
-        systemState.setTask("Sleeping / Waiting for Next Task");
-        await (prisma as any).systemSettings.update({ where: { id: 1 }, data: { lastScrapedAt: new Date() } });
-      } else {
-        const minutesSinceLastScrape = Math.abs(now.getTime() - new Date(settings.lastScrapedAt).getTime()) / (60 * 1000);
-        if (minutesSinceLastScrape >= settings.scrapeIntervalMinutes) {
+      // 1. Check if we should scrape (guarded: legacy scraper pipeline)
+      if (isLegacyScraperPipelineEnabled()) {
+        if (!settings.lastScrapedAt) {
           systemState.setTask("Checking for new trends...");
           await executeScrape();
           systemState.setTask("Sleeping / Waiting for Next Task");
           await (prisma as any).systemSettings.update({ where: { id: 1 }, data: { lastScrapedAt: new Date() } });
+        } else {
+          const minutesSinceLastScrape = Math.abs(now.getTime() - new Date(settings.lastScrapedAt).getTime()) / (60 * 1000);
+          if (minutesSinceLastScrape >= settings.scrapeIntervalMinutes) {
+            systemState.setTask("Checking for new trends...");
+            await executeScrape();
+            systemState.setTask("Sleeping / Waiting for Next Task");
+            await (prisma as any).systemSettings.update({ where: { id: 1 }, data: { lastScrapedAt: new Date() } });
+          }
         }
       }
 
-      // 2. Check if we should publish
-      const uploadTimes = settings.uploadTimes.split(',').map((t: string) => t.trim());
-      if (uploadTimes.includes(currentTimeString)) {
-        systemState.setTask("Starting publisher task...");
-        await executePublish();
-        systemState.setTask("Sleeping / Waiting for Next Task");
+      // 2. Check if we should publish (guarded: legacy publisher loop requires opt-in & autoPublishOnline)
+      if (isLegacyScraperPipelineEnabled() && settings.autoPublishOnline) {
+        const uploadTimes = settings.uploadTimes.split(',').map((t: string) => t.trim());
+        if (uploadTimes.includes(currentTimeString)) {
+          systemState.setTask("Starting publisher task...");
+          await executePublish();
+          systemState.setTask("Sleeping / Waiting for Next Task");
+        }
       }
 
       // 3. Analytics (Midnight)

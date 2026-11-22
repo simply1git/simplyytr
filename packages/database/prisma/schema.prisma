@@ -41,6 +41,7 @@ model RenderJob {
   scriptBody        String?
   scriptCta         String?
   visualPrompts     Json?       // Array of scene descriptions for Pexels queries
+  contentPackage    Json?       // Validated Single Content-Package Contract (Phase 4B)
   voiceName         String      @default("en-US-GuyNeural")
 
   // SOTA Compliance & Risk

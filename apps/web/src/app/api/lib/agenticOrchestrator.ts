@@ -16,6 +16,8 @@ import { selectBanditStrategy } from './banditLearningLoop';
 import { getCircuitStatus, recordCircuitSuccess, recordCircuitFailure } from './circuitBreaker';
 import { ScriptPackage } from './schemas';
 import { logSystemEvent } from './logStore';
+import { generateTopicGroundedPackage } from './topicGroundedGenerator';
+import { validateContentPackage, deriveCaptionsFromSegments, type ContentPackage, type NarrationSegment, type FactualClaim } from './contentContract';
 
 export interface AgenticExecutionTrace {
   runId: string;
@@ -41,9 +43,11 @@ export interface AgenticExecutionTrace {
  */
 export async function executePeakAgenticRun(options: {
   forceNiche?: string;
+  forceTopic?: string;
   targetChannels?: string;
   defaultStyle?: 'PRODUCT_FIND' | 'REMASTER_REACTION' | 'CURIOSITY_SPLITSCREEN' | 'STANDARD';
   settings?: any;
+  qualityProfile?: 'STANDARD' | 'CINEMATIC_PRO';
 }): Promise<{ success: boolean; trace: AgenticExecutionTrace; scriptPackage?: ScriptPackage; error?: string }> {
   const startTime = Date.now();
   const runId = `run-${Date.now().toString(36)}`;
@@ -94,7 +98,7 @@ export async function executePeakAgenticRun(options: {
     // 4. Dynamic Multi-Source Opportunity Discovery
     const opportunity = await discoverDynamicOpportunity(options.forceNiche, memory.pastTopics);
     const selectedNiche = opportunity.niche;
-    const selectedTopic = opportunity.topic;
+    const selectedTopic = options.forceTopic?.trim() || opportunity.topic;
     const selectedStyle = options.defaultStyle || opportunity.recommendedStyle;
     const sourceUrl = opportunity.sourceSignal?.url;
     const sourceTitle = opportunity.sourceSignal?.title;
@@ -174,19 +178,138 @@ export async function executePeakAgenticRun(options: {
     }
 
     const passedAllGates = blockReasons.length === 0;
-    const jobStatus = passedAllGates ? 'SCRIPTED' : 'NEEDS_REVIEW';
+    const jobStatus = 'NEEDS_REVIEW';
 
-    // 11. Persist into Database RenderJob
+    // 11. Construct Topic-Grounded Content Package (Phase 4B Single Content Contract)
+    let contentPkg: ContentPackage;
+
+    if (!passedAllGates) {
+      // Degraded/unconfigured LLM -> Produce explicitly labeled deterministic topic-grounded demo
+      contentPkg = generateTopicGroundedPackage(selectedTopic, {
+        niche: selectedNiche,
+        style: selectedStyle,
+        version: '1.0.0'
+      });
+      contentPkg.reviewStatus = 'NEEDS_REVIEW';
+    } else {
+      // Live LLM passed all gates -> construct ContentPackage with generatorMode AI_DIRECT
+      const segments: NarrationSegment[] = [
+        {
+          id: 'seg-1',
+          order: 1,
+          text: rawPackage.hook,
+          visualPlan: {
+            sceneType: 'MOTION_GRAPHIC',
+            description: rawPackage.visualPrompts[0] || `Opening scene for ${selectedTopic}`,
+            primaryText: selectedTopic.toUpperCase().slice(0, 30),
+            secondaryText: rawPackage.selectedTitle,
+            badgeText: 'HOT TOPIC',
+            assetSource: 'LOCAL_SCENE_GRAPHICS',
+            licenseMetadata: {
+              licenseName: 'CC-BY-4.0',
+              provenance: 'SIMPLYYTR AI Visual Generator',
+              verified: false
+            }
+          }
+        },
+        {
+          id: 'seg-2',
+          order: 2,
+          text: rawPackage.body,
+          visualPlan: {
+            sceneType: 'ORIGINAL_DIAGRAM',
+            description: rawPackage.visualPrompts[1] || `Body scene for ${selectedTopic}`,
+            primaryText: 'KEY INSIGHTS',
+            secondaryText: 'Reported Analysis',
+            badgeText: 'ANALYSIS',
+            assetSource: 'ORIGINAL_DIAGRAM',
+            licenseMetadata: {
+              licenseName: 'CC-BY-4.0',
+              provenance: 'SIMPLYYTR AI Visual Generator',
+              verified: false
+            }
+          }
+        },
+        {
+          id: 'seg-3',
+          order: 3,
+          text: rawPackage.cta,
+          visualPlan: {
+            sceneType: 'MOTION_GRAPHIC',
+            description: rawPackage.visualPrompts[2] || `Closing scene for ${selectedTopic}`,
+            primaryText: 'ACTIONABLE STEPS',
+            secondaryText: 'Follow For More',
+            badgeText: 'TAKEAWAY',
+            assetSource: 'LOCAL_SCENE_GRAPHICS',
+            licenseMetadata: {
+              licenseName: 'CC-BY-4.0',
+              provenance: 'SIMPLYYTR AI Visual Generator',
+              verified: false
+            }
+          }
+        }
+      ];
+
+      const claims: FactualClaim[] = claimSet.claims.map((c: any, i: number) => ({
+        id: c.id || `claim-${i + 1}`,
+        claimText: c.claimText,
+        sourceRef: c.sourceTitle || c.sourceUrl || 'Research Signal',
+        sourceUrl: c.sourceUrl || '',
+        verified: false, // AI generation cannot assert verified: true without verifiable retrieval receipt
+        evidenceStatus: c.sourceUrl ? 'source_located' : 'unverified',
+        supportingExcerpt: c.supportingExcerpt || undefined,
+        excerptType: c.supportingExcerpt ? 'authored_summary' : 'unmatched_excerpt',
+        retrievalStatus: 'NOT_ATTEMPTED',
+        verificationNotes: c.verificationNotes || (c.sourceUrl ? `Source identified by LLM research agent: ${c.sourceUrl}. Requires independent retrieval and operator review.` : 'Unverified claim candidate from AI generation.')
+      }));
+
+      contentPkg = {
+        version: '1.0.0',
+        topic: selectedTopic,
+        audience: `Audience for ${selectedNiche}`,
+        targetProblem: `Core insights regarding ${selectedTopic}`,
+        proposedTitle: rawPackage.selectedTitle,
+        openingHook: rawPackage.hook,
+        segments,
+        claims: claims.length > 0 ? claims : [{
+          id: 'claim-1',
+          claimText: `Analysis of ${selectedTopic}`,
+          sourceRef: 'Research Signal',
+          verified: false,
+          evidenceStatus: 'unverified',
+          excerptType: 'unmatched_excerpt',
+          retrievalStatus: 'NOT_ATTEMPTED'
+        }],
+        callToAction: rawPackage.cta,
+        captions: deriveCaptionsFromSegments(segments, 16.0),
+        provenance: {
+          source: 'AI Pipeline Engine (Groq/Gemini Multi-Stage)',
+          generatorMode: 'AI_DIRECT',
+          license: 'Proprietary Channel License',
+          verified: false
+        },
+        reviewStatus: 'NEEDS_REVIEW',
+        qualityProfile: options.qualityProfile || 'STANDARD'
+      };
+    }
+
+    const validation = validateContentPackage(contentPkg);
+    if (!validation.valid) {
+      blockReasons.push(...validation.errors);
+    }
+
+    // 12. Persist into Database RenderJob
     const job = await prisma.renderJob.create({
       data: {
         status: jobStatus,
         topic: selectedTopic,
-        scriptHook: rawPackage.hook,
-        scriptBody: rawPackage.body,
-        scriptCta: rawPackage.cta,
-        visualPrompts: rawPackage.visualPrompts,
+        scriptHook: contentPkg.segments[0].text,
+        scriptBody: contentPkg.segments.slice(1, -1).map(s => s.text).join(' ') || contentPkg.segments[1].text,
+        scriptCta: contentPkg.segments[contentPkg.segments.length - 1].text,
+        visualPrompts: contentPkg.segments.map(s => s.visualPlan.description),
+        contentPackage: contentPkg as any,
         voiceName: options.settings?.voiceName || 'en-US-GuyNeural',
-        generatedTitle: rawPackage.selectedTitle,
+        generatedTitle: contentPkg.proposedTitle,
         generatedDescription: rawPackage.description,
         generatedTags: rawPackage.tags,
         videoStyle: selectedStyle,

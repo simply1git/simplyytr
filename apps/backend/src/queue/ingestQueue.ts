@@ -3,6 +3,7 @@ import { spawn } from 'child_process';
 import path from 'path';
 import { addEditorJob } from './editorQueue';
 import { systemState } from '../state';
+import { isLegacyScraperPipelineEnabled } from './legacyGuard';
 
 const prisma = new PrismaClient();
 
@@ -11,12 +12,22 @@ const queue: string[] = [];
 let isProcessing = false;
 
 export function addIngestJob(youtubeId: string) {
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn(`[Queue] Legacy ingest queue is disabled. Refusing to queue ingest job for ${youtubeId}.`);
+        return;
+    }
     queue.push(youtubeId);
     console.log(`[Queue] Added job for ${youtubeId}. Queue length: ${queue.length}`);
     processQueue();
 }
 
 async function processQueue() {
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn('[Queue] Legacy ingest queue is disabled. Halting queue processing.');
+        queue.length = 0;
+        isProcessing = false;
+        return;
+    }
     if (isProcessing || queue.length === 0) return;
 
     isProcessing = true;

@@ -1,8 +1,11 @@
 /**
  * SOTA 2026 Viral Product & Multi-Link Affiliate Discovery Engine
  * Curates problem-solving gadgets, tech finds, and lifestyle tools
- * with automated Multi-Link bundles (Amazon + Global Store + Accessories + Coupon).
+ * with automated Multi-Link bundles and strict FTC compliance disclosures.
  */
+
+export type ProductProvenance = 'LOCAL_SAMPLE_CATALOG' | 'LIVE_MARKET_INTELLIGENCE';
+export type VerificationStatus = 'SAMPLE_UNVERIFIED' | 'PROVIDER_VERIFIED';
 
 export interface ViralProduct {
   id: string;
@@ -15,15 +18,23 @@ export interface ViralProduct {
   features: string[];
   affiliateKeyword: string;
   accessoriesKeyword?: string;
+  amazonSearchQuery?: string;
   couponCode?: string;
+  provenance: ProductProvenance;
+  verificationStatus: VerificationStatus;
+  retrievedAt: string;
+  isAffiliateLinkVerified: boolean;
 }
 
 export interface MultiAffiliateLinks {
   amazonLink: string;
   globalStoreLink: string;
   bundleAccessoriesLink: string;
-  couponCode: string;
+  couponCode?: string;
   allLinksFormatted: string;
+  provenance: ProductProvenance;
+  verificationStatus: VerificationStatus;
+  isAffiliateLinkVerified: boolean;
 }
 
 export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
@@ -38,7 +49,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['Compact lipstick-sized bottle', 'Refillable cleaning fluid', 'Washable microfiber body', 'Safe for all oleophobic coatings'],
     affiliateKeyword: '2-in-1-screen-cleaner-spray',
     accessoriesKeyword: 'screen-cleaner-refill-solution-500ml',
-    couponCode: 'CLEAN50'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   },
   {
     id: 'prod_cable_magnetic_organizer',
@@ -51,7 +65,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['Ultra-strong neodymium magnets', 'Universal cable slot size', 'Residue-free 3M adhesive', 'Minimalist matte black aluminum'],
     affiliateKeyword: 'magnetic-desk-cable-organizer',
     accessoriesKeyword: 'magnetic-cable-clips-pack-of-6',
-    couponCode: 'DESK20'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   },
   {
     id: 'prod_mini_sealer_cutter',
@@ -64,7 +81,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['Instant micro-heating element', 'Built-in hidden box cutter', 'Magnetic fridge mount', 'USB-C fast charging'],
     affiliateKeyword: 'rechargeable-mini-bag-sealer',
     accessoriesKeyword: 'reusable-food-storage-bags-pack',
-    couponCode: 'SNACK50'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   },
   {
     id: 'prod_anti_gravity_humidifier',
@@ -77,7 +97,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['Stroboscopic levitating water effect', 'Whisper-quiet ultrasonic mist', 'Warm ambient LED light', 'Auto shut-off when dry'],
     affiliateKeyword: 'anti-gravity-water-droplet-humidifier',
     accessoriesKeyword: 'aromatherapy-essential-oils-set',
-    couponCode: 'MIST30'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   },
   {
     id: 'prod_turbo_air_duster',
@@ -90,7 +113,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['130,000 RPM brushless motor', '52 m/s hurricane wind speed', 'CNC aluminum turbine fan', 'Type-C fast charging'],
     affiliateKeyword: '130000-rpm-turbo-jet-fan-duster',
     accessoriesKeyword: 'turbo-fan-nozzle-attachments-set',
-    couponCode: 'TURBO40'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   },
   {
     id: 'prod_electric_jar_opener',
@@ -103,7 +129,10 @@ export const VIRAL_PRODUCT_CATALOG: ViralProduct[] = [
     features: ['One-button automated clamp & twist', 'Fits lids from 1.2 to 3.5 inches', 'Zero grip strength needed', 'Compact drawer storage'],
     affiliateKeyword: 'hands-free-electric-jar-opener',
     accessoriesKeyword: 'silicone-jar-gripper-pads-set',
-    couponCode: 'EASY25'
+    provenance: 'LOCAL_SAMPLE_CATALOG',
+    verificationStatus: 'SAMPLE_UNVERIFIED',
+    retrievedAt: '2026-10-13T00:00:00.000Z',
+    isAffiliateLinkVerified: false
   }
 ];
 
@@ -121,23 +150,24 @@ export function buildMultiAffiliateBundle(
   
   const globalStoreLink = customPrefix && customPrefix.startsWith('http')
     ? `${customPrefix.replace(/\/$/, '')}/${product.affiliateKeyword}`
-    : `https://www.amazon.com/dp/search?k=${encodeURIComponent(product.name + ' direct store')}&tag=${amazonTag}`;
+    : `https://www.amazon.com/dp/search?k=${encodeURIComponent(product.name + ' search')}&tag=${amazonTag}`;
 
   const accessoriesTerm = product.accessoriesKeyword || `${product.affiliateKeyword}-accessories`;
   const bundleAccessoriesLink = `https://www.amazon.com/dp/search?k=${encodeURIComponent(accessoriesTerm.replace(/-/g, ' '))}&tag=${amazonTag}`;
 
-  const couponCode = product.couponCode || 'SAVE50';
-
-  const allLinksFormatted = `1️⃣ Primary Deal (Amazon): ${amazonLink}
-2️⃣ Global / Alternative Store: ${globalStoreLink}
-3️⃣ Bundle Accessories Pack: ${bundleAccessoriesLink}`;
+  const allLinksFormatted = `* Amazon Search: ${amazonLink}
+* Global / Alternative Store: ${globalStoreLink}
+* Companion Accessories: ${bundleAccessoriesLink}`;
 
   return {
     amazonLink,
     globalStoreLink,
     bundleAccessoriesLink,
-    couponCode,
-    allLinksFormatted
+    couponCode: product.couponCode,
+    allLinksFormatted,
+    provenance: product.provenance,
+    verificationStatus: product.verificationStatus,
+    isAffiliateLinkVerified: false
   };
 }
 
@@ -148,35 +178,25 @@ export function buildAffiliateLink(product: ViralProduct, amazonTag: string = 's
 
 export function buildPinnedComment(product: ViralProduct, affiliateBundle: MultiAffiliateLinks | string): string {
   if (typeof affiliateBundle === 'string') {
-    return `🔥 GET THE ${product.name.toUpperCase()} HERE:
+    return `Product Details & Search Links for ${product.name.toUpperCase()}:
 👉 ${affiliateBundle}
-
-⚡ 50% Off Flash Sale Active Today!
-(Disclosure: As an affiliate, I earn a commission on qualifying purchases at zero extra cost to you!)`;
+(Disclosure: As an affiliate, I earn a commission on qualifying purchases at zero extra cost to you. Pricing and availability subject to merchant listing.)`;
   }
 
-  return `🔥 GET THE ${product.name.toUpperCase()} & BUNDLES:
-1️⃣ Amazon Deal (Prime Shipping):
-👉 ${affiliateBundle.amazonLink}
-
-2️⃣ Global / Alternative Store:
-👉 ${affiliateBundle.globalStoreLink}
-
-3️⃣ Recommended Accessories Bundle:
-👉 ${affiliateBundle.bundleAccessoriesLink}
-
-⚡ Flash Code: "${affiliateBundle.couponCode}" (50% Off Today)
-(Disclosure: As an affiliate, I earn a small commission on qualifying purchases at zero extra cost to you!)`;
+  return `Product Details & Search Links for ${product.name.toUpperCase()}:
+* Amazon Search: ${affiliateBundle.amazonLink}
+* Alternative Options: ${affiliateBundle.globalStoreLink}
+* Accessories: ${affiliateBundle.bundleAccessoriesLink}
+(Disclosure: As an affiliate, I earn a small commission on qualifying purchases at zero extra cost to you. Pricing and availability subject to merchant listing.)`;
 }
 
 export function buildMultiLinkDescription(product: ViralProduct, title: string, affiliateBundle: MultiAffiliateLinks): string {
   return `${title}
 
-🔥 PRODUCT LINKS & DISCOUNTS:
-• Amazon Official: ${affiliateBundle.amazonLink}
-• Global Store: ${affiliateBundle.globalStoreLink}
-• Recommended Accessories: ${affiliateBundle.bundleAccessoriesLink}
+Product Search & Reference Links:
+* Amazon Search: ${affiliateBundle.amazonLink}
+* Global / Alternative Options: ${affiliateBundle.globalStoreLink}
+* Accessories: ${affiliateBundle.bundleAccessoriesLink}
 
-🎟️ Discount Code: ${affiliateBundle.couponCode}
 (FTC Disclosure: As an Amazon Associate and affiliate partner, I earn from qualifying purchases.)`;
 }

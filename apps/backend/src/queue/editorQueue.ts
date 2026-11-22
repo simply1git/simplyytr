@@ -5,6 +5,7 @@ import fs from 'fs';
 import { exec } from 'child_process';
 import util from 'util';
 import { systemState } from '../state';
+import { isLegacyScraperPipelineEnabled } from './legacyGuard';
 
 const execPromise = util.promisify(exec);
 const prisma = new PrismaClient();
@@ -21,6 +22,11 @@ export async function getOrDownloadMusic(musicDir: string): Promise<string | nul
         return path.join(musicDir, files[Math.floor(Math.random() * files.length)]);
     }
 
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn('[Editor] Legacy scraper pipeline is disabled. Refusing to download music from YouTube via yt-dlp.');
+        return null;
+    }
+
     console.log('[Editor] No background music found. Downloading a default Lo-Fi track...');
     const bgUrl = 'https://www.youtube.com/watch?v=1fueZCTYkpA'; // Example free lofi track
     try {
@@ -34,12 +40,22 @@ export async function getOrDownloadMusic(musicDir: string): Promise<string | nul
 }
 
 export function addEditorJob(youtubeId: string) {
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn(`[Editor] Legacy editor queue is disabled. Refusing to queue editing job for ${youtubeId}.`);
+        return;
+    }
     editorQueue.push(youtubeId);
     console.log(`[Editor] Added editing job for ${youtubeId}. Queue length: ${editorQueue.length}`);
     processEditorQueue();
 }
 
 async function processEditorQueue() {
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn('[Editor] Legacy editor queue is disabled. Halting editor queue.');
+        editorQueue.length = 0;
+        isEditing = false;
+        return;
+    }
     if (isEditing || editorQueue.length === 0) return;
 
     isEditing = true;
@@ -93,6 +109,9 @@ async function processEditorQueue() {
 }
 
 export function processVideoForShorts(inputPath: string, outputPath: string, settings: any, musicPath: string | null): Promise<void> {
+    if (!isLegacyScraperPipelineEnabled()) {
+        return Promise.reject(new Error('[Editor] Legacy video processing is disabled. Configure ENABLE_LEGACY_SCRAPER_PIPELINE="true" to enable.'));
+    }
     return new Promise((resolve, reject) => {
         // Use relative path for FFmpeg on Windows to avoid 'C:/' drive letter colon parsing issues
         const fontPath = 'assets/font.ttf';

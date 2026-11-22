@@ -3,11 +3,11 @@
  * Generates N candidate angles, executes head-to-head battle, and enforces objective rubric grading.
  */
 
-import { scanAndSanitizeScript, ComplianceScanResult } from './complianceProxy';
-import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, ViralProduct } from './productRadar';
+import { scanAndSanitizeScript, type ComplianceScanResult } from './complianceProxy';
+import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, type ViralProduct } from './productRadar';
 import { executeLLM } from './llmClient';
 import { headToHeadJudge } from './adversarialQualityGate';
-import { ClaimSet, AngleCandidate, RubricGrade, AngleCandidateSchema } from './schemas';
+import { AngleCandidateSchema, type ClaimSet, type AngleCandidate, type RubricGrade } from './schemas';
 
 export interface ComprehensiveContentPackage {
   topic: string;
@@ -239,16 +239,16 @@ Return JSON:
     };
   } catch (e: any) {
     return {
-      overallScore: 88,
-      hookStrength: 9,
-      informationVelocity: 9,
-      retentionCurve: 9,
-      originality: 8,
-      loopClosure: 9,
+      overallScore: 65,
+      hookStrength: 7,
+      informationVelocity: 7,
+      retentionCurve: 6,
+      originality: 6,
+      loopClosure: 6,
       adSafety: 10,
-      criticNotes: 'High-velocity retention structure applied with open loop.',
-      passed: true,
-      degraded: false
+      criticNotes: 'LLM unconfigured or rubric critique failed: graded as degraded fallback.',
+      passed: false,
+      degraded: true
     };
   }
 }

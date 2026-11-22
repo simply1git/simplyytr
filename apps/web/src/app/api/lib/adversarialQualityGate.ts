@@ -4,7 +4,7 @@
  * and head-to-head angle battles before any video is allowed to render.
  */
 
-import { RetentionSimulation, AdversaryCritique, RetentionSimulationSchema, AdversaryCritiqueSchema } from './schemas';
+import { RetentionSimulationSchema, AdversaryCritiqueSchema, type RetentionSimulation, type AdversaryCritique } from './schemas';
 import { executeLLM } from './llmClient';
 
 /**
@@ -64,24 +64,25 @@ Return strict JSON matching this structure:
     console.warn('[RetentionSim] LLM call failed, using heuristic retention curve:', e.message);
   }
 
-  // Heuristic retention model based on script structure
+  // Heuristic retention model based on script structure (marked as degraded fallback)
   const hasStrongHook = hook.length > 10 && (hook.includes('?') || hook.includes('!') || hook.includes('...'));
-  const apvVal = hasStrongHook ? '124%' : '118%';
+  const apvVal = hasStrongHook ? '105%' : '95%';
   return {
     averagePercentageViewed: apvVal,
     lowestRetentionSecond: 15,
-    lowestRetentionScore: 86,
-    passedGate: true,
-    degraded: false,
+    lowestRetentionScore: 70,
+    passedGate: false,
+    degraded: true,
+    rejectionReason: 'LLM unconfigured or retention simulation failed: heuristic simulation held for review',
     curve: [
-      { second: 0, predictedRetentionPct: 100, dropOffRisk: 'LOW', pacingNote: 'High pattern-interrupt hook' },
-      { second: 5, predictedRetentionPct: 96, dropOffRisk: 'LOW', pacingNote: 'Immediate visual payoff' },
-      { second: 10, predictedRetentionPct: 92, dropOffRisk: 'LOW', pacingNote: 'Curiosity gap maintainer' },
-      { second: 15, predictedRetentionPct: 86, dropOffRisk: 'LOW', pacingNote: 'Fast information velocity' },
-      { second: 20, predictedRetentionPct: 88, dropOffRisk: 'LOW', pacingNote: 'High-energy revelation' },
-      { second: 25, predictedRetentionPct: 90, dropOffRisk: 'LOW', pacingNote: 'Punchline delivery' },
-      { second: 30, predictedRetentionPct: 94, dropOffRisk: 'LOW', pacingNote: 'Seamless loop bridge' },
-      { second: 35, predictedRetentionPct: 118, dropOffRisk: 'LOW', pacingNote: 'Loop completed, replay triggered' }
+      { second: 0, predictedRetentionPct: 100, dropOffRisk: 'LOW', pacingNote: 'Pattern-interrupt hook' },
+      { second: 5, predictedRetentionPct: 90, dropOffRisk: 'MEDIUM', pacingNote: 'Visual payoff pending' },
+      { second: 10, predictedRetentionPct: 82, dropOffRisk: 'MEDIUM', pacingNote: 'Curiosity gap' },
+      { second: 15, predictedRetentionPct: 70, dropOffRisk: 'HIGH', pacingNote: 'Pacing dip' },
+      { second: 20, predictedRetentionPct: 75, dropOffRisk: 'LOW', pacingNote: 'Revelation' },
+      { second: 25, predictedRetentionPct: 80, dropOffRisk: 'LOW', pacingNote: 'Punchline delivery' },
+      { second: 30, predictedRetentionPct: 85, dropOffRisk: 'LOW', pacingNote: 'Loop bridge' },
+      { second: 35, predictedRetentionPct: 95, dropOffRisk: 'LOW', pacingNote: 'Replay bridge' }
     ]
   };
 }
@@ -138,15 +139,16 @@ Return strict JSON:
     console.warn('[RedTeam] Adversary LLM call failed, using heuristic audit:', e.message);
   }
 
-  // Heuristic adversary audit based on script analysis
+  // Heuristic adversary audit (marked as degraded fallback when live model is unavailable)
   return {
-    redTeamScore: 90,
-    hookVelocityGrade: 'A',
-    clickbaitAccuracyRatio: 0.96,
-    objections: ['Maintain 60fps dynamic visual pacing across every 3-second B-roll cut.'],
-    requiredRefinements: ['Verified strong open loop and zero misleading claims.'],
-    passedAdversaryGate: true,
-    degraded: false
+    redTeamScore: 65,
+    hookVelocityGrade: 'C',
+    clickbaitAccuracyRatio: 0.70,
+    objections: ['Live LLM red-team auditor was unavailable to critique script.'],
+    requiredRefinements: ['Requires human editor review before render dispatch.'],
+    passedAdversaryGate: false,
+    degraded: true,
+    blockReason: 'LLM unconfigured: Red-team adversary could not verify hook integrity'
   };
 }
 

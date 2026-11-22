@@ -37,18 +37,102 @@ export async function POST(request: NextRequest) {
       return Response.json({ status: 'error_recorded', jobId });
     }
 
+    // Validate artifact existence - prevent false READY states
+    if (!videoUrl || typeof videoUrl !== 'string' || videoUrl.trim().length === 0) {
+      await prisma.renderJob.update({
+        where: { id: jobId },
+        data: {
+          status: 'FAILED',
+          error: 'ARTIFACT_MISSING: Webhook received empty or missing videoUrl.',
+          attempts: { increment: 1 },
+        },
+      });
+      return Response.json({ error: 'videoUrl is required and cannot be empty' }, { status: 400 });
+    }
+
+    // If videoUrl represents a local file path or /api/media/ route, verify actual file on disk
+    if (!videoUrl.startsWith('http://') && !videoUrl.startsWith('https://')) {
+      const fs = await import('fs');
+      const path = await import('path');
+      let targetFile = videoUrl;
+      if (videoUrl.startsWith('/api/media/')) {
+        targetFile = path.join('storage/processed', videoUrl.replace('/api/media/', ''));
+      }
+      const candidatePaths = [
+        path.isAbsolute(targetFile) ? targetFile : path.resolve(/*turbopackIgnore: true*/ process.cwd(), targetFile),
+        path.resolve(/*turbopackIgnore: true*/ process.cwd(), '../../', targetFile),
+        path.resolve(/*turbopackIgnore: true*/ process.cwd(), '../', targetFile),
+      ];
+      const resolvedPath = candidatePaths.find(p => fs.existsSync(p));
+      if (!resolvedPath || fs.statSync(resolvedPath).size === 0) {
+        const errorMsg = `ARTIFACT_NOT_FOUND: Rendered video file does not exist or is empty at ${videoUrl}`;
+        await prisma.renderJob.update({
+          where: { id: jobId },
+          data: {
+            status: 'FAILED',
+            error: errorMsg,
+            attempts: { increment: 1 },
+          },
+        });
+        return Response.json({ error: errorMsg }, { status: 422 });
+      }
+    }
+
+    // Fail closed: do not transition an invalid package to READY
+    if (existingJob.contentPackage) {
+      const { validateContentPackage, verifyPackageFingerprint } = await import('../../lib/contentContract');
+      let parsedPkg: any;
+      try {
+        parsedPkg = typeof existingJob.contentPackage === 'string'
+          ? JSON.parse(existingJob.contentPackage)
+          : existingJob.contentPackage;
+      } catch {
+        parsedPkg = null;
+      }
+      const validation = validateContentPackage(parsedPkg);
+      if (!validation.valid) {
+        const errorMsg = `CONTENT_PACKAGE_INVALID_ON_COMPLETION: ${validation.errors.join('; ')}`;
+        await prisma.renderJob.update({
+          where: { id: jobId },
+          data: {
+            status: 'FAILED',
+            error: errorMsg,
+            attempts: { increment: 1 },
+          },
+        });
+        return Response.json({ error: errorMsg }, { status: 422 });
+      }
+
+      if (parsedPkg?.packageFingerprint) {
+        const fingerprintMatches = verifyPackageFingerprint(parsedPkg, parsedPkg.packageFingerprint);
+        if (!fingerprintMatches) {
+          const errorMsg = `CONTENT_PACKAGE_MUTATED_ON_COMPLETION: Package fingerprint does not match approved digest.`;
+          await prisma.renderJob.update({
+            where: { id: jobId },
+            data: {
+              status: 'FAILED',
+              error: errorMsg,
+              attempts: { increment: 1 },
+            },
+          });
+          return Response.json({ error: errorMsg }, { status: 422 });
+        }
+      }
+    }
+
     // Fetch system settings to check autonomy dial
     const settings = await prisma.systemSettings.findUnique({ where: { id: 1 } });
     
-    // Rendering succeeded
+    // Rendering succeeded and package validated
     const updatedJob = await prisma.renderJob.update({
       where: { id: jobId },
       data: {
         status: 'READY',
-        videoUrl: videoUrl || null,
+        videoUrl: videoUrl,
         thumbnailUrl: thumbnailUrl || null,
         voiceoverUrl: voiceoverUrl || null,
         renderedAt: new Date(),
+        error: null,
       },
     });
 

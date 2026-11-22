@@ -1,9 +1,10 @@
 import cron from 'node-cron';
 import { PrismaClient } from '@prisma/client';
-import { uploadViaPuppeteer } from '../services/puppeteerUploader';
+import { publishToYouTubeDataApi } from '../services/youtubePublisher';
 import { processVideoForShorts, getOrDownloadMusic } from './editorQueue';
 import { generateViralMetadata } from '../services/aiRewriter';
 import { systemState } from '../state';
+import { isLegacyScraperPipelineEnabled } from './legacyGuard';
 import path from 'path';
 
 const prisma = new PrismaClient();
@@ -14,10 +15,15 @@ const prisma = new PrismaClient();
 export async function executePublish() {
     console.log('[Publisher] Waking up to process pending videos...');
     
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn('[Publisher] Legacy scraper/publisher pipeline is disabled. Returning to sleep.');
+        return;
+    }
+
     try {
         const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
-        if (!settings || !settings.autoPilotEnabled) {
-            console.log('[Publisher] Auto-Pilot is disabled. Returning to sleep.');
+        if (!settings || !settings.autoPilotEnabled || !settings.autoPublishOnline) {
+            console.log('[Publisher] Auto-Pilot or Online Auto-Publishing is disabled. Returning to sleep.');
             return;
         }
 
@@ -61,8 +67,14 @@ export async function executePublish() {
             systemState.setTask(`Uploading to YouTube: ${meta.title}...`);
             console.log(`[Publisher] Uploading to YouTube... Title: ${meta.title}`);
             
-            // Upload to YouTube via Puppeteer Stealth
-            const videoId = await uploadViaPuppeteer(processedPath, meta.title, meta.description);
+            // Upload to YouTube via Official Data API
+            const publishResult = await publishToYouTubeDataApi({
+                videoUrl: processedPath,
+                title: meta.title,
+                description: meta.description,
+                tags: ['shorts', 'viral']
+            });
+            const videoId = publishResult.youtubeVideoId;
             
             // Mark as UPLOADED
             await prisma.trendSignal.update({

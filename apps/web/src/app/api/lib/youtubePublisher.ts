@@ -31,13 +31,10 @@ export async function publishToYouTubeDataApi(options: YouTubePublishOptions): P
   const accessToken = options.channelAccessToken || process.env.YOUTUBE_ACCESS_TOKEN;
   
   if (!accessToken) {
-    console.warn('[YouTubePublisher] No YOUTUBE_ACCESS_TOKEN provided. In Draft/Simulated mode.');
-    const mockId = `yt-${Date.now().toString(36)}`;
+    console.warn('[YouTubePublisher] No YOUTUBE_ACCESS_TOKEN provided. Online publishing is disabled or unconfigured.');
     return {
-      success: true,
-      youtubeVideoId: mockId,
-      youtubeUrl: `https://youtube.com/shorts/${mockId}`,
-      pinnedCommentId: `comment-${mockId}`
+      success: false,
+      error: 'YOUTUBE_ACCESS_TOKEN is not configured. Online publishing requires valid YouTube OAuth credentials.'
     };
   }
 

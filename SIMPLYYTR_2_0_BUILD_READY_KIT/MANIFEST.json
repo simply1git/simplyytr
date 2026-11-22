@@ -1,0 +1,197 @@
+{
+  "kit": "SIMPLYYTR 2.0 Build-Ready Kit",
+  "version": "1.0",
+  "generated": "2026-10-08",
+  "files": [
+    {
+      "path": ".agent/adapters/antigravity/ANTIGRAVITY.md",
+      "size": 163,
+      "sha256": "28ed4a8d8fe4c6fd85951e461318686a6d17098fbcbb63ec1f4fbc123fa2777d"
+    },
+    {
+      "path": ".agent/adapters/claude-code/CLAUDE.md",
+      "size": 137,
+      "sha256": "901b32d371bccfe607f589fe159e194625971cc172ea9cf74fedfc920a73714b"
+    },
+    {
+      "path": ".agent/adapters/cline/CLINE.md",
+      "size": 133,
+      "sha256": "60b7c4431538d1e0f1ea7e859eeb1b305fcf18ecbbc5844b8ce6ec25a2664661"
+    },
+    {
+      "path": ".agent/adapters/codex/AGENTS.md",
+      "size": 146,
+      "sha256": "7988106e91947bd2cc6ad39704fd61601e13ad22fd4ba758a3d8d40f6cb20af6"
+    },
+    {
+      "path": ".agent/adapters/copilot/COPILOT_INSTRUCTIONS.md",
+      "size": 134,
+      "sha256": "038ace8f4aad314745092006a436a6cdbfc5b731f4f5723bcc25f5198b2122e1"
+    },
+    {
+      "path": ".agent/adapters/cursor/CURSOR_RULES.md",
+      "size": 118,
+      "sha256": "77c3be0af2de5e89baf7b500c4cf84d35d9af4061d6010df2a3896227333a2df"
+    },
+    {
+      "path": ".agent/memory/DECISIONS.md",
+      "size": 344,
+      "sha256": "b01a8ddf56f8cddc816b78d6419f121c780c1d5059ed09a4af520249f208770f"
+    },
+    {
+      "path": ".agent/memory/LESSONS.md",
+      "size": 76,
+      "sha256": "ec06a4a6797226f3c7f669ad118f871f02d3e56d064036312fe7fcce69b4914d"
+    },
+    {
+      "path": ".agent/memory/PREFERENCES.md",
+      "size": 196,
+      "sha256": "4ccdbad2fe15527fc251794dd89e426cae55d093e4227530d77de84f02a9782f"
+    },
+    {
+      "path": ".agent/protocols/DECISION_PROTOCOL.md",
+      "size": 266,
+      "sha256": "407250f38b6185ea1592b0c0ef26073f04328eea18db07bf79436535fe72defc"
+    },
+    {
+      "path": ".agent/protocols/HANDOFF_PROTOCOL.md",
+      "size": 356,
+      "sha256": "d5a9fde5897be69651cd0980b02c288406b8fbc1536335f9e163af76a321afa3"
+    },
+    {
+      "path": ".agent/protocols/REVIEW_PROTOCOL.md",
+      "size": 309,
+      "sha256": "69b7c379e6716ba1fe9e0e8c994ba362a189fb3ba5db26c737d66856beecd68c"
+    },
+    {
+      "path": ".agent/protocols/SECURITY_PROTOCOL.md",
+      "size": 269,
+      "sha256": "dd5b639263fe2b24854ad92a56cdce9ae598ac7eaa3bbf9247edcde35f645478"
+    },
+    {
+      "path": ".agent/protocols/TASK_PROTOCOL.md",
+      "size": 220,
+      "sha256": "56e7474b95205ef525fb90dc3638618c25e40ff13c0b1c8cf565144f3d1864f8"
+    },
+    {
+      "path": ".agent/state/ACTIVE_MISSION.md",
+      "size": 232,
+      "sha256": "52f18a8f86f5f4a3bb3938ff89e293bd9aa8f15bfabc08974cbea9fdbeca13f1"
+    },
+    {
+      "path": ".agent/state/BLOCKERS.md",
+      "size": 194,
+      "sha256": "4211762a71367246e4986def721b5e5c06292128319f2f08f3ac0eb728269751"
+    },
+    {
+      "path": ".agent/state/CURRENT_STATE.md",
+      "size": 294,
+      "sha256": "c5fb76f9f6934467d2a982a3bf272ba331db236c320cedb952f75c8bb58fd5e9"
+    },
+    {
+      "path": ".agent/state/NEXT_ACTIONS.md",
+      "size": 179,
+      "sha256": "4ba70bda5a742cb67e2b42d399144d75fd164d9d388de04ce8356a0db5d95134"
+    },
+    {
+      "path": ".agent/transfer/export_schema.json",
+      "size": 538,
+      "sha256": "57a3aefd78ca6ead9477bdf88a8bd9b1f787115ef6e45da17c0e1bdb82bdcba6"
+    },
+    {
+      "path": ".agents/skills/simplyytr-core/SKILL.md",
+      "size": 296,
+      "sha256": "f175a386656cdca0dce7cc6fe718128f4c311874e056fd0b2e92eaac63b92ba0"
+    },
+    {
+      "path": ".agents/skills/simplyytr-testing/SKILL.md",
+      "size": 203,
+      "sha256": "8c65ce9d595cb2dedd3fd91e108264256be2e1b18ccb322f803df0e0abf6e32d"
+    },
+    {
+      "path": "AGENTS.md",
+      "size": 819,
+      "sha256": "341e6961047448d0764f65b37a5d8a43c639c7f421ba55750f1a54bbd6c8425e"
+    },
+    {
+      "path": "BUILDER_BENCHMARK_TASK.md",
+      "size": 261,
+      "sha256": "eb0c8c10d9739b14656cba77bf1b653e4be149e82b8b60996f312714c65f865b"
+    },
+    {
+      "path": "MASTER_ONE_SHOT_BUILDER_PROMPT.md",
+      "size": 853,
+      "sha256": "7956d13df2a16331187d0ce9e2933fe054693adb8fccaf2d5a33efb32e88cac0"
+    },
+    {
+      "path": "SIMPLYYTR_2_0_FINAL_COMPLETE_SYSTEM_SPECIFICATION.md",
+      "size": 83119,
+      "sha256": "b59ef0a5e4c11ccbe6c1e62539e75b65d97872353c8df59397948cc4ba6ff78f"
+    },
+    {
+      "path": "START_HERE.md",
+      "size": 914,
+      "sha256": "343ff7a1de9637692cc6bb0e6860a1cab89614ec2c437bd79530db75d9e75a52"
+    },
+    {
+      "path": "docs/alphasignal/ALPHASIGNAL_INTELLIGENCE_RESEARCH.md",
+      "size": 1755,
+      "sha256": "d6a95f7f3bba23ec90e30c2be20df36490bc9f9350709b10035679f1571a2b23"
+    },
+    {
+      "path": "docs/alphasignal/ALPHASIGNAL_OPEN_SOURCE_REFERENCES.md",
+      "size": 1117,
+      "sha256": "5c425296a5bc024b15329949a1b0b97dda7c8f09c990d558ae0f974c825e144b"
+    },
+    {
+      "path": "docs/alphasignal/ALPHASIGNAL_TO_SIMPLYYTR_DESIGN.md",
+      "size": 1073,
+      "sha256": "3bb585de43e79c17c5cebe55ed7aacfd1a9b8484b8cc69d698931810b14eb270"
+    },
+    {
+      "path": "docs/build-readiness/BUILDER_PLATFORM_BENCHMARK.md",
+      "size": 1155,
+      "sha256": "fff67352cd1505301f9978465dd424248e408df824c6486e68d9169b40b53570"
+    },
+    {
+      "path": "docs/build-readiness/BUILDER_PORTABILITY_PROTOCOL.md",
+      "size": 1517,
+      "sha256": "9b99499da11ea88e9664e56106a826f3425013aac85071fba0a836437637e2a3"
+    },
+    {
+      "path": "docs/build-readiness/BUILD_READINESS_MASTER_PLAN.md",
+      "size": 2225,
+      "sha256": "7f698c231132aac7085a4dfcac8343979697a02e2a39e2a4ebdc4acf90b07304"
+    },
+    {
+      "path": "docs/build-readiness/OSS_TECHNOLOGY_SELECTION_MATRIX.md",
+      "size": 1906,
+      "sha256": "fe182d918d3f1dfdf617ea6a1382722d8699691c0d283ed917317a0962c86e1b"
+    },
+    {
+      "path": "docs/build-readiness/PHASE_0_FORENSIC_TASK.md",
+      "size": 1412,
+      "sha256": "f31f715c0384fdec3447dd580a1ee89726770bb6c2697d49086dae90e83fae2c"
+    },
+    {
+      "path": "docs/build-readiness/PHASE_1_FOUNDATION_TASKS.md",
+      "size": 1148,
+      "sha256": "10fb67c839f1efba4cbeddac68c9f0d70504bfbc4352be5708e5c70aa4b9d731"
+    },
+    {
+      "path": "docs/builder-platforms/BUILDER_SELECTION.md",
+      "size": 664,
+      "sha256": "4a8415d6ee7dc8b7370e95a0abdb783d5cf816127081001679b807e8f622ab61"
+    },
+    {
+      "path": "schemas/task-contract.schema.json",
+      "size": 994,
+      "sha256": "38737617a700cf5d1520babf3867d7a3a0cdc1fcb600952d9cd23d0c3568b015"
+    },
+    {
+      "path": "scripts/builder/README.md",
+      "size": 294,
+      "sha256": "e3865f21617a175d2854b9001751331f45b0421ef2885e06b4af9d50da2b9825"
+    }
+  ]
+}

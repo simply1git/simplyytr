@@ -1,5 +1,5 @@
-import { scanAndSanitizeScript, ComplianceScanResult } from './complianceProxy';
-import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, ViralProduct } from './productRadar';
+import { scanAndSanitizeScript, type ComplianceScanResult } from './complianceProxy';
+import { getRandomViralProduct, buildMultiAffiliateBundle, buildPinnedComment, buildMultiLinkDescription, type ViralProduct } from './productRadar';
 
 export interface ScriptGenerationResult {
     title: string;

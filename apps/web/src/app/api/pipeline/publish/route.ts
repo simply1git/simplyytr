@@ -28,6 +28,10 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Job does not have a rendered videoUrl yet' }, { status: 400 });
     }
 
+    if (job.status !== 'READY') {
+      return Response.json({ error: `Cannot publish job in ${job.status} status. Job must be READY.` }, { status: 400 });
+    }
+
     const pubResult = await publishToYouTubeDataApi({
       videoUrl: job.videoUrl,
       thumbnailUrl: job.thumbnailUrl || undefined,

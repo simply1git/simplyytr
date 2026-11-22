@@ -4,7 +4,7 @@
  * discrete verified claims with source confidence and channel memory retrieval.
  */
 
-import { ClaimItem, ClaimSet, ClaimSetSchema } from './schemas';
+import { ClaimSetSchema, type ClaimItem, type ClaimSet } from './schemas';
 import { prisma } from './utils';
 import { executeLLM } from './llmClient';
 
@@ -57,12 +57,15 @@ Return JSON matching this exact structure:
 
     const parsed = ClaimSetSchema.safeParse(rawResult);
     if (parsed.success) {
-      return parsed.data;
+      return {
+        ...parsed.data,
+        degraded: false
+      };
     } else {
       console.warn('[EvidenceGraph] Schema parse failed:', parsed.error);
     }
   } catch (e: any) {
-    console.warn('[EvidenceGraph] LLM extraction failed, generating grounded factual claimset:', e.message);
+    console.warn('[EvidenceGraph] LLM extraction failed, returning unverified degraded claimset:', e.message);
   }
 
   const cleanTopic = topic.replace(/[#@]/g, '').trim();
@@ -72,26 +75,19 @@ Return JSON matching this exact structure:
     topic: cleanTopic,
     niche,
     primarySourceUrl: source,
-    summary: `Verified factual breakdown for ${cleanTopic}`,
+    summary: `Unverified claim breakdown for ${cleanTopic}`,
     claims: [
       {
-        id: 'claim-1',
+        id: 'claim-fallback-1',
         claimText: cleanTopic,
         sourceUrl: source,
-        sourceTitle: sourceTitle || `Topic Insight: ${cleanTopic}`,
-        confidence: 0.95,
-        verified: true
-      },
-      {
-        id: 'claim-2',
-        claimText: `Key viral insight and practical breakdown of ${cleanTopic}`,
-        sourceUrl: source,
-        sourceTitle: sourceTitle || cleanTopic,
-        confidence: 0.90,
-        verified: true
+        sourceTitle: sourceTitle || `Topic: ${cleanTopic}`,
+        confidence: 0.5,
+        verified: false
       }
     ],
-    degraded: false
+    degraded: true,
+    error: 'Live LLM unconfigured or extraction failed: factual claims cannot be verified autonomously'
   };
 }
 
@@ -102,18 +98,64 @@ export async function lintScriptAgainstClaims(
   scriptText: string,
   claimSet: ClaimSet
 ): Promise<{ passed: boolean; mappedClaims: string[]; orphanedAssertions: string[]; blockReason?: string }> {
+  if (!scriptText || scriptText.trim().length < 20) {
+    return {
+      passed: false,
+      mappedClaims: [],
+      orphanedAssertions: ['Script text is empty or too short.'],
+      blockReason: 'Empty or malformed script provided.'
+    };
+  }
+
   const sentences = scriptText
     .split(/[.!?]+/)
     .map(s => s.trim())
     .filter(s => s.length > 8);
 
-  const mappedClaims: string[] = claimSet.claims.map(c => c.id);
+  const mappedClaims: string[] = claimSet.claims.filter(c => c.verified).map(c => c.id);
   const orphanedAssertions: string[] = [];
+
+  // If claimset is degraded or has 0 verified claims, fail closed
+  if (claimSet.degraded || mappedClaims.length === 0) {
+    return {
+      passed: false,
+      mappedClaims,
+      orphanedAssertions: sentences.slice(0, 3),
+      blockReason: `Evidence Graph degraded or has 0 verified claims (${claimSet.error || 'Unverified evidence source'}).`
+    };
+  }
+
+  // Check for high-risk ungrounded claims (medical, financial, fake guarantees)
+  const highRiskPatterns = [
+    /\b(guaranteed\s*(results|income|profit|cure|weight loss))\b/i,
+    /\b(100%\s*(effective|safe|cure|guaranteed|free money))\b/i,
+    /\b(miracle\s*(cure|pill|drug|trick))\b/i,
+    /\b(FDA\s*approved)\b/i,
+    /\b(cure(s)?\s*(cancer|diabetes|disease|illness))\b/i,
+    /\b(make\s*\$?[0-9,]+\s*(per day|a day|overnight|in 24 hours))\b/i
+  ];
+
+  for (const sentence of sentences) {
+    for (const pat of highRiskPatterns) {
+      if (pat.test(sentence)) {
+        orphanedAssertions.push(sentence);
+      }
+    }
+  }
+
+  if (orphanedAssertions.length > 0) {
+    return {
+      passed: false,
+      mappedClaims,
+      orphanedAssertions,
+      blockReason: `Script contains ${orphanedAssertions.length} ungrounded high-risk factual assertion(s).`
+    };
+  }
 
   return {
     passed: true,
     mappedClaims,
-    orphanedAssertions,
+    orphanedAssertions: [],
     blockReason: undefined
   };
 }

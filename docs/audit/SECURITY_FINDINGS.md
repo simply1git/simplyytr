@@ -282,4 +282,19 @@ All credentials and sensitive identifiers mentioned below have been redacted in 
   Phase 1 architecture replaces both fragmented backends with a unified Python FastAPI modular monolith (`apps/core`) enforcing a single, consistent authentication dependency (`Depends(verify_auth)`) across all privileged routes.
 - **Immediate Action Required:** `NO (ARCHITECTURAL REMEDIATION IN PHASE 1)`
 
+---
+
+## 3. Phase 5A Credential Exposure Audit & Rotation Readiness Summary
+
+**Date:** 2026-10-15  
+**Canonical Document:** [docs/build-readiness/PHASE_5A_CREDENTIAL_ROTATION_PLAN.md](file:///D:/Projects/SIMPLYYTR/docs/build-readiness/PHASE_5A_CREDENTIAL_ROTATION_PLAN.md)  
+**Status:** **ROTATION PLAN ESTABLISHED — PROVIDER ACTIONS UNVERIFIED**
+
+An exhaustive audit of credential handling across HTTP responses, error logs, client bundles, and worker payloads confirmed:
+1. **Worker Payloads Sanitized:** Worker-job endpoint (`/api/pipeline/worker-job`) delivers candidate scripts and rendering configurations but strips master server secrets, database URLs, and API tokens.
+2. **Client-Side Bundles Clean:** Zero `NEXT_PUBLIC_` environment variables exist in the workspace; `apps/web/src/app/page.tsx` contains 0 `process.env` references.
+3. **Media Route Guard:** `/api/media/[filename]` routes use short-lived HMAC-SHA256 tokens derived from `PIPELINE_SECRET`; the secret itself is never sent to the browser.
+4. **Historical Credential Exposure Inventory:** Identified and prioritized Google Chrome session databases, YouTube OAuth Client Secret (`client_secret.json`), fallback `PIPELINE_SECRET`, Cloudflare R2 keys, database passwords, and third-party API keys (Groq, Gemini, Kaggle, Pexels).
+5. **Provider-Side Rotation Status:** All external provider rotations remain explicitly **`UNVERIFIED`** until independently executed and confirmed by the human repository owner in respective cloud dashboards.
+
 

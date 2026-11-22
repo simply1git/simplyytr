@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { executeScrape } from '../queue/youtubeScraper';
+import { isLegacyScraperPipelineEnabled } from '../queue/legacyGuard';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -41,8 +42,11 @@ router.post('/', async (req, res) => {
         });
 
         if (payload.autoPilotEnabled) {
-            // Instantly start working when user clicks save
-            executeScrape().catch(console.error);
+            if (isLegacyScraperPipelineEnabled()) {
+                executeScrape().catch(console.error);
+            } else {
+                console.log('[Settings] autoPilotEnabled is true, but legacy scraper pipeline is disabled. Skipping executeScrape.');
+            }
         }
 
         res.json({ status: 'success', settings });

@@ -4,6 +4,7 @@ This package connects the frozen product specification to the coding builder tha
 
 ## Source of truth
 - `SIMPLYYTR_2_0_FINAL_COMPLETE_SYSTEM_SPECIFICATION.md`
+- `docs/OPERATOR_RUNBOOK.md` (Canonical Operator Runbook)
 - `docs/build-readiness/BUILD_READINESS_MASTER_PLAN.md`
 - Git history
 - executable tests

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { spawn } from 'child_process';
 import { addIngestJob } from '../queue/ingestQueue';
+import { isLegacyScraperPipelineEnabled } from '../queue/legacyGuard';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -36,6 +37,12 @@ function fetchMetadata(url: string): Promise<any> {
 }
 
 router.post('/ingest', async (req, res) => {
+    if (!isLegacyScraperPipelineEnabled()) {
+        return res.status(403).json({
+            error: 'Legacy trend ingestion pipeline is disabled. Configure ENABLE_LEGACY_SCRAPER_PIPELINE="true" to enable.',
+            status: 403
+        });
+    }
     const { url } = req.body;
     if (!url) {
         return res.status(400).json({ error: 'URL is required' });

@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "project": {"id": "simplyytr", "name": "SIMPLYYTR 2.0"},
+  "source_of_truth": {"spec_hash_sha256": "", "git_commit": "", "git_branch": ""},
+  "builder": {"id": "", "version": "", "model": "", "session_id": ""},
+  "state": {"phase": 0, "active_task_id": "", "blockers": [], "next_actions": [], "last_verified_tests": []},
+  "decisions": [], "lessons": [], "incidents": [], "files_changed": [], "artifacts": [],
+  "environment_prerequisites": [], "secret_references": [], "integrity": {"bundle_sha256": ""}
+}

@@ -4,11 +4,17 @@ import readline from 'readline';
 import path from 'path';
 import { systemState } from '../state';
 import { addIngestJob } from './ingestQueue';
+import { isLegacyScraperPipelineEnabled } from './legacyGuard';
 
 const prisma = new PrismaClient();
 
 export async function executeScrape() {
     console.log('[Competitive Pulse] Waking up to scan viral topics & competitor velocity...');
+    
+    if (!isLegacyScraperPipelineEnabled()) {
+        console.warn('[Competitive Pulse] Legacy scraper pipeline is disabled (ENABLE_LEGACY_SCRAPER_PIPELINE is not true). Skipping execution.');
+        return;
+    }
     
     try {
         let newDownloadsCount = 0;

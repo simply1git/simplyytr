@@ -43,6 +43,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
+
+    // Early parameter validation before database queries
+    const rawProfile = body.qualityProfile;
+    if (rawProfile && rawProfile !== 'STANDARD' && rawProfile !== 'CINEMATIC_PRO') {
+      return Response.json({ status: 'error', error: 'Invalid qualityProfile: must be either "STANDARD" or "CINEMATIC_PRO"' }, { status: 400 });
+    }
+    const qualityProfile = rawProfile || 'STANDARD';
+
     const count = Math.min(body.count || 1, 4); // Max 4 videos per trigger
 
     // Fetch system settings
@@ -92,10 +100,12 @@ Generate content that follows patterns from top performers and avoids patterns f
     for (let i = 0; i < count; i++) {
       const { executePeakAgenticRun } = await import('../../lib/agenticOrchestrator');
       const result = await executePeakAgenticRun({
+        forceTopic: body.topic || body.forceTopic,
         forceNiche: body.niche || (settings.targetNiche !== 'Motivation' && settings.targetNiche !== 'General / Multi-Niche' ? settings.targetNiche : undefined),
         targetChannels: settings.targetChannels,
         defaultStyle: activeStyle,
-        settings
+        settings,
+        qualityProfile
       });
 
       if (result.success && result.trace.jobCreatedId) {

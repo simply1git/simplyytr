@@ -4,14 +4,20 @@ import { google } from 'googleapis';
 import fs from 'fs';
 import path from 'path';
 import { generateViralMetadata } from '../services/aiRewriter';
-import { uploadViaPuppeteer } from '../services/puppeteerUploader';
+import { verifyBackendAuth } from '../middleware/auth';
+import { isLegacyScraperPipelineEnabled } from '../queue/legacyGuard';
 
 const router = Router();
 const prisma = new PrismaClient();
 
+// Enforce authentication on all publishing endpoints (fails closed if unauthenticated)
+router.use(verifyBackendAuth);
+
 // In a production environment, store these securely.
 // For the MVP, we expect a client_secret.json in the backend root.
-const CREDENTIALS_PATH = path.resolve(__dirname, '../../client_secret.json');
+const CREDENTIALS_PATH = fs.existsSync(path.resolve(process.cwd(), 'apps/backend/client_secret.json'))
+    ? path.resolve(process.cwd(), 'apps/backend/client_secret.json')
+    : path.resolve(process.cwd(), 'client_secret.json');
 
 export function getOAuth2Client() {
     if (!fs.existsSync(CREDENTIALS_PATH)) {
@@ -99,6 +105,21 @@ export async function uploadToYouTube(videoPath: string, title: string, descript
 // Force Upload Next Ready Video
 router.post('/force-next', async (req, res) => {
     try {
+        if (!isLegacyScraperPipelineEnabled()) {
+            return res.status(403).json({
+                error: 'Legacy publishing pipeline is disabled. Configure ENABLE_LEGACY_SCRAPER_PIPELINE="true" to enable.',
+                status: 403
+            });
+        }
+
+        const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
+        if (!settings || !settings.autoPublishOnline) {
+            return res.status(403).json({
+                error: 'Online publishing is disabled (autoPublishOnline is false).',
+                status: 403
+            });
+        }
+
         const trend = await prisma.trendSignal.findFirst({
             where: { downloadStatus: 'COMPLETED' },
             orderBy: { score: 'desc' }
@@ -108,11 +129,10 @@ router.post('/force-next', async (req, res) => {
             return res.status(404).json({ error: "No completed videos ready for upload." });
         }
 
-        const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
-        const videoPath = path.resolve(__dirname, '../..', trend.processedFilePath);
+        const videoPath = path.resolve(process.cwd(), trend.processedFilePath);
         const { title, description } = await generateViralMetadata(trend.topic, settings);
 
-        const videoId = await uploadViaPuppeteer(videoPath, title, description);
+        const videoId = await uploadToYouTube(videoPath, title, description);
         
         await prisma.trendSignal.update({
             where: { youtubeId: trend.youtubeId },
@@ -133,17 +153,31 @@ router.post('/force-next', async (req, res) => {
 // 3. Publish Video
 router.post('/:youtubeId', async (req, res) => {
     try {
+        if (!isLegacyScraperPipelineEnabled()) {
+            return res.status(403).json({
+                error: 'Legacy publishing pipeline is disabled. Configure ENABLE_LEGACY_SCRAPER_PIPELINE="true" to enable.',
+                status: 403
+            });
+        }
+
+        const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
+        if (!settings || !settings.autoPublishOnline) {
+            return res.status(403).json({
+                error: 'Online publishing is disabled (autoPublishOnline is false).',
+                status: 403
+            });
+        }
+
         const { youtubeId } = req.params;
         const trend = await prisma.trendSignal.findUnique({ where: { youtubeId } });
         if (!trend || !trend.processedFilePath) {
             return res.status(404).json({ error: "Processed video not found." });
         }
         
-        const settings = await (prisma as any).systemSettings.findUnique({ where: { id: 1 } });
-        const videoPath = path.resolve(__dirname, '../..', trend.processedFilePath);
+        const videoPath = path.resolve(process.cwd(), trend.processedFilePath);
         const { title, description } = await generateViralMetadata(trend.topic, settings);
 
-        const videoId = await uploadViaPuppeteer(videoPath, title, description);
+        const videoId = await uploadToYouTube(videoPath, title, description);
         
         // Mark as uploaded in DB
         await prisma.trendSignal.update({
