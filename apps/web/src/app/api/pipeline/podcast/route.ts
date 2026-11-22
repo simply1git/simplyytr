@@ -22,7 +22,19 @@ const DEFAULT_SEARCH_DIRS = [
 function loadChannelProfiles() {
   if (fs.existsSync(PROFILES_PATH)) {
     try {
-      return JSON.parse(fs.readFileSync(PROFILES_PATH, "utf-8"));
+      const data = JSON.parse(fs.readFileSync(PROFILES_PATH, "utf-8"));
+      if (Array.isArray(data.channels)) {
+        for (const ch of data.channels) {
+          if (Array.isArray(ch.recent_videos)) {
+            for (const v of ch.recent_videos) {
+              if (v.id && (v.thumbnail?.includes("_custom_") || v.thumbnail?.includes("hq720.jpg"))) {
+                v.thumbnail = `https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`;
+              }
+            }
+          }
+        }
+      }
+      return data;
     } catch {}
   }
   return { active_channel_id: "rajshamani", channels: [] };

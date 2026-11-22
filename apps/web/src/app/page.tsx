@@ -1459,7 +1459,17 @@ export default function SimplyYtrCommandCenter() {
                         >
                           <div className="space-y-1.5">
                             <div className="relative aspect-video rounded-lg overflow-hidden bg-black/80">
-                              <img src={vid.thumbnail} alt={vid.title} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300" />
+                              <img
+                                src={vid.thumbnail}
+                                alt={vid.title}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300"
+                                onError={(e) => {
+                                  const target = e.currentTarget;
+                                  if (vid.id && !target.src.includes("hqdefault.jpg")) {
+                                    target.src = `https://i.ytimg.com/vi/${vid.id}/hqdefault.jpg`;
+                                  }
+                                }}
+                              />
                               <span className="absolute bottom-1 right-1 px-1.5 py-0.2 rounded bg-black/80 text-[8px] font-bold text-white font-mono">
                                 {vid.duration}
                               </span>
