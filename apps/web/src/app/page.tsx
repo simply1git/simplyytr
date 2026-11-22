@@ -164,6 +164,26 @@ export default function SimplyYtrCommandCenter() {
     }
   }, [selectedStudioClip?.id]);
 
+  // Autonomous Ingestion Polling & Auto-Switch
+  const prevIngestionActiveRef = useRef(false);
+  useEffect(() => {
+    let interval: any;
+    if (podcastData?.ingestionStatus?.active) {
+      interval = setInterval(() => {
+        fetchPodcastData();
+      }, 2500);
+    } else if (prevIngestionActiveRef.current && !podcastData?.ingestionStatus?.active) {
+      if (podcastData?.ingestionStatus?.stage === "COMPLETED" && podcastData?.ingestionStatus?.episode_id) {
+        toast.success(`🎉 Ingestion complete! "${podcastData.ingestionStatus.title || 'Episode'}" is now ready.`);
+        handleSwitchEpisode(podcastData.ingestionStatus.episode_id);
+      }
+    }
+    prevIngestionActiveRef.current = !!podcastData?.ingestionStatus?.active;
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [podcastData?.ingestionStatus?.active]);
+
   const handleSeekToTime = (timeSec: number) => {
     if (videoRef.current) {
       videoRef.current.currentTime = timeSec;
@@ -307,7 +327,7 @@ export default function SimplyYtrCommandCenter() {
       const data = await res.json();
       if (data.status === "success") {
         toast.success(data.message || "Autonomous pipeline running for selected episode!");
-        setTimeout(fetchPodcastData, 3000);
+        fetchPodcastData();
       } else {
         toast.error(data.message || "Failed to trigger auto-creation");
       }
@@ -344,7 +364,7 @@ export default function SimplyYtrCommandCenter() {
         setNewVideoTitle("");
         setNewVideoGuest("");
         setOpusUrlInput("");
-        setTimeout(fetchPodcastData, 3000);
+        fetchPodcastData();
       } else {
         toast.error(data.message || "Failed to ingest episode");
       }
@@ -1539,6 +1559,45 @@ export default function SimplyYtrCommandCenter() {
                   ))}
                 </div>
               </div>
+
+              {/* Active Autonomous Ingestion Pipeline Status Banner */}
+              {podcastData?.ingestionStatus?.active && (
+                <div className="mt-6 p-4 bg-gradient-to-r from-purple-950/70 via-indigo-950/50 to-zinc-900 border border-purple-500/50 rounded-2xl shadow-[0_0_30px_rgba(168,85,247,0.25)] flex flex-col md:flex-row items-center justify-between gap-4 animate-pulse">
+                  <div className="flex items-center gap-3.5 text-left">
+                    <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-400/40 shrink-0">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping absolute"></span>
+                      <span className="material-symbols-outlined text-purple-300 text-[18px]">bolt</span>
+                    </div>
+                    <div>
+                      <div className="text-[11px] font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2">
+                        <span>AUTONOMOUS INGESTION ENGINE IN PROGRESS</span>
+                        <span className="px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[9px] font-mono">
+                          {podcastData.ingestionStatus.stage || "PROCESSING"}
+                        </span>
+                      </div>
+                      <h4 className="text-xs font-bold text-white mt-0.5 line-clamp-1">
+                        {podcastData.ingestionStatus.title || "Selected Podcast Video"}
+                      </h4>
+                      <p className="text-[11px] text-zinc-400 mt-0.5">
+                        {podcastData.ingestionStatus.message || "Synthesizing hooks and rendering studio clips..."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="w-full md:w-64 space-y-1.5 shrink-0">
+                    <div className="flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-zinc-400">Pipeline Synthesis:</span>
+                      <span className="text-purple-400 font-bold">{podcastData.ingestionStatus.progress || 10}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-black/60 rounded-full overflow-hidden border border-white/10">
+                      <div
+                        className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-emerald-400 transition-all duration-700"
+                        style={{ width: `${Math.max(5, podcastData.ingestionStatus.progress || 10)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* 2. Episode Switcher & Metrics Ribbon */}
               <div className="mt-8 pt-6 border-t border-white/[0.08] flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 relative z-10">

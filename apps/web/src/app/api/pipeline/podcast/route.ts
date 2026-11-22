@@ -9,7 +9,29 @@ const REPO_ROOT = path.resolve(process.cwd(), "..", "..");
 const PIPELINE_DIR = path.join(REPO_ROOT, "scratch", "shorts-pipeline");
 const CATALOG_PATH = path.join(PIPELINE_DIR, "episodes_catalog.json");
 const PROFILES_PATH = path.join(PIPELINE_DIR, "channel_profiles.json");
+const STATUS_PATH = path.join(PIPELINE_DIR, "ingestion_status.json");
 const DEFAULT_LONG_CLIPS_DIR = path.join(PIPELINE_DIR, "output", "long_clips");
+
+function getPythonExe(): string {
+  const venvPy = path.resolve(REPO_ROOT, "scratch", "test_kokoro_venv", "Scripts", "python.exe");
+  if (fs.existsSync(venvPy)) return venvPy;
+  const sys312 = "C:\\Users\\Hp\\AppData\\Local\\Programs\\Python\\Python312\\python.exe";
+  if (fs.existsSync(sys312)) return sys312;
+  return "python";
+}
+
+function loadIngestionStatus() {
+  if (fs.existsSync(STATUS_PATH)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(STATUS_PATH, "utf-8"));
+      if (data.timestamp && Date.now() / 1000 - data.timestamp > 1800) {
+        data.active = false;
+      }
+      return data;
+    } catch {}
+  }
+  return { active: false, stage: "IDLE", progress: 0, message: "Standby" };
+}
 const DEFAULT_SHORTS_DIR = path.join(PIPELINE_DIR, "output_10outof10");
 const CAPCUT_EXE = "C:\\Users\\Hp\\AppData\\Local\\CapCut\\Apps\\9.5.0.4050\\CapCut.exe";
 const CAPCUT_DRAFTS_ROOT = "C:\\Users\\Hp\\AppData\\Local\\CapCut\\User Data\\Projects\\com.lveditor.draft";
@@ -332,6 +354,7 @@ export async function GET(request: NextRequest) {
     const discoveredVideos = getDiscoveredVideos();
     const profilesData = loadChannelProfiles();
     const activeChannel = profilesData.channels.find((c: any) => c.id === profilesData.active_channel_id) || profilesData.channels[0] || null;
+    const ingestionStatus = loadIngestionStatus();
 
     return NextResponse.json({
       status: "success",
@@ -339,6 +362,7 @@ export async function GET(request: NextRequest) {
         activeEpisodeId: activeEp.id,
         channelProfiles: profilesData,
         activeChannel,
+        ingestionStatus,
         episodes: episodes.map((e: any) => ({
           id: e.id,
           title: e.title,
@@ -413,7 +437,8 @@ export async function POST(req: Request) {
 
       try {
         const safeHandle = cleanHandle.replace(/["'$`]/g, "");
-        const output = execSync(`python "${scriptPath}" --fetch-channel "${safeHandle}"`, {
+        const pythonExe = getPythonExe();
+        const output = execSync(`"${pythonExe}" "${scriptPath}" --fetch-channel "${safeHandle}"`, {
           timeout: 25000,
           encoding: "utf-8"
         });
@@ -488,15 +513,36 @@ export async function POST(req: Request) {
         }
       }
 
+      const pythonExe = getPythonExe();
+      const logFile = path.resolve(PIPELINE_DIR, "ingestion_latest.log");
+      const outLog = fs.openSync(logFile, "a");
+      const spawnEnv = {
+        ...process.env,
+        OMP_NUM_THREADS: "2",
+        MKL_NUM_THREADS: "2",
+        KMP_DUPLICATE_LIB_OK: "TRUE"
+      };
+
+      // Set initial status so UI immediately updates
+      try {
+        fs.writeFileSync(STATUS_PATH, JSON.stringify({
+          active: true,
+          stage: "INITIATING",
+          progress: 5,
+          message: `Autonomous Ingestion triggered for: ${customTitle || path.basename(resolvedPath)}`,
+          title: customTitle || path.basename(resolvedPath),
+          timestamp: Math.floor(Date.now() / 1000)
+        }, null, 2));
+      } catch {}
+
       // B. If it's an existing local file
       if (fs.existsSync(resolvedPath)) {
-        const pythonExe = path.resolve(REPO_ROOT, "scratch", "test_kokoro_venv", "Scripts", "python.exe");
         const ingestScript = path.resolve(PIPELINE_DIR, "scripts", "dynamic_podcast_pipeline.py");
         const args = [ingestScript, "--video", resolvedPath];
         if (customTitle) args.push("--title", customTitle);
         if (guestName) args.push("--guest", guestName);
 
-        const proc = spawn(pythonExe, args, { detached: true, stdio: "ignore" });
+        const proc = spawn(pythonExe, args, { detached: true, stdio: ["ignore", outLog, outLog], env: spawnEnv });
         proc.unref();
 
         return NextResponse.json({
@@ -513,7 +559,7 @@ export async function POST(req: Request) {
         if (customTitle) args.push("--title", customTitle);
         if (guestName) args.push("--guest", guestName);
 
-        const proc = spawn("python", args, { detached: true, stdio: "ignore" });
+        const proc = spawn(pythonExe, args, { detached: true, stdio: ["ignore", outLog, outLog], env: spawnEnv });
         proc.unref();
 
         return NextResponse.json({
