@@ -1688,6 +1688,9 @@ export default function SimplyYtrCommandCenter() {
                         playsInline
                         preload="auto"
                         onLoadedMetadata={(e) => {
+                          if (videoCurrentTime > 0 && e.currentTarget.duration && videoCurrentTime < e.currentTarget.duration) {
+                            try { e.currentTarget.currentTime = videoCurrentTime; } catch {}
+                          }
                           e.currentTarget.play().catch(() => {});
                         }}
                         onTimeUpdate={(e) => setVideoCurrentTime(e.currentTarget.currentTime)}
